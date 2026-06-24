@@ -64,7 +64,7 @@ export async function processPdf(
     const page = await pdf.getPage(pageNum)
 
     // 2.0 倍スケールで高解像度レンダリング（= 約 144 DPI 相当）
-    const scale    = 2.0
+    const scale    = 3.0
     const viewport = page.getViewport({ scale })
 
     // Canvas をページサイズに合わせてリサイズ（前ページのピクセルは自動クリア）

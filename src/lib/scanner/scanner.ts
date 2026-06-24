@@ -1,7 +1,13 @@
 /**
  * scanner.ts
  * ブラウザ内でのみ動作するバーコード解析モジュール。
- * ZXing を動的インポートし、グリッド分割 + コントラスト強化で複数コードを高精度に検出する。
+ * ZXing を動的インポートし、グリッド分割 + コントラスト強化 + 反転スキャンで
+ * 複数コードを高精度に検出する。
+ *
+ * 対応パターン:
+ * - 通常色（黒いコード + 白い背景）
+ * - 反転色（白いコード + 濃色背景）← 学校プリントのQR等
+ * - 薄い印字（コントラスト強化で補完）
  */
 
 import type { ScanResult } from '@/types'
@@ -85,7 +91,6 @@ function enhanceContrast(src: HTMLCanvasElement): HTMLCanvasElement {
   const data   = ctx.getImageData(0, 0, canvas.width, canvas.height)
   const px     = data.data
 
-  // ヒストグラムの最小・最大輝度を検出
   let min = 255; let max = 0
   for (let i = 0; i < px.length; i += 4) {
     const g = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]
@@ -94,10 +99,32 @@ function enhanceContrast(src: HTMLCanvasElement): HTMLCanvasElement {
   }
   const range = max - min || 1
 
-  // 輝度正規化 + グレースケール変換
   for (let i = 0; i < px.length; i += 4) {
     const g = ((0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]) - min) / range * 255
     px[i] = px[i + 1] = px[i + 2] = Math.round(Math.min(255, Math.max(0, g)))
+  }
+
+  ctx.putImageData(data, 0, 0)
+  return canvas
+}
+
+/**
+ * 色を反転させた Canvas を返す。
+ * 【重要】濃色背景に白いQRコード（例：濃紺の背景に白）の検出に必要。
+ * ZXing はデフォルトで「明るい背景に暗いコード」を想定しているため、
+ * 反転することで逆色パターンも検出できるようになる。
+ */
+function invertCanvas(src: HTMLCanvasElement): HTMLCanvasElement {
+  const canvas = extractRegion(src, 0, 0, src.width, src.height)
+  const ctx    = canvas.getContext('2d')!
+  const data   = ctx.getImageData(0, 0, canvas.width, canvas.height)
+  const px     = data.data
+
+  for (let i = 0; i < px.length; i += 4) {
+    px[i]     = 255 - px[i]
+    px[i + 1] = 255 - px[i + 1]
+    px[i + 2] = 255 - px[i + 2]
+    // Alpha はそのまま
   }
 
   ctx.putImageData(data, 0, 0)
@@ -112,7 +139,6 @@ function tryDecode(
   reader: NonNullable<typeof zxingReader>,
   canvas: HTMLCanvasElement,
 ): Omit<ScanResult, 'id' | 'page'> | null {
-  // 最小サイズチェック（小さすぎる領域はスキップ）
   if (canvas.width < 20 || canvas.height < 20) return null
 
   try {
@@ -121,7 +147,6 @@ function tryDecode(
     if (!format) return null
     return { type: format, value: result.getText() as string }
   } catch {
-    // NotFoundException は通常パス（コードなし）
     return null
   }
 }
@@ -130,13 +155,6 @@ function tryDecode(
 // スキャン領域の生成（グリッド + ストリップ）
 // ============================================================
 
-/**
- * 画像全体を複数の重複あり領域に分割して返す。
- * - 全体スキャン × 1
- * - 2×2 グリッド（境界付近のコードを捕捉）
- * - 3×3 グリッド（密集した複数コードに対応）
- * - 水平ストリップ × 6（1D バーコードに特化した走査）
- */
 function getScanRegions(
   w: number,
   h: number,
@@ -189,7 +207,12 @@ function getScanRegions(
 
 /**
  * 1枚の Canvas から全バーコード/QRを抽出する。
- * PDF の 1 ページ、または画像ファイル 1 枚に対応。
+ *
+ * スキャン戦略（精度優先）:
+ * 1. 通常スキャン（グリッド + ストリップ）
+ * 2. 反転スキャン（濃色背景の白いQR対策）
+ * 3. コントラスト強化スキャン（薄い印字対策）
+ * 4. 反転 + コントラスト強化（最難関パターン対策）
  */
 export async function scanCanvas(
   canvas: HTMLCanvasElement,
@@ -202,22 +225,43 @@ export async function scanCanvas(
   const raw: Omit<ScanResult, 'id'>[] = []
   const regions = getScanRegions(w, h)
 
+  // --- Pass 1: 通常スキャン（グリッド全領域）---
   let tick = 0
   for (const [x, y, rw, rh] of regions) {
     const sub = extractRegion(work, x, y, rw, rh)
     const hit = tryDecode(reader, sub)
     if (hit) raw.push({ ...hit, page })
 
-    // 5 領域ごとにメインスレッドを解放（UI フリーズ防止）
     if (++tick % 5 === 0) {
       await new Promise((resolve) => setTimeout(resolve, 0))
     }
   }
 
-  // コントラスト強化版で全体再スキャン（薄い印字への対策）
-  const enhanced = enhanceContrast(work)
-  const enhHit   = tryDecode(reader, enhanced)
-  if (enhHit) raw.push({ ...enhHit, page })
+  // --- Pass 2: 反転スキャン（濃色背景に白いQR対策）---
+  // 全体 + 2×2グリッドのみ（反転は処理コストが高いため絞る）
+  const invWork = invertCanvas(work)
+  const invRegions: Array<[number, number, number, number]> = [
+    [0, 0, w, h],
+    [0, 0, w / 2, h / 2],
+    [w / 2, 0, w / 2, h / 2],
+    [0, h / 2, w / 2, h / 2],
+    [w / 2, h / 2, w / 2, h / 2],
+  ]
+  for (const [x, y, rw, rh] of invRegions) {
+    const sub = extractRegion(invWork, x, y, rw, rh)
+    const hit = tryDecode(reader, sub)
+    if (hit) raw.push({ ...hit, page })
+  }
+  await new Promise((resolve) => setTimeout(resolve, 0))
+
+  // --- Pass 3: コントラスト強化版（通常 + 反転）---
+  const enhanced    = enhanceContrast(work)
+  const invEnhanced = enhanceContrast(invWork)
+
+  const enhHit    = tryDecode(reader, enhanced)
+  const invEnhHit = tryDecode(reader, invEnhanced)
+  if (enhHit)    raw.push({ ...enhHit, page })
+  if (invEnhHit) raw.push({ ...invEnhHit, page })
 
   // ID 付与 + 重複除外
   return deduplicateResults(raw.map((r) => ({ ...r, id: generateId() })))
@@ -235,8 +279,6 @@ export function imageFileToCanvas(file: File): Promise<HTMLCanvasElement> {
     img.onload = () => {
       URL.revokeObjectURL(url)
 
-      // 最小辺が 1000px 未満 → 最大 3 倍までスケールアップ
-      // 最大辺が 3000px 超 → スケールダウン
       const MIN_DIM = 1000
       const MAX_DIM = 3000
       const minSide = Math.min(img.width, img.height)
