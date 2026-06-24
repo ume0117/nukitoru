@@ -13,7 +13,7 @@ import './globals.css'
  */
 
 export const metadata: Metadata = {
-  title: 'ScanHub - PDF・画像からQRコード・JANコードを抽出',
+  title: 'Nukitoru - PDF・画像からQRコード・JANコードを抽出',
   description:
     'PDFや画像・スクリーンショットからQRコード・JANコード・EAN・バーコードを無料で一括抽出。ブラウザ内処理でファイルはサーバーに送信されません。せどり・EC事業・フリマ出品・物流業務に対応。',
   keywords: [
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     'EAN-13', 'CODE128', '無料ツール', 'せどり', 'EC',
   ],
   openGraph: {
-    title: 'ScanHub - PDF・画像からQRコード・JANコードを抽出',
+    title: 'Nukitoru - PDF・画像からQRコード・JANコードを抽出',
     description: 'PDFや画像からQRコード・JANコード・バーコードを無料で一括抽出。',
     type: 'website',
     locale: 'ja_JP',
@@ -51,7 +51,7 @@ export default function RootLayout({
             <p>
               ファイルはブラウザ内で処理されます。サーバーへの送信は一切行いません。
             </p>
-            <p>© 2024 ScanHub. All rights reserved.</p>
+            <p>© 2024 Nukitoru. All rights reserved.</p>
           </div>
         </footer>
       </body>

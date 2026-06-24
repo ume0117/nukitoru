@@ -1,4 +1,4 @@
-# ScanHub
+# Nukitoru
 
 **PDF・画像からQRコード・JANコード・バーコードを高精度で抽出する無料Webツール**
 

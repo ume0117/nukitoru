@@ -26,7 +26,7 @@ export function Header() {
         {/* テキスト */}
         <div className="flex flex-col leading-none">
           <span className="text-base font-bold text-gray-900 dark:text-white tracking-tight">
-            ScanHub
+            Nukitoru
           </span>
           <span className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
             PDF・画像コード抽出ツール
