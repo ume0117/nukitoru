@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light dark;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  /* スムーススクロール */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* テキスト選択カラー */
+  ::selection {
+    background-color: #BFDBFE;
+    color: #1E3A8A;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    ::selection {
+      background-color: #1E3A8A;
+      color: #BFDBFE;
+    }
+  }
+}
+
+@layer utilities {
+  /* PDF スキャン中のスピナー */
+  .animate-spin-slow {
+    animation: spin 2s linear infinite;
+  }
+}
