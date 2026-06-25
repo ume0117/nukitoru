@@ -1,11 +1,11 @@
 /**
  * scanner.ts
  *
- * QR コード    → jsQR（高精度・反転色対応）
- * 1D バーコード → BarcodeDetector API（Chrome ネイティブ） → quagga2（フォールバック）
+ * QR コード    → jsQR（全ブラウザ・高精度・反転色対応）
+ * 1D バーコード → zbar-wasm（全ブラウザ対応）+ BarcodeDetector（Chrome補完）
  *
- * Chrome 83+ はブラウザ内蔵の BarcodeDetector API で高精度検出。
- * Safari/Firefox は quagga2（numOfWorkers:0 でワーカー不要）でフォールバック。
+ * zbar-wasm は pyzbar と同じ zbar エンジンの WASM 版。
+ * Safari/Firefox を含む全ブラウザで EAN-13・EAN-8・CODE128 を検出できる。
  */
 
 import type { ScanResult } from '@/types'
@@ -63,6 +63,11 @@ function enhanceContrast(src: HTMLCanvasElement): HTMLCanvasElement {
   return c
 }
 
+function getImageData(canvas: HTMLCanvasElement): ImageData {
+  return canvas.getContext('2d', { willReadFrequently: true })!
+    .getImageData(0, 0, canvas.width, canvas.height)
+}
+
 // ============================================================
 // QR スキャン（jsQR）
 // ============================================================
@@ -100,17 +105,16 @@ async function scanQR(
 
   for (const [x, y, rw, rh] of regions) {
     const sub = extractRegion(canvas, x, y, rw, rh, false)
-    const ctx = sub.getContext('2d', { willReadFrequently: true })!
-    const imgData = ctx.getImageData(0, 0, sub.width, sub.height)
+    const imgData = getImageData(sub)
     const hit = jsQR(imgData.data, sub.width, sub.height, opts)
     if (hit?.data) {
       results.push({ id: generateId(), type: 'QR_CODE', value: hit.data, page })
     }
   }
 
+  // コントラスト強化版
   const enh = enhanceContrast(canvas)
-  const ectx = enh.getContext('2d', { willReadFrequently: true })!
-  const eData = ectx.getImageData(0, 0, enh.width, enh.height)
+  const eData = getImageData(enh)
   const eHit = jsQR(eData.data, enh.width, enh.height, opts)
   if (eHit?.data) {
     results.push({ id: generateId(), type: 'QR_CODE', value: eHit.data, page })
@@ -120,7 +124,53 @@ async function scanQR(
 }
 
 // ============================================================
-// 1D バーコード: Chrome ネイティブ BarcodeDetector
+// 1D バーコード: zbar-wasm（全ブラウザ対応）
+// ============================================================
+
+const ZBAR_FORMAT_MAP: Record<string, ScanResult['type']> = {
+  'ZBAR_EAN13':   'EAN_13',
+  'ZBAR_EAN8':    'EAN_8',
+  'ZBAR_CODE128': 'CODE_128',
+}
+
+async function scan1DWithZBar(
+  canvas: HTMLCanvasElement,
+  page?: number,
+): Promise<ScanResult[]> {
+  try {
+    const { scanImageData } = await import('@undecaf/zbar-wasm')
+    const results: ScanResult[] = []
+
+    // 通常スキャン + コントラスト強化版を両方試す
+    const targets = [canvas, enhanceContrast(canvas)]
+
+    for (const target of targets) {
+      const imageData = getImageData(target)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const symbols: any[] = await scanImageData(imageData)
+
+      for (const sym of symbols) {
+        const type = ZBAR_FORMAT_MAP[sym.typeName]
+        if (type) {
+          results.push({
+            id: generateId(),
+            type,
+            value: sym.decode(),
+            page,
+          })
+        }
+      }
+    }
+
+    return results
+  } catch (e) {
+    console.error('[Nukitoru] zbar-wasm error:', e)
+    return []
+  }
+}
+
+// ============================================================
+// 1D バーコード: BarcodeDetector（Chrome 補完）
 // ============================================================
 
 const BD_FORMAT_MAP: Record<string, ScanResult['type']> = {
@@ -132,25 +182,20 @@ const BD_FORMAT_MAP: Record<string, ScanResult['type']> = {
 async function scan1DWithBarcodeDetector(
   canvas: HTMLCanvasElement,
   page?: number,
-): Promise<ScanResult[] | null> {
-  // BarcodeDetector が利用可能か確認（Chrome 83+）
-  if (!('BarcodeDetector' in window)) return null
+): Promise<ScanResult[]> {
+  if (!('BarcodeDetector' in window)) return []
 
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const BD = (window as any).BarcodeDetector
     const detector = new BD({ formats: ['ean_13', 'ean_8', 'code_128'] })
-
-    // 全体 + コントラスト強化版で試す
-    const targets = [canvas, enhanceContrast(canvas)]
     const results: ScanResult[] = []
 
-    for (const target of targets) {
+    for (const target of [canvas, enhanceContrast(canvas)]) {
       const bitmap = await createImageBitmap(target)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const barcodes: any[] = await detector.detect(bitmap)
       bitmap.close()
-
       for (const b of barcodes) {
         const type = BD_FORMAT_MAP[b.format]
         if (type && b.rawValue) {
@@ -162,101 +207,23 @@ async function scan1DWithBarcodeDetector(
     return results
   } catch (e) {
     console.warn('[Nukitoru] BarcodeDetector error:', e)
-    return null
+    return []
   }
 }
 
 // ============================================================
-// 1D バーコード: quagga2（フォールバック）
-// ============================================================
-
-type QuaggaResult = {
-  codeResult?: { code: string | null; format: string }
-} | null
-
-const QUAGGA_FORMAT_MAP: Record<string, ScanResult['type']> = {
-  'ean_13':   'EAN_13',
-  'ean_8':    'EAN_8',
-  'code_128': 'CODE_128',
-}
-
-async function decodeWithQuagga(
-  dataUrl: string,
-): Promise<Omit<ScanResult, 'id' | 'page'> | null> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const mod = await import('@ericblade/quagga2') as any
-  const Quagga = mod.default ?? mod
-
-  if (typeof Quagga?.decodeSingle !== 'function') {
-    console.error('[Nukitoru] quagga2 decodeSingle not found')
-    return null
-  }
-
-  return new Promise((resolve) => {
-    try {
-      Quagga.decodeSingle(
-        {
-          numOfWorkers: 0,       // ワーカーなし（Next.js 環境対応）
-          inputStream: { size: 1200 },
-          decoder: {
-            readers: ['ean_reader', 'ean_8_reader', 'code_128_reader'],
-            multiple: false,
-          },
-          locate: true,
-          src: dataUrl,
-        },
-        (result: QuaggaResult) => {
-          if (result?.codeResult?.code && result.codeResult.format) {
-            const type = QUAGGA_FORMAT_MAP[result.codeResult.format]
-            if (type) {
-              resolve({ type, value: result.codeResult.code })
-              return
-            }
-          }
-          resolve(null)
-        },
-      )
-    } catch (e) {
-      console.error('[Nukitoru] quagga2 exception:', e)
-      resolve(null)
-    }
-  })
-}
-
-async function scan1DWithQuagga(
-  canvas: HTMLCanvasElement,
-  page?: number,
-): Promise<ScanResult[]> {
-  const raw: Omit<ScanResult, 'id'>[] = []
-
-  // 全体スキャン
-  const hit1 = await decodeWithQuagga(canvas.toDataURL('image/png'))
-  if (hit1) raw.push({ ...hit1, page })
-
-  // コントラスト強化版
-  const enh = enhanceContrast(canvas)
-  const hit2 = await decodeWithQuagga(enh.toDataURL('image/png'))
-  if (hit2) raw.push({ ...hit2, page })
-
-  return raw.map((r) => ({ ...r, id: generateId() }))
-}
-
-// ============================================================
-// 1D バーコード: ディスパッチャー（並行実行で最大精度）
+// 1D ディスパッチャー: zbar-wasm + BarcodeDetector を並行実行
 // ============================================================
 
 async function scan1D(
   canvas: HTMLCanvasElement,
   page?: number,
 ): Promise<ScanResult[]> {
-  // BarcodeDetector と quagga2 を並行実行して結果をマージ
-  // BarcodeDetector: CODE128 / EAN-8 が得意
-  // quagga2: EAN-13 の補完スキャン
-  const [bdResults, quaggaResults] = await Promise.all([
-    scan1DWithBarcodeDetector(canvas, page).then((r) => r ?? []),
-    scan1DWithQuagga(canvas, page),
+  const [zbarResults, bdResults] = await Promise.all([
+    scan1DWithZBar(canvas, page),
+    scan1DWithBarcodeDetector(canvas, page),
   ])
-  return deduplicateResults([...bdResults, ...quaggaResults])
+  return deduplicateResults([...zbarResults, ...bdResults])
 }
 
 // ============================================================

@@ -3,8 +3,12 @@ import type { NextConfig } from 'next'
 const nextConfig: NextConfig = {
   webpack: (config, { isServer }) => {
     if (!isServer) {
-      // PDF.js はブラウザ側でのみ動作。canvas (Node.js) モジュールを無効化。
       config.resolve.alias['canvas'] = false
+    }
+    // zbar-wasm の WebAssembly ファイルを非同期ロードするために必要
+    config.experiments = {
+      ...config.experiments,
+      asyncWebAssembly: true,
     }
     return config
   },
