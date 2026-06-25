@@ -89,7 +89,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <p>サーバーへの送信は一切行いません。</p>
             <p className="mt-2">
               <a
-                href="mailto:nukitoru.app@gmail.com"
+                href="https://docs.google.com/forms/d/e/1FAIpQLSd-weZVjjVo953gs0ML79bstzrDvxde3YIZbjEn1_crjERgmA/viewform"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="underline hover:text-gray-600 dark:hover:text-gray-400 transition-colors"
               >
                 お問い合わせ・バグ報告
