@@ -65,7 +65,8 @@ export default function RootLayout({
 
         <footer className="mt-16 border-t border-gray-200 dark:border-gray-800 py-8">
           <div className="max-w-3xl mx-auto px-4 text-center text-xs text-gray-400 dark:text-gray-600 space-y-1">
-            <p>ファイルはブラウザ内で処理されます。サーバーへの送信は一切行いません。</p>
+            <p>ファイルはブラウザ内で処理されます。</p>
+            <p>サーバーへの送信は一切行いません。</p>
             <p>© 2026 Nukitoru. All rights reserved.</p>
           </div>
         </footer>
