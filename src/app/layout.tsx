@@ -1,29 +1,54 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Header } from '@/components/layout/Header'
+import { InstallBanner } from '@/components/pwa/InstallBanner'
 import './globals.css'
 
 const BASE_URL = 'https://nukitoru.vercel.app'
 
+// ── ビューポート・テーマカラー設定 ──
+export const viewport: Viewport = {
+  themeColor: '#2563EB',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+}
+
+// ── SEO・OGP・PWA メタデータ ──
 export const metadata: Metadata = {
-  title: 'Nukitoru（ヌキトル）- PDF・画像からQRコード・JANコードを抽出',
+  title: 'Nukitoru（ヌキトル）- PDF・画像からURLやコードを一発抽出',
   description:
-    'PDFや画像・スクリーンショットからQRコード・JANコード・EAN・バーコードを無料で一括抽出。ブラウザ内処理でファイルはサーバーに送信されません。Chrome・Safari対応。',
+    'PDFや画像・スクリーンショットからQRコード・JANコード・EAN・バーコードを無料で一括抽出。URLはすぐ開ける。Chrome・Safari対応。ブラウザだけで動作。',
   keywords: [
     'QRコード抽出', 'JANコード', 'バーコード読み取り', 'PDF QR',
     'EAN-13', 'CODE128', '無料ツール', 'ヌキトル', 'Nukitoru',
   ],
-  // ── ファビコン設定 ──
+  // ── ファビコン ──
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
     ],
     apple: [
       { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
     ],
   },
-  // ── OGP（SNS シェア用） ──
+  // ── PWA ──
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    title: 'Nukitoru',
+    statusBarStyle: 'default',
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  // ── Google Search Console ──
+  verification: {
+    google: '2qpRvXKiMdZY23ZcxcT9GsbawXqSN1NUHgtlgLXLZL8',
+  },
+  // ── OGP ──
   openGraph: {
-    title: 'Nukitoru（ヌキトル）- PDF・画像からQRコードを一発抽出',
+    title: 'Nukitoru（ヌキトル）- PDF・画像からURLを一発抽出',
     description: 'PDFや画像からQRコード・JANコード・バーコードを無料で一括抽出。Chrome・Safari対応。',
     type: 'website',
     locale: 'ja_JP',
@@ -40,7 +65,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Nukitoru（ヌキトル）- PDF・画像からQRコードを一発抽出',
+    title: 'Nukitoru（ヌキトル）- PDF・画像からURLを一発抽出',
     description: 'PDFや画像からQRコード・JANコード・バーコードを無料で一括抽出。',
     images: [`${BASE_URL}/ogp.png`],
   },
@@ -50,19 +75,14 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ja" suppressHydrationWarning>
-      <body
-        className="font-sans bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 antialiased min-h-screen"
-      >
+      <body className="font-sans bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 antialiased min-h-screen">
         <Header />
         {children}
 
+        {/* フッター */}
         <footer className="mt-16 border-t border-gray-200 dark:border-gray-800 py-8">
           <div className="max-w-3xl mx-auto px-4 text-center text-xs text-gray-400 dark:text-gray-600 space-y-1">
             <p>ファイルはブラウザ内で処理されます。</p>
@@ -70,6 +90,24 @@ export default function RootLayout({
             <p>© 2026 Nukitoru. All rights reserved.</p>
           </div>
         </footer>
+
+        {/* PWA インストール案内バナー */}
+        <InstallBanner />
+
+        {/* Service Worker 登録 */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').catch(function(err) {
+                    console.log('SW registration failed:', err);
+                  });
+                });
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   )
