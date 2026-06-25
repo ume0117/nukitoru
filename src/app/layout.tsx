@@ -95,7 +95,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 お問い合わせ・バグ報告
               </a>
             </p>
-            <p className="mt-1">© 2026 Nukitoru. All rights reserved.</p>
+            <p className="mt-1">© 2026 Nukitoru by 4REAL. All rights reserved.</p>
           </div>
         </footer>
 
