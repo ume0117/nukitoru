@@ -74,3 +74,25 @@ export interface UserPlan {
     aiAnalysis: boolean
   }
 }
+
+// ============================================================
+// QRコード内容判定
+// ============================================================
+/** QR_CODE フォーマットで検出された値の種別（フォーマットとは独立） */
+export type QRContentType = 'URL' | 'WIFI' | 'VCARD' | 'EMAIL' | 'TEL' | 'TEXT'
+
+// ============================================================
+// URL 注意喚起（安全判定ではない）
+// ============================================================
+export type URLWarningType = 'ip' | 'punycode' | 'shortener' | 'suspicious_tld' | 'long_url'
+
+export interface URLWarning {
+  type: URLWarningType
+  message: string
+}
+
+export interface URLAnalysis {
+  domain: string
+  warnings: URLWarning[]
+  hasWarnings: boolean
+}

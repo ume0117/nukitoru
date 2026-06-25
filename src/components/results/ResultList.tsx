@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import type { ScanResult } from '@/types'
 import { ResultItem } from './ResultItem'
+import { getResultPriority } from '@/lib/utils/qr-content'
 import { cn } from '@/lib/utils/cn'
 
 interface ResultListProps {
@@ -16,8 +17,14 @@ export function ResultList({ results, onDelete, onClear }: ResultListProps) {
 
   if (results.length === 0) return null
 
+  // URL > QR > JAN > EAN-8 > CODE128 の順にソート
+  const sorted = [...results].sort(
+    (a, b) =>
+      getResultPriority(a.type, a.value) - getResultPriority(b.type, b.value),
+  )
+
   const handleCopyAll = async () => {
-    const text = results.map((r) => r.value).join('\n')
+    const text = sorted.map((r) => r.value).join('\n')
     try {
       await navigator.clipboard.writeText(text)
     } catch {
@@ -33,11 +40,11 @@ export function ResultList({ results, onDelete, onClear }: ResultListProps) {
   }
 
   return (
-    <section aria-label="検出結果" className="space-y-3">
+    <section aria-label="見つかったURL・コード" className="space-y-3">
       {/* ヘッダー行 */}
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-          検出結果{' '}
+          見つかったURL・コード{' '}
           <span className="text-blue-600 dark:text-blue-400">
             {results.length} 件
           </span>
@@ -60,7 +67,7 @@ export function ResultList({ results, onDelete, onClear }: ResultListProps) {
           <button
             onClick={onClear}
             className="h-8 px-3 rounded-lg text-xs font-medium text-gray-500 hover:text-red-600 hover:bg-red-50 dark:text-gray-500 dark:hover:text-red-400 dark:hover:bg-red-950/30 transition-all duration-150"
-            aria-label="結果を全てクリア"
+            aria-label="結果をクリア"
           >
             クリア
           </button>
@@ -69,7 +76,7 @@ export function ResultList({ results, onDelete, onClear }: ResultListProps) {
 
       {/* 結果カードリスト */}
       <ul className="space-y-2" role="list">
-        {results.map((result) => (
+        {sorted.map((result) => (
           <li key={result.id}>
             <ResultItem result={result} onDelete={onDelete} />
           </li>
