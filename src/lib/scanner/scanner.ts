@@ -179,8 +179,13 @@ function tryZXing(
     const result = reader.decodeFromCanvas(canvas)
     const type = ZXING_FORMAT[result.getBarcodeFormat() as number]
     if (!type) return null
+    console.log('[Nukitoru] ZXing hit:', type, result.getText())
     return { type, value: result.getText() as string }
-  } catch {
+  } catch (e: unknown) {
+    const name = (e as Error)?.constructor?.name
+    if (name !== 'NotFoundException') {
+      console.warn('[Nukitoru] ZXing unexpected error:', name, e)
+    }
     return null
   }
 }
@@ -189,7 +194,14 @@ async function scan1D(
   canvas: HTMLCanvasElement,
   page?: number,
 ): Promise<ScanResult[]> {
-  const reader = await getZXingReader()
+  let reader
+  try {
+    reader = await getZXingReader()
+    console.log('[Nukitoru] ZXing reader initialized OK')
+  } catch (e) {
+    console.error('[Nukitoru] ZXing init failed:', e)
+    return []
+  }
   const w = canvas.width
   const h = canvas.height
   const raw: Omit<ScanResult, 'id'>[] = []
