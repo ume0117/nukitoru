@@ -1,10 +1,11 @@
 /**
  * scanner.ts
  *
- * QR コード    → jsQR（シンプル・高精度・反転色標準対応）
- * 1D バーコード → quagga2（EAN-13 / EAN-8 / CODE 128 の静止画検出に特化）
+ * QR コード    → jsQR（高精度・反転色対応）
+ * 1D バーコード → BarcodeDetector API（Chrome ネイティブ） → quagga2（フォールバック）
  *
- * ZXing は動画/カメラ向けで静止画の1D検出が不安定なため quagga2 に切り替え。
+ * Chrome 83+ はブラウザ内蔵の BarcodeDetector API で高精度検出。
+ * Safari/Firefox は quagga2（numOfWorkers:0 でワーカー不要）でフォールバック。
  */
 
 import type { ScanResult } from '@/types'
@@ -107,7 +108,6 @@ async function scanQR(
     }
   }
 
-  // コントラスト強化版
   const enh = enhanceContrast(canvas)
   const ectx = enh.getContext('2d', { willReadFrequently: true })!
   const eData = ectx.getImageData(0, 0, enh.width, enh.height)
@@ -120,31 +120,84 @@ async function scanQR(
 }
 
 // ============================================================
-// 1D バーコードスキャン（quagga2）
+// 1D バーコード: Chrome ネイティブ BarcodeDetector
 // ============================================================
 
-type QuaggaResult = {
-  codeResult?: {
-    code: string | null
-    format: string
-  }
-} | null
-
-const FORMAT_MAP_QUAGGA: Record<string, ScanResult['type']> = {
+const BD_FORMAT_MAP: Record<string, ScanResult['type']> = {
   'ean_13':   'EAN_13',
   'ean_8':    'EAN_8',
   'code_128': 'CODE_128',
 }
 
-async function decodeWith1D(dataUrl: string): Promise<Omit<ScanResult, 'id' | 'page'> | null> {
+async function scan1DWithBarcodeDetector(
+  canvas: HTMLCanvasElement,
+  page?: number,
+): Promise<ScanResult[] | null> {
+  // BarcodeDetector が利用可能か確認（Chrome 83+）
+  if (!('BarcodeDetector' in window)) return null
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const BD = (window as any).BarcodeDetector
+    const detector = new BD({ formats: ['ean_13', 'ean_8', 'code_128'] })
+
+    // 全体 + コントラスト強化版で試す
+    const targets = [canvas, enhanceContrast(canvas)]
+    const results: ScanResult[] = []
+
+    for (const target of targets) {
+      const bitmap = await createImageBitmap(target)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const barcodes: any[] = await detector.detect(bitmap)
+      bitmap.close()
+
+      for (const b of barcodes) {
+        const type = BD_FORMAT_MAP[b.format]
+        if (type && b.rawValue) {
+          results.push({ id: generateId(), type, value: b.rawValue, page })
+        }
+      }
+    }
+
+    return results
+  } catch (e) {
+    console.warn('[Nukitoru] BarcodeDetector error:', e)
+    return null
+  }
+}
+
+// ============================================================
+// 1D バーコード: quagga2（フォールバック）
+// ============================================================
+
+type QuaggaResult = {
+  codeResult?: { code: string | null; format: string }
+} | null
+
+const QUAGGA_FORMAT_MAP: Record<string, ScanResult['type']> = {
+  'ean_13':   'EAN_13',
+  'ean_8':    'EAN_8',
+  'code_128': 'CODE_128',
+}
+
+async function decodeWithQuagga(
+  dataUrl: string,
+): Promise<Omit<ScanResult, 'id' | 'page'> | null> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const QuaggaModule = await import('@ericblade/quagga2') as any
-  const Quagga = QuaggaModule.default ?? QuaggaModule
+  const mod = await import('@ericblade/quagga2') as any
+  const Quagga = mod.default ?? mod
+
+  if (typeof Quagga?.decodeSingle !== 'function') {
+    console.error('[Nukitoru] quagga2 decodeSingle not found')
+    return null
+  }
 
   return new Promise((resolve) => {
     try {
       Quagga.decodeSingle(
         {
+          numOfWorkers: 0,       // ワーカーなし（Next.js 環境対応）
+          inputStream: { size: 1200 },
           decoder: {
             readers: ['ean_reader', 'ean_8_reader', 'code_128_reader'],
             multiple: false,
@@ -154,7 +207,7 @@ async function decodeWith1D(dataUrl: string): Promise<Omit<ScanResult, 'id' | 'p
         },
         (result: QuaggaResult) => {
           if (result?.codeResult?.code && result.codeResult.format) {
-            const type = FORMAT_MAP_QUAGGA[result.codeResult.format]
+            const type = QUAGGA_FORMAT_MAP[result.codeResult.format]
             if (type) {
               resolve({ type, value: result.codeResult.code })
               return
@@ -164,44 +217,44 @@ async function decodeWith1D(dataUrl: string): Promise<Omit<ScanResult, 'id' | 'p
         },
       )
     } catch (e) {
-      console.error('[Nukitoru] quagga2 error:', e)
+      console.error('[Nukitoru] quagga2 exception:', e)
       resolve(null)
     }
   })
 }
 
-async function scan1D(
+async function scan1DWithQuagga(
   canvas: HTMLCanvasElement,
   page?: number,
 ): Promise<ScanResult[]> {
   const raw: Omit<ScanResult, 'id'>[] = []
 
-  // 全体スキャン（オリジナル）
-  const hit1 = await decodeWith1D(canvas.toDataURL('image/png'))
+  // 全体スキャン
+  const hit1 = await decodeWithQuagga(canvas.toDataURL('image/png'))
   if (hit1) raw.push({ ...hit1, page })
 
   // コントラスト強化版
   const enh = enhanceContrast(canvas)
-  const hit2 = await decodeWith1D(enh.toDataURL('image/png'))
+  const hit2 = await decodeWithQuagga(enh.toDataURL('image/png'))
   if (hit2) raw.push({ ...hit2, page })
 
-  // 上半分・下半分（ページに複数バーコードがある場合）
-  const w = canvas.width
-  const h = canvas.height
-  const halves: Array<[number, number, number, number]> = [
-    [0, 0, w / 2, h],
-    [w / 2, 0, w / 2, h],
-    [0, 0, w, h / 2],
-    [0, h / 2, w, h / 2],
-  ]
-  for (const [x, y, rw, rh] of halves) {
-    const sub = extractRegion(canvas, x, y, rw, rh, false)
-    const hit = await decodeWith1D(sub.toDataURL('image/png'))
-    if (hit) raw.push({ ...hit, page })
-    await new Promise((r) => setTimeout(r, 0))
-  }
-
   return raw.map((r) => ({ ...r, id: generateId() }))
+}
+
+// ============================================================
+// 1D バーコード: ディスパッチャー
+// ============================================================
+
+async function scan1D(
+  canvas: HTMLCanvasElement,
+  page?: number,
+): Promise<ScanResult[]> {
+  // Chrome: ネイティブ BarcodeDetector を優先
+  const bdResult = await scan1DWithBarcodeDetector(canvas, page)
+  if (bdResult !== null) return bdResult
+
+  // その他のブラウザ: quagga2
+  return scan1DWithQuagga(canvas, page)
 }
 
 // ============================================================
