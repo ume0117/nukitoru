@@ -87,7 +87,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="max-w-3xl mx-auto px-4 text-center text-xs text-gray-400 dark:text-gray-600 space-y-1">
             <p>ファイルはブラウザ内で処理されます。</p>
             <p>サーバーへの送信は一切行いません。</p>
-            <p>© 2026 Nukitoru. All rights reserved.</p>
+            <p className="mt-2">
+              <a
+                href="mailto:nukitoru.app@gmail.com"
+                className="underline hover:text-gray-600 dark:hover:text-gray-400 transition-colors"
+              >
+                お問い合わせ・バグ報告
+              </a>
+            </p>
+            <p className="mt-1">© 2026 Nukitoru. All rights reserved.</p>
           </div>
         </footer>
 
