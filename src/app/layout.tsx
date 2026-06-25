@@ -44,6 +44,9 @@ export const metadata: Metadata = {
     description: 'PDFや画像からQRコード・JANコード・バーコードを無料で一括抽出。',
     images: [`${BASE_URL}/ogp.png`],
   },
+  verification: {
+    google: '2qpRvXKiMdZY23ZcxcT9GsbawXqSN1NUHgtlgLXLZL8',
+  },
   robots: {
     index: true,
     follow: true,
