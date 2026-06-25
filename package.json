@@ -1,5 +1,5 @@
 {
-  "name": "nukitoru",
+  "name": "scanhub",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ericblade/quagga2": "^1.12.1",
     "@zxing/library": "^0.21.3",
     "clsx": "^2.1.1",
     "jsqr": "^1.4.0",
