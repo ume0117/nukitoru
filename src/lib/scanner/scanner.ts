@@ -242,19 +242,21 @@ async function scan1DWithQuagga(
 }
 
 // ============================================================
-// 1D バーコード: ディスパッチャー
+// 1D バーコード: ディスパッチャー（並行実行で最大精度）
 // ============================================================
 
 async function scan1D(
   canvas: HTMLCanvasElement,
   page?: number,
 ): Promise<ScanResult[]> {
-  // Chrome: ネイティブ BarcodeDetector を優先
-  const bdResult = await scan1DWithBarcodeDetector(canvas, page)
-  if (bdResult !== null) return bdResult
-
-  // その他のブラウザ: quagga2
-  return scan1DWithQuagga(canvas, page)
+  // BarcodeDetector と quagga2 を並行実行して結果をマージ
+  // BarcodeDetector: CODE128 / EAN-8 が得意
+  // quagga2: EAN-13 の補完スキャン
+  const [bdResults, quaggaResults] = await Promise.all([
+    scan1DWithBarcodeDetector(canvas, page).then((r) => r ?? []),
+    scan1DWithQuagga(canvas, page),
+  ])
+  return deduplicateResults([...bdResults, ...quaggaResults])
 }
 
 // ============================================================
