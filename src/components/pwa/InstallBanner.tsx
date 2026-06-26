@@ -18,6 +18,11 @@ export function InstallBanner() {
     if ((navigator as any).standalone === true) return
 
     const ua = navigator.userAgent
+
+    // PC（デスクトップ）では表示しない・モバイルのみ
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(ua)
+    if (!isMobile) return
+
     const isIOS = /iPhone|iPad|iPod/.test(ua)
 
     if (isIOS) {
