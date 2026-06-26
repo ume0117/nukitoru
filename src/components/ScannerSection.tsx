@@ -180,10 +180,10 @@ export function ScannerSection() {
             />
           )}
 
-          {/* 区切り + 別ファイル選択（結果ありの場合のみ） */}
+          {/* 区切り + 別ファイル選択（結果ありの場合） */}
           {hasResults && (
             <div className="border-t border-gray-100 dark:border-gray-800 pt-4">
-              <CompactUploadButton onFile={processFile} />
+              <UploadArea onFileSelect={processFile} isScanning={isScanning} />
             </div>
           )}
         </div>
