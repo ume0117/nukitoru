@@ -18,8 +18,7 @@ export type ProgressCallback = (
 
 async function loadPdfJs() {
   const pdfjsLib = await import('pdfjs-dist')
-  pdfjsLib.GlobalWorkerOptions.workerSrc =
-    `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`
+  pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
   return pdfjsLib
 }
 
@@ -68,9 +67,9 @@ export async function processPdf(
   const pdf         = await pdfjsLib.getDocument({
     data: arrayBuffer,
     // 日本語フォント（CMap）を CDN から読み込む
-    cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/cmaps/`,
+    cMapUrl: '/cmaps/',
     cMapPacked: true,
-    standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/standard_fonts/`,
+    standardFontDataUrl: '/standard_fonts/',
   }).promise
   const totalPages  = pdf.numPages
 

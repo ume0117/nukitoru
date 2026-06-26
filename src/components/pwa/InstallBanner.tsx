@@ -22,7 +22,9 @@ export function InstallBanner() {
 
     if (isIOS) {
       // iPhone Chrome / Firefox → Safari への誘導
-      const isOtherBrowser = /CriOS|FxiOS|OPiOS|Mercury/.test(ua)
+      // Brave は userAgent では検出不可なので navigator.brave で判定
+      const isBrave = !!(navigator as any).brave
+      const isOtherBrowser = /CriOS|FxiOS|OPiOS|Mercury/.test(ua) || isBrave
       if (isOtherBrowser) {
         setMode('ios-chrome')
         setTimeout(() => setShow(true), 2000)
