@@ -100,7 +100,7 @@ export function ScannerSection() {
         className={cn(
           'overflow-hidden transition-all duration-500 ease-in-out',
           isIdle
-            ? 'max-h-[500px] opacity-100 pt-8 pb-6'
+            ? 'max-h-[500px] opacity-100 pt-4 pb-4'
             : 'max-h-0 opacity-0 pointer-events-none',
         )}
         aria-hidden={!isIdle}
