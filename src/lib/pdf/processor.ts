@@ -63,7 +63,13 @@ export async function processPdf(
 ): Promise<ScanResult[]> {
   const pdfjsLib    = await loadPdfJs()
   const arrayBuffer = await file.arrayBuffer()
-  const pdf         = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+  const pdf         = await pdfjsLib.getDocument({
+    data: arrayBuffer,
+    // 日本語フォント（CMap）を CDN から読み込む
+    cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/cmaps/`,
+    cMapPacked: true,
+    standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/standard_fonts/`,
+  }).promise
   const totalPages  = pdf.numPages
 
   onProgress(0, totalPages, `PDF 読み込み完了（全 ${totalPages} ページ）`)
