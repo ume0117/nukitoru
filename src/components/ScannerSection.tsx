@@ -100,26 +100,26 @@ export function ScannerSection() {
         className={cn(
           'overflow-hidden transition-all duration-500 ease-in-out',
           isIdle
-            ? 'max-h-[500px] opacity-100 pt-4 pb-4'
+            ? 'max-h-[500px] opacity-100 pt-2 pb-2'
             : 'max-h-0 opacity-0 pointer-events-none',
         )}
         aria-hidden={!isIdle}
       >
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
           PDF・画像からURLを一発抽出
         </h1>
 <div className="flex flex-wrap gap-2 mt-4">
           {[
-            '🔗 URLをすぐ開ける',
-            '📄 PDF全ページ対応',
-            '🔒 プライバシー安全',
-            '⚡ ブラウザ内処理',
-          ].map((badge) => (
+            { label: '🔗 URLをすぐ開ける', mobile: true },
+            { label: '📄 PDF全ページ対応', mobile: true },
+            { label: '🔒 プライバシー安全', mobile: false },
+            { label: '⚡ ブラウザ内処理', mobile: false },
+          ].map(({ label, mobile }) => (
             <span
-              key={badge}
-              className="text-xs px-3 py-1 rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 shadow-sm"
+              key={label}
+              className={`text-xs px-3 py-1 rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 shadow-sm ${mobile ? '' : 'hidden sm:inline-flex'}`}
             >
-              {badge}
+              {label}
             </span>
           ))}
         </div>
