@@ -8,8 +8,7 @@
 
 import type { ScanResult } from '@/types'
 import { scanCanvas } from '@/lib/scanner/scanner'
-import { deduplicateResults } from '@/lib/utils/dedup'
-import { extractAllFromText } from '@/lib/utils/text-extractor'
+import { deduplicateResults, generateId } from '@/lib/utils/dedup'
 
 export type ProgressCallback = (
   current: number,
@@ -22,6 +21,40 @@ async function loadPdfJs() {
   pdfjsLib.GlobalWorkerOptions.workerSrc =
     `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`
   return pdfjsLib
+}
+
+/** EAN-13 チェックデジット検証 */
+function isValidEAN13(digits: string): boolean {
+  if (!/^\d{13}$/.test(digits)) return false
+  let sum = 0
+  for (let i = 0; i < 12; i++) {
+    sum += parseInt(digits[i]) * (i % 2 === 0 ? 1 : 3)
+  }
+  return (10 - (sum % 10)) % 10 === parseInt(digits[12])
+}
+
+/** テキストから有効な JAN コードをすべて抽出する（最もシンプルな実装） */
+function extractJANsFromRawText(text: string): string[] {
+  const found = new Set<string>()
+  // 13桁の数字をすべて抽出
+  const matches = text.match(/\d{13}/g) ?? []
+  for (const m of matches) {
+    if (isValidEAN13(m)) found.add(m)
+  }
+  return Array.from(found)
+}
+
+/** テキストから URL を抽出する */
+function extractURLsFromRawText(text: string): string[] {
+  const found = new Set<string>()
+  const pattern = /https?:\/\/[^\s\u3000\u3001\u3002\uff0c\uff0e）)】\]」』]+/g
+  let m = pattern.exec(text)
+  while (m) {
+    const url = m[0].replace(/[.,!?）)】\]」』]+$/, '')
+    found.add(url)
+    m = pattern.exec(text)
+  }
+  return Array.from(found)
 }
 
 export async function processPdf(
@@ -55,17 +88,26 @@ export async function processPdf(
     const imageResults = await scanCanvas(canvas, pageNum)
     allResults.push(...imageResults)
 
-    // ② テキストレイヤーから JAN・URL 抽出
+    // ② テキストレイヤーから JAN・URL 抽出（シンプル実装）
     try {
       const textContent = await page.getTextContent()
-      const pageText = textContent.items
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .map((item: any) => item.str ?? '')
-        .join(' ')
-      const textResults = extractAllFromText(pageText, pageNum)
-      allResults.push(...textResults)
-    } catch {
-      // テキストレイヤーがない場合はスキップ
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const items: string[] = textContent.items.map((item: any) => item.str ?? '')
+
+      // スペースなし結合（カッコ内JAN対応）とスペースあり結合の両方を試す
+      const rawText = items.join('') + ' ' + items.join(' ')
+
+      // JAN コード抽出
+      for (const jan of extractJANsFromRawText(rawText)) {
+        allResults.push({ id: generateId(), type: 'EAN_13', value: jan, page: pageNum })
+      }
+
+      // URL 抽出
+      for (const url of extractURLsFromRawText(rawText)) {
+        allResults.push({ id: generateId(), type: 'QR_CODE', value: url, page: pageNum })
+      }
+    } catch (err) {
+      console.warn(`ページ ${pageNum} のテキスト抽出をスキップ:`, err)
     }
 
     page.cleanup()

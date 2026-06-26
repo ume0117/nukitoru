@@ -153,13 +153,19 @@ export function ScannerSection() {
           {/* 結果なし：フルアップロードエリアを表示（ドラッグ&ドロップ対応） */}
           {!hasResults && (
             <div className="space-y-3">
-              <div className="text-center space-y-1 py-4">
+              <div className="text-center space-y-2 py-4">
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                   コードが見つかりませんでした
                 </p>
                 <p className="text-xs text-gray-400 dark:text-gray-600">
                   画像が小さい・ぼけている場合は高解像度の画像をお試しください
                 </p>
+                <button
+                  onClick={clearAll}
+                  className="text-xs text-blue-500 dark:text-blue-400 underline underline-offset-2 hover:text-blue-700 transition-colors"
+                >
+                  ← トップに戻る
+                </button>
               </div>
               <UploadArea onFileSelect={processFile} isScanning={isScanning} />
             </div>
