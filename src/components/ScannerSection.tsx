@@ -93,7 +93,7 @@ export function ScannerSection() {
   }, [isDone, hasResults])
 
   return (
-    <div className="space-y-0">
+    <div>
 
       {/* ── ヒーローセクション（idle のみ表示・それ以外は折りたたむ） ── */}
       <div
@@ -201,7 +201,7 @@ export function ScannerSection() {
 
       {/* ── 使い方（idle のみ表示） ── */}
       {isIdle && (
-        <section className="mt-40 space-y-4">
+        <section className="space-y-4" style={{ marginTop: "10rem" }}>
           <h2 className="text-base font-semibold text-gray-700 dark:text-gray-300">
             使い方
           </h2>
