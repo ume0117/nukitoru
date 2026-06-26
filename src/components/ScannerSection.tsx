@@ -201,7 +201,7 @@ export function ScannerSection() {
 
       {/* ── 使い方（idle のみ表示） ── */}
       {isIdle && (
-        <section className="space-y-4" style={{ marginTop: "10rem" }}>
+        <section className="space-y-4" style={{ marginTop: "4rem" }}>
           <h2 className="text-base font-semibold text-gray-700 dark:text-gray-300">
             使い方
           </h2>
