@@ -106,6 +106,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* PWA インストール案内バナー */}
         <InstallBanner />
 
+        {/* モバイルのみ scroll-lock を適用 */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+                document.documentElement.classList.add('mobile-lock');
+              }
+            `,
+          }}
+        />
+
         {/* Service Worker 登録 */}
         <script
           dangerouslySetInnerHTML={{

@@ -39,21 +39,19 @@
   }
 }
 
-/* iOS Safari のスクロール完全防止（スマホのみ） */
-@media (max-width: 767px) {
-  html {
-    height: 100%;
-    overflow: hidden;
-  }
+/* iOS Safari スクロール防止（JS で mobile クラスを付与時のみ適用） */
+html.mobile-lock {
+  height: 100%;
+  overflow: hidden;
+}
 
-  body {
-    height: 100%;
-    overflow: hidden;
-  }
+html.mobile-lock body {
+  height: 100%;
+  overflow: hidden;
+}
 
-  #scroll-root {
-    height: 100%;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
+html.mobile-lock #scroll-root {
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
