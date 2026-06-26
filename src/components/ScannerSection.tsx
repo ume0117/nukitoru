@@ -152,7 +152,7 @@ export function ScannerSection() {
 
           {/* 結果なし */}
           {!hasResults && (
-            <div className="text-center py-10 space-y-2">
+            <div className="text-center py-10 space-y-3">
               <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto">
                 <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803 7.5 7.5 0 0015.803 15.803z" />
@@ -164,6 +164,7 @@ export function ScannerSection() {
               <p className="text-xs text-gray-400 dark:text-gray-600">
                 画像が小さい・ぼけている場合は高解像度の画像をお試しください
               </p>
+              <CompactUploadButton onFile={processFile} />
             </div>
           )}
 
