@@ -1,6 +1,6 @@
 export function Header() {
   return (
-    <header className="sticky top-0 z-10 border-b border-gray-200 dark:border-gray-800 bg-white/90 dark:bg-gray-950/90 backdrop-blur-sm">
+    <header className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
       <div className="max-w-3xl mx-auto px-4 h-14 flex items-center gap-3">
         {/* ロゴアイコン */}
         <div
