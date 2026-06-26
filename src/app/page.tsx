@@ -6,7 +6,7 @@ import { ScannerSection } from '@/components/ScannerSection'
  */
 export default function HomePage() {
   return (
-    <main className="max-w-3xl mx-auto px-4 pb-12">
+    <main className="max-w-3xl mx-auto px-4 pb-6">
       <ScannerSection />
     </main>
   )
