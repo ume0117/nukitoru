@@ -105,19 +105,19 @@ export function ScannerSection() {
         )}
         aria-hidden={!isIdle}
       >
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+        <h1 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">
           PDF・画像からURLを一発抽出
         </h1>
 <div className="flex flex-wrap gap-2 mt-4">
           {[
-            { label: '🔗 URLをすぐ開ける', mobile: true },
-            { label: '📄 PDF全ページ対応', mobile: true },
-            { label: '🔒 プライバシー安全', mobile: false },
-            { label: '⚡ ブラウザ内処理', mobile: false },
-          ].map(({ label, mobile }) => (
+            '🔗 URLをすぐ開ける',
+            '📄 PDF全ページ対応',
+            '🔒 プライバシー安全',
+            '⚡ ブラウザ内処理',
+          ].map((label) => (
             <span
               key={label}
-              className={`text-xs px-3 py-1 rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 shadow-sm ${mobile ? '' : 'hidden sm:inline-flex'}`}
+              className="text-xs px-3 py-1 rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 shadow-sm"
             >
               {label}
             </span>
