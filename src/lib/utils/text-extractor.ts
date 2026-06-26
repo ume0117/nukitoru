@@ -43,7 +43,7 @@ export function extractJANFromText(text: string): string[] {
   const found = new Set<string>()
 
   // カッコ付き形式：(4969887595664) または （4969887595664）
-  const bracketPattern = /[（(](\d{13})[）)]/g
+  const bracketPattern = /[（(]\s*(\d{13})\s*[）)]/g
   let m = bracketPattern.exec(text)
   while (m) {
     if (isValidJAN(m[1])) found.add(m[1])
