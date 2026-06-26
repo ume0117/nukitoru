@@ -70,7 +70,7 @@ export function UploadArea({ onFileSelect, isScanning }: UploadAreaProps) {
       className={cn(
         'relative w-full rounded-2xl border-2 border-dashed',
         'flex flex-col items-center justify-center gap-3',
-        'min-h-[200px] md:min-h-[240px]',
+        'min-h-[150px] md:min-h-[220px]',
         'cursor-pointer select-none transition-all duration-200',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
         // 通常状態
