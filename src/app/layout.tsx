@@ -83,7 +83,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
 
         {/* フッター */}
-        <footer className="mt-16 border-t border-gray-200 dark:border-gray-800 py-8">
+        <footer className="mt-4 border-t border-gray-200 dark:border-gray-800 py-4">
           <div className="max-w-3xl mx-auto px-4 text-center text-xs text-gray-400 dark:text-gray-600 space-y-1">
             <p>ファイルはブラウザ内で処理されます。</p>
             <p>サーバーへの送信は一切行いません。</p>

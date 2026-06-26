@@ -108,12 +108,7 @@ export function ScannerSection() {
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
           PDF・画像からURLを一発抽出
         </h1>
-        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-          スマホやパソコンに保存したPDFや画像のQRコードからURLをすぐ開けます。
-          <br className="hidden sm:block" />
-          JANコード・バーコードの抽出にも対応。ファイルはサーバーに送信されません。
-        </p>
-        <div className="flex flex-wrap gap-2 mt-4">
+<div className="flex flex-wrap gap-2 mt-4">
           {[
             '🔗 URLをすぐ開ける',
             '📄 PDF全ページ対応',
