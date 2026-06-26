@@ -23,9 +23,11 @@ async function loadPdfJs() {
   return pdfjsLib
 }
 
-/** EAN-13 チェックデジット検証 */
+/** EAN-13 チェックデジット検証 + 日本JANコード判定 */
 function isValidEAN13(digits: string): boolean {
   if (!/^\d{13}$/.test(digits)) return false
+  // 日本のJANコードは 45 または 49 始まり
+  if (!digits.startsWith('45') && !digits.startsWith('49')) return false
   let sum = 0
   for (let i = 0; i < 12; i++) {
     sum += parseInt(digits[i]) * (i % 2 === 0 ? 1 : 3)

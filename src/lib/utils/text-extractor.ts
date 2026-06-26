@@ -26,9 +26,9 @@ import type { ScanResult } from '@/types'
  */
 function isValidJAN(digits: string): boolean {
   if (digits.length !== 13) return false
-  // 日本のJANコード（49 または 45 始まり）を優先
-  // ただし他のEAN-13も有効とする
   if (!/^\d{13}$/.test(digits)) return false
+  // 日本のJANコードは 45 または 49 始まりに限定（誤検出防止）
+  if (!digits.startsWith('45') && !digits.startsWith('49')) return false
 
   // EAN-13 チェックデジット検証
   let sum = 0
