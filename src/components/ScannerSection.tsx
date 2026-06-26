@@ -173,11 +173,21 @@ export function ScannerSection() {
 
           {/* 結果リスト（URL > QR > JAN > CODE128 の順） */}
           {hasResults && (
-            <ResultList
-              results={results}
-              onDelete={deleteResult}
-              onClear={clearAll}
-            />
+            <div className="space-y-2">
+              <ResultList
+                results={results}
+                onDelete={deleteResult}
+                onClear={clearAll}
+              />
+              <div className="text-center pt-1">
+                <button
+                  onClick={clearAll}
+                  className="text-xs text-blue-500 dark:text-blue-400 underline underline-offset-2 hover:text-blue-700 transition-colors"
+                >
+                  ← トップに戻る
+                </button>
+              </div>
+            </div>
           )}
 
           {/* 区切り + 別ファイル選択（結果ありの場合） */}
