@@ -185,7 +185,7 @@ export function ScannerSection() {
 
       {/* ── 使い方（idle のみ表示） ── */}
       {isIdle && (
-        <section className="mt-12 space-y-4">
+        <section className="mt-20 space-y-4">
           <h2 className="text-base font-semibold text-gray-700 dark:text-gray-300">
             使い方
           </h2>

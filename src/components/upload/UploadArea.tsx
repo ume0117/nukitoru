@@ -141,8 +141,9 @@ export function UploadArea({ onFileSelect, isScanning }: UploadAreaProps) {
             </>
           )}
         </p>
-        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">
-          PDF（最大 50 MB）・JPG / PNG / WEBP（最大 20 MB）
+        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5 text-center leading-relaxed">
+          PDF（最大 50 MB）<br />
+          JPG / PNG / WEBP（最大 20 MB）
         </p>
       </div>
 
