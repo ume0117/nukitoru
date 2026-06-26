@@ -150,21 +150,18 @@ export function ScannerSection() {
       {isDone && (
         <div ref={resultRef} className="space-y-4 pt-2">
 
-          {/* 結果なし */}
+          {/* 結果なし：フルアップロードエリアを表示（ドラッグ&ドロップ対応） */}
           {!hasResults && (
-            <div className="text-center py-10 space-y-3">
-              <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto">
-                <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803 7.5 7.5 0 0015.803 15.803z" />
-                </svg>
+            <div className="space-y-3">
+              <div className="text-center space-y-1 py-4">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  コードが見つかりませんでした
+                </p>
+                <p className="text-xs text-gray-400 dark:text-gray-600">
+                  画像が小さい・ぼけている場合は高解像度の画像をお試しください
+                </p>
               </div>
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                コードが見つかりませんでした
-              </p>
-              <p className="text-xs text-gray-400 dark:text-gray-600">
-                画像が小さい・ぼけている場合は高解像度の画像をお試しください
-              </p>
-              <CompactUploadButton onFile={processFile} />
+              <UploadArea onFileSelect={processFile} isScanning={isScanning} />
             </div>
           )}
 
@@ -177,10 +174,12 @@ export function ScannerSection() {
             />
           )}
 
-          {/* 区切り + 別ファイル選択 */}
-          <div className="border-t border-gray-100 dark:border-gray-800 pt-4">
-            <CompactUploadButton onFile={processFile} />
-          </div>
+          {/* 区切り + 別ファイル選択（結果ありの場合のみ） */}
+          {hasResults && (
+            <div className="border-t border-gray-100 dark:border-gray-800 pt-4">
+              <CompactUploadButton onFile={processFile} />
+            </div>
+          )}
         </div>
       )}
 
