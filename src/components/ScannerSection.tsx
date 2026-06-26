@@ -98,7 +98,7 @@ export function ScannerSection() {
       {/* ── ヒーローセクション（idle のみ表示・それ以外は折りたたむ） ── */}
       <div
         className={cn(
-          'overflow-hidden transition-all duration-500 ease-in-out',
+          'hidden sm:block overflow-hidden transition-all duration-500 ease-in-out',
           isIdle
             ? 'max-h-[500px] opacity-100 pt-4 pb-4'
             : 'max-h-0 opacity-0 pointer-events-none',
