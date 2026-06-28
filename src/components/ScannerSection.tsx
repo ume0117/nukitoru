@@ -1,8 +1,9 @@
 'use client'
 
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { useFileProcessor } from '@/hooks/useFileProcessor'
 import { UploadArea } from '@/components/upload/UploadArea'
+import { ManualSearch } from '@/components/search/ManualSearch'
 import { ScanProgress } from '@/components/scanner/ScanProgress'
 import { ResultList } from '@/components/results/ResultList'
 import { cn } from '@/lib/utils/cn'
