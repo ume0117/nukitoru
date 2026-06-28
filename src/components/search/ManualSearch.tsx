@@ -10,7 +10,7 @@ function getRakutenURL(query: string): string {
   const searchURL = encodeURIComponent(
     `https://search.rakuten.co.jp/search/mall/${encodeURIComponent(searchTerm)}/`
   )
-  return `https://hb.afl.rakuten.co.jp/hgb/${RAKUTEN_AFFILIATE_ID}/?pc=${searchURL}`
+  return `https://hb.afl.rakuten.co.jp/ichiba/${RAKUTEN_AFFILIATE_ID}/?pc=${searchURL}`
 }
 
 export function ManualSearch() {

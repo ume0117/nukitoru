@@ -255,7 +255,7 @@ function getRakutenSearchURL(janCode: string): string {
   const searchURL = encodeURIComponent(
     `https://search.rakuten.co.jp/search/mall/${janCode}/`
   )
-  return `https://hb.afl.rakuten.co.jp/hgb/${RAKUTEN_AFFILIATE_ID}/?pc=${searchURL}`
+  return `https://hb.afl.rakuten.co.jp/ichiba/${RAKUTEN_AFFILIATE_ID}/?pc=${searchURL}`
 }
 
 function BarcodeResultCard({
