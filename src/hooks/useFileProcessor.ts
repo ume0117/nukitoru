@@ -98,6 +98,20 @@ export function useFileProcessor() {
     }))
   }, [])
 
+  /** カメラスキャン結果を追加する */
+  const addResults = useCallback((newResults: ScanResult[]) => {
+    setState({
+      results: newResults,
+      error: null,
+      progress: {
+        current: 1,
+        total: 1,
+        status: 'done',
+        message: `${newResults.length} 件のコードを検出しました`,
+      },
+    })
+  }, [])
+
   /** 全結果をクリアして初期状態に戻す */
   const clearAll = useCallback(() => {
     setState(INITIAL_STATE)
@@ -109,6 +123,7 @@ export function useFileProcessor() {
     error: state.error,
     isScanning: state.progress.status === 'scanning',
     processFile,
+    addResults,
     deleteResult,
     clearAll,
   }

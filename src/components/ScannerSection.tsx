@@ -4,9 +4,11 @@ import { useRef, useEffect, useState } from 'react'
 import { useFileProcessor } from '@/hooks/useFileProcessor'
 import { UploadArea } from '@/components/upload/UploadArea'
 import { ManualSearch } from '@/components/search/ManualSearch'
+import { CameraScanner } from '@/components/camera/CameraScanner'
 import { ScanProgress } from '@/components/scanner/ScanProgress'
 import { ResultList } from '@/components/results/ResultList'
 import { cn } from '@/lib/utils/cn'
+import type { ScanResult } from '@/types'
 
 // ============================================================
 // コンパクトアップロードボタン（結果表示後に使用）
@@ -74,15 +76,21 @@ export function ScannerSection() {
     error,
     isScanning,
     processFile,
+    addResults,
     deleteResult,
     clearAll,
   } = useFileProcessor()
 
   const resultRef = useRef<HTMLDivElement>(null)
+  const [cameraOpen, setCameraOpen] = useState(false)
 
   const isIdle    = progress.status === 'idle'
   const isDone    = progress.status === 'done'
   const hasResults = results.length > 0
+
+  const handleCameraResult = (newResults: ScanResult[]) => {
+    addResults(newResults)
+  }
 
   // スキャン完了時に結果セクションへ smooth scroll
   useEffect(() => {
@@ -129,6 +137,14 @@ export function ScannerSection() {
       {/* ── スキャン中・idle: アップロードエリア + 進捗 ── */}
       {!isDone && (
         <div className="space-y-4">
+          {/* カメラスキャンボタン */}
+          <button
+            onClick={() => setCameraOpen(true)}
+            className="w-full h-12 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-700 flex items-center justify-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:border-blue-400 hover:text-blue-500 dark:hover:border-blue-500 dark:hover:text-blue-400 transition-colors"
+          >
+            <span className="text-lg">📷</span>
+            カメラでスキャン
+          </button>
           <UploadArea onFileSelect={processFile} isScanning={isScanning} />
           <ManualSearch />
           {error && <ErrorAlert message={error} />}
@@ -194,6 +210,13 @@ export function ScannerSection() {
             </div>
           )}
         </div>
+      )}
+      {/* カメラスキャナー */}
+      {cameraOpen && (
+        <CameraScanner
+          onResult={handleCameraResult}
+          onClose={() => setCameraOpen(false)}
+        />
       )}
     </div>
   )
