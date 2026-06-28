@@ -249,6 +249,15 @@ const BARCODE_META: Record<string, { icon: string; label: string }> = {
   CODE_128: { icon: '📦', label: 'CODE128' },
 }
 
+const RAKUTEN_AFFILIATE_ID = '554ce912.68635f88.554ce913.1ffa91d2'
+
+function getRakutenSearchURL(janCode: string): string {
+  const searchURL = encodeURIComponent(
+    `https://search.rakuten.co.jp/search/mall/${janCode}/`
+  )
+  return `https://hb.afl.rakuten.co.jp/hgb/${RAKUTEN_AFFILIATE_ID}/?pc=${searchURL}`
+}
+
 function BarcodeResultCard({
   result,
   onDelete,
@@ -257,39 +266,55 @@ function BarcodeResultCard({
   onDelete: (id: string) => void
 }) {
   const meta = BARCODE_META[result.type] ?? { icon: '📄', label: result.type }
+  const isJAN = result.type === 'EAN_13' || result.type === 'EAN_8'
 
   return (
-    <div className="rounded-xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-sm p-3.5 flex items-start gap-3">
-      <div className="shrink-0 pt-0.5">
-        <span className="text-xl">{meta.icon}</span>
-      </div>
-
-      <div className="flex-1 min-w-0 space-y-1">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
-            {meta.label}
-          </span>
-          {result.page != null && (
-            <span className="text-[10px] text-gray-400">P.{result.page}</span>
-          )}
+    <div className="rounded-xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-sm p-3.5 space-y-2.5">
+      <div className="flex items-start gap-3">
+        <div className="shrink-0 pt-0.5">
+          <span className="text-xl">{meta.icon}</span>
         </div>
-        <p className="font-mono text-sm text-gray-800 dark:text-gray-100 break-all leading-relaxed">
-          {result.value}
-        </p>
+
+        <div className="flex-1 min-w-0 space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+              {meta.label}
+            </span>
+            {result.page != null && (
+              <span className="text-[10px] text-gray-400">P.{result.page}</span>
+            )}
+          </div>
+          <p className="font-mono text-sm text-gray-800 dark:text-gray-100 break-all leading-relaxed">
+            {result.value}
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-1.5 shrink-0">
+          <CopyButton value={result.value} />
+          <button
+            onClick={() => onDelete(result.id)}
+            aria-label="削除"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
       </div>
 
-      <div className="flex flex-col gap-1.5 shrink-0">
-        <CopyButton value={result.value} />
-        <button
-          onClick={() => onDelete(result.id)}
-          aria-label="削除"
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all"
+      {/* 楽天検索ボタン（JAN/EAN のみ） */}
+      {isJAN && (
+        <a
+          href={getRakutenSearchURL(result.value)}
+          target="_blank"
+          rel="nofollow noopener noreferrer sponsored"
+          className="flex items-center justify-center gap-2 w-full h-9 rounded-lg text-sm font-medium bg-[#bf0000] hover:bg-[#a00000] text-white transition-colors"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
+          <span>🛒</span>
+          <span>楽天市場で検索</span>
+        </a>
+      )}
     </div>
   )
 }
