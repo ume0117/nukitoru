@@ -253,7 +253,7 @@ const RAKUTEN_AFFILIATE_ID = '554ce912.68635f88.554ce913.1ffa91d2'
 
 function getRakutenSearchURL(janCode: string): string {
   const searchURL = encodeURIComponent(
-    `https://search.rakuten.co.jp/search/mall/${janCode}/`
+    `https://search.rakuten.co.jp/search/mall/${janCode}/?s=1`
   )
   return `https://hb.afl.rakuten.co.jp/ichiba/${RAKUTEN_AFFILIATE_ID}/?pc=${searchURL}`
 }
