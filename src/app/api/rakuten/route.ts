@@ -7,32 +7,38 @@ export async function GET(request: NextRequest) {
   }
 
   const appId = process.env.RAKUTEN_APP_ID
+  const accessKey = process.env.RAKUTEN_ACCESS_KEY
   const affiliateId = process.env.RAKUTEN_AFFILIATE_ID
 
-  if (!appId) {
+  if (!appId || !accessKey) {
     return NextResponse.json({ error: 'API not configured' }, { status: 500 })
   }
 
   try {
-    // 最小パラメータでテスト
-    const baseUrl = 'https://app.rakuten.co.jp/services/api/IchibaItem/Search/20220601'
-    const params = [
-      `applicationId=${appId}`,
-      `keyword=${encodeURIComponent(jan)}`,
-      `hits=3`,
-      `format=json`,
-    ]
-    const apiUrl = `${baseUrl}?${params.join('&')}`
+    // 新エンドポイント（2026年2月〜）
+    const params = new URLSearchParams({
+      applicationId: appId,
+      keyword: jan,
+      hits: '3',
+      format: 'json',
+      httpReferer: 'https://nukitoru.vercel.app',
+    })
+    if (affiliateId) params.set('affiliateId', affiliateId)
+
+    const apiUrl = `https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20220601?${params.toString()}`
 
     const res = await fetch(apiUrl, {
-      next: { revalidate: 0 },
+      next: { revalidate: 300 },
       headers: {
+        'accessKey': accessKey,
         'Referer': 'https://nukitoru.vercel.app',
+        'Origin': 'https://nukitoru.vercel.app',
       },
     })
+
     const data = await res.json()
     console.log('Rakuten API status:', res.status)
-    console.log('Rakuten API full response:', JSON.stringify(data).slice(0, 500))
+    console.log('Rakuten API response:', JSON.stringify(data).slice(0, 300))
 
     if (data.error) {
       console.error('Rakuten API error:', data.error, data.error_description)
