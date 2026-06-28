@@ -14,15 +14,19 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const url = new URL('https://app.rakuten.co.jp/services/api/IchibaItem/Search/20220601')
-    url.searchParams.set('applicationId', appId)
-    if (affiliateId) url.searchParams.set('affiliateId', affiliateId)
-    url.searchParams.set('keyword', jan)
-    url.searchParams.set('hits', '3')
-    url.searchParams.set('sort', '+itemPrice')
-    url.searchParams.set('format', 'json')
+    // URLSearchParams は + を %2B にエンコードするため手動で構築
+    const baseUrl = 'https://app.rakuten.co.jp/services/api/IchibaItem/Search/20220601'
+    const params = [
+      `applicationId=${encodeURIComponent(appId)}`,
+      `keyword=${encodeURIComponent(jan)}`,
+      `hits=3`,
+      `sort=%2BitemPrice`,
+      `format=json`,
+    ]
+    if (affiliateId) params.push(`affiliateId=${encodeURIComponent(affiliateId)}`)
+    const apiUrl = `${baseUrl}?${params.join('&')}`
 
-    const res = await fetch(url.toString(), {
+    const res = await fetch(apiUrl, {
       next: { revalidate: 0 },
       headers: {
         'Referer': 'https://nukitoru.vercel.app',
