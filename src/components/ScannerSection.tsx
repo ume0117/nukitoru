@@ -138,14 +138,7 @@ export function ScannerSection() {
       {!isDone && (
         <div className="space-y-4">
           {/* カメラスキャンボタン */}
-          <button
-            onClick={() => setCameraOpen(true)}
-            className="w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 flex items-center justify-center gap-2 text-sm font-semibold text-white transition-colors shadow-sm"
-          >
-            <span className="text-base">📷</span>
-            カメラでスキャン
-          </button>
-          <UploadArea onFileSelect={processFile} isScanning={isScanning} />
+          <UploadArea onFileSelect={processFile} isScanning={isScanning} onCameraClick={() => setCameraOpen(true)} />
           <ManualSearch />
           {error && <ErrorAlert message={error} />}
           {progress.status !== 'idle' && (
