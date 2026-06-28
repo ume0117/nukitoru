@@ -23,14 +23,19 @@ export async function GET(request: NextRequest) {
     url.searchParams.set('format', 'json')
 
     const res = await fetch(url.toString(), {
-      next: { revalidate: 300 },
+      next: { revalidate: 0 },
       headers: {
         'Referer': 'https://nukitoru.vercel.app',
       },
     })
     const data = await res.json()
     console.log('Rakuten API status:', res.status)
-    console.log('Rakuten API response:', JSON.stringify(data).slice(0, 300))
+    console.log('Rakuten API full response:', JSON.stringify(data).slice(0, 500))
+
+    if (data.error) {
+      console.error('Rakuten API error:', data.error, data.error_description)
+      return NextResponse.json({ found: false, error: data.error })
+    }
 
     if (!data.Items?.length) {
       return NextResponse.json({ found: false })
