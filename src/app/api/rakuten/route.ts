@@ -22,7 +22,12 @@ export async function GET(request: NextRequest) {
     url.searchParams.set('sort', '+itemPrice')
     url.searchParams.set('format', 'json')
 
-    const res = await fetch(url.toString(), { next: { revalidate: 300 } })
+    const res = await fetch(url.toString(), {
+      next: { revalidate: 300 },
+      headers: {
+        'Referer': 'https://nukitoru.vercel.app',
+      },
+    })
     const data = await res.json()
 
     if (!data.Items?.length) {
