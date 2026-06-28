@@ -14,16 +14,14 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // URLSearchParams は + を %2B にエンコードするため手動で構築
+    // 最小パラメータでテスト
     const baseUrl = 'https://app.rakuten.co.jp/services/api/IchibaItem/Search/20220601'
     const params = [
-      `applicationId=${encodeURIComponent(appId)}`,
+      `applicationId=${appId}`,
       `keyword=${encodeURIComponent(jan)}`,
       `hits=3`,
-      `sort=%2BitemPrice`,
       `format=json`,
     ]
-    if (affiliateId) params.push(`affiliateId=${encodeURIComponent(affiliateId)}`)
     const apiUrl = `${baseUrl}?${params.join('&')}`
 
     const res = await fetch(apiUrl, {
