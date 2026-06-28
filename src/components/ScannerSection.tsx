@@ -146,6 +146,7 @@ export function ScannerSection() {
             カメラでスキャン
           </button>
           <UploadArea onFileSelect={processFile} isScanning={isScanning} />
+          <ManualSearch />
           {error && <ErrorAlert message={error} />}
           {progress.status !== 'idle' && (
             <ScanProgress
