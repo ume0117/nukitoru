@@ -130,6 +130,7 @@ export function ScannerSection() {
       {!isDone && (
         <div className="space-y-4">
           <UploadArea onFileSelect={processFile} isScanning={isScanning} />
+          <ManualSearch />
           {error && <ErrorAlert message={error} />}
           {progress.status !== 'idle' && (
             <ScanProgress
