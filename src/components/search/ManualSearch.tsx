@@ -34,29 +34,27 @@ export function ManualSearch() {
         </span>
       </div>
 
-      <div className="flex gap-2">
-        <input
+      <input
           type="text"
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="例: 4901234567890 または ABC-1234"
-          className="flex-1 h-10 px-3 rounded-lg text-sm border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full h-10 px-3 rounded-lg text-sm border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
         <a
           href={canSearch ? getRakutenURL(value) : undefined}
           target="_blank"
           rel="nofollow noopener noreferrer sponsored"
           onClick={(e) => { if (!canSearch) e.preventDefault() }}
-          className={`h-10 px-4 rounded-lg text-sm font-medium text-white transition-colors whitespace-nowrap flex items-center gap-1.5 ${
+          className={`flex items-center justify-center gap-2 w-full h-10 rounded-lg text-sm font-medium text-white transition-colors ${
             canSearch
               ? 'bg-[#bf0000] hover:bg-[#a00000] cursor-pointer'
               : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
           }`}
         >
-          🛒 楽天で検索
+          🛒 楽天市場で検索
         </a>
-      </div>
 
       <p className="text-[11px] text-gray-400 dark:text-gray-600 leading-relaxed">
         {value.trim().length > 0

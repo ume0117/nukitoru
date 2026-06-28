@@ -29,6 +29,8 @@ export async function GET(request: NextRequest) {
       },
     })
     const data = await res.json()
+    console.log('Rakuten API status:', res.status)
+    console.log('Rakuten API response:', JSON.stringify(data).slice(0, 300))
 
     if (!data.Items?.length) {
       return NextResponse.json({ found: false })
