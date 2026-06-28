@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils/cn'
 import type { ScanResult } from '@/types'
 import {
@@ -241,8 +241,33 @@ function QRResultCard({
 }
 
 // ============================================================
-// バーコードカード（JAN / EAN-8 / CODE128）
+// 楽天商品情報フック
 // ============================================================
+interface RakutenProduct {
+  name: string
+  price: number
+  affiliateUrl: string
+  imageUrl: string | null
+}
+
+function useRakutenProduct(janCode: string, isJAN: boolean) {
+  const [product, setProduct] = useState<RakutenProduct | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (!isJAN) return
+    setLoading(true)
+    fetch(`/api/rakuten?jan=${encodeURIComponent(janCode)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.found) setProduct(data)
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [janCode, isJAN])
+
+  return { product, loading }
+}
 const BARCODE_META: Record<string, { icon: string; label: string }> = {
   EAN_13:   { icon: '🏷️', label: 'JANコード' },
   EAN_8:    { icon: '🏷️', label: 'EAN-8' },
@@ -267,6 +292,7 @@ function BarcodeResultCard({
 }) {
   const meta = BARCODE_META[result.type] ?? { icon: '📄', label: result.type }
   const isJAN = result.type === 'EAN_13' || result.type === 'EAN_8'
+  const { product, loading } = useRakutenProduct(result.value, isJAN)
 
   return (
     <div className="rounded-xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-sm p-3.5 space-y-2.5">
@@ -303,17 +329,44 @@ function BarcodeResultCard({
         </div>
       </div>
 
-      {/* 楽天検索ボタン（JAN/EAN のみ） */}
+      {/* 楽天商品情報（JAN/EAN のみ） */}
       {isJAN && (
-        <a
-          href={getRakutenSearchURL(result.value)}
-          target="_blank"
-          rel="nofollow noopener noreferrer sponsored"
-          className="flex items-center justify-center gap-2 w-full h-9 rounded-lg text-sm font-medium bg-[#bf0000] hover:bg-[#a00000] text-white transition-colors"
-        >
-          <span>🛒</span>
-          <span>楽天市場で検索</span>
-        </a>
+        <div className="border-t border-gray-100 dark:border-gray-800 pt-2.5 space-y-2">
+          {loading && (
+            <p className="text-xs text-gray-400 animate-pulse">楽天で商品を検索中...</p>
+          )}
+          {!loading && product && (
+            <div className="space-y-1.5">
+              <p className="text-xs text-gray-700 dark:text-gray-300 leading-snug line-clamp-2">
+                {product.name}
+              </p>
+              <p className="text-sm font-bold text-red-600 dark:text-red-400">
+                ¥{product.price.toLocaleString()}
+                <span className="text-xs font-normal text-gray-400 ml-1">（税込・最安値順）</span>
+              </p>
+              <a
+                href={product.affiliateUrl}
+                target="_blank"
+                rel="nofollow noopener noreferrer sponsored"
+                className="flex items-center justify-center gap-2 w-full h-9 rounded-lg text-sm font-medium bg-[#bf0000] hover:bg-[#a00000] text-white transition-colors"
+              >
+                <span>🛒</span>
+                <span>楽天市場で購入</span>
+              </a>
+            </div>
+          )}
+          {!loading && !product && (
+            <a
+              href={getRakutenSearchURL(result.value)}
+              target="_blank"
+              rel="nofollow noopener noreferrer sponsored"
+              className="flex items-center justify-center gap-2 w-full h-9 rounded-lg text-sm font-medium bg-[#bf0000] hover:bg-[#a00000] text-white transition-colors"
+            >
+              <span>🛒</span>
+              <span>楽天市場で検索</span>
+            </a>
+          )}
+        </div>
       )}
     </div>
   )
