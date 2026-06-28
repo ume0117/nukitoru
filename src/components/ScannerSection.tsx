@@ -140,13 +140,12 @@ export function ScannerSection() {
           {/* カメラスキャンボタン */}
           <button
             onClick={() => setCameraOpen(true)}
-            className="w-full h-12 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-700 flex items-center justify-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:border-blue-400 hover:text-blue-500 dark:hover:border-blue-500 dark:hover:text-blue-400 transition-colors"
+            className="w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 flex items-center justify-center gap-2 text-sm font-semibold text-white transition-colors shadow-sm"
           >
-            <span className="text-lg">📷</span>
+            <span className="text-base">📷</span>
             カメラでスキャン
           </button>
           <UploadArea onFileSelect={processFile} isScanning={isScanning} />
-          <ManualSearch />
           {error && <ErrorAlert message={error} />}
           {progress.status !== 'idle' && (
             <ScanProgress
@@ -205,7 +204,8 @@ export function ScannerSection() {
 
           {/* 区切り + 別ファイル選択（結果ありの場合） */}
           {hasResults && (
-            <div className="border-t border-gray-100 dark:border-gray-800 pt-4">
+            <div className="border-t border-gray-100 dark:border-gray-800 pt-4 space-y-4">
+              <ManualSearch />
               <UploadArea onFileSelect={processFile} isScanning={isScanning} />
             </div>
           )}
