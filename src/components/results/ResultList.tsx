@@ -74,7 +74,7 @@ export function ResultList({ results, onDelete, onClear }: ResultListProps) {
   return (
     <section aria-label="見つかったURL・コード" className="space-y-3">
       {/* ヘッダー行 */}
-      <div className="flex items-center justify-between">
+      <div className="space-y-2">
         <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
           見つかったURL・コード{' '}
           <span className="text-blue-600 dark:text-blue-400">
@@ -89,7 +89,7 @@ export function ResultList({ results, onDelete, onClear }: ResultListProps) {
             className="h-8 px-3 rounded-lg text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
             aria-label="CSVダウンロード"
           >
-            ↓ CSV
+            ↓ CSV出力
           </button>
 
           <button
