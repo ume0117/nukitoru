@@ -275,12 +275,17 @@ const BARCODE_META: Record<string, { icon: string; label: string }> = {
 }
 
 const RAKUTEN_AFFILIATE_ID = '554ce912.68635f88.554ce913.1ffa91d2'
+const AMAZON_ASSOCIATE_ID = 'nukitoru-22'
 
 function getRakutenSearchURL(janCode: string): string {
   const searchURL = encodeURIComponent(
     `https://search.rakuten.co.jp/search/mall/${janCode}/?s=1`
   )
   return `https://hb.afl.rakuten.co.jp/ichiba/${RAKUTEN_AFFILIATE_ID}/?pc=${searchURL}`
+}
+
+function getAmazonSearchURL(janCode: string): string {
+  return `https://www.amazon.co.jp/s?k=${encodeURIComponent(janCode)}&tag=${AMAZON_ASSOCIATE_ID}`
 }
 
 function BarcodeResultCard({
@@ -353,18 +358,38 @@ function BarcodeResultCard({
                 <span>🛒</span>
                 <span>楽天市場で購入</span>
               </a>
+              <a
+                href={getAmazonSearchURL(result.value)}
+                target="_blank"
+                rel="nofollow noopener noreferrer sponsored"
+                className="flex items-center justify-center gap-2 w-full h-9 rounded-lg text-sm font-medium bg-[#FF9900] hover:bg-[#e68a00] text-white transition-colors"
+              >
+                <span>📦</span>
+                <span>Amazonで検索</span>
+              </a>
             </div>
           )}
           {!loading && !product && (
-            <a
-              href={getRakutenSearchURL(result.value)}
-              target="_blank"
-              rel="nofollow noopener noreferrer sponsored"
-              className="flex items-center justify-center gap-2 w-full h-9 rounded-lg text-sm font-medium bg-[#bf0000] hover:bg-[#a00000] text-white transition-colors"
-            >
-              <span>🛒</span>
-              <span>楽天市場で検索</span>
-            </a>
+            <div className="space-y-2">
+              <a
+                href={getRakutenSearchURL(result.value)}
+                target="_blank"
+                rel="nofollow noopener noreferrer sponsored"
+                className="flex items-center justify-center gap-2 w-full h-9 rounded-lg text-sm font-medium bg-[#bf0000] hover:bg-[#a00000] text-white transition-colors"
+              >
+                <span>🛒</span>
+                <span>楽天市場で検索</span>
+              </a>
+              <a
+                href={getAmazonSearchURL(result.value)}
+                target="_blank"
+                rel="nofollow noopener noreferrer sponsored"
+                className="flex items-center justify-center gap-2 w-full h-9 rounded-lg text-sm font-medium bg-[#FF9900] hover:bg-[#e68a00] text-white transition-colors"
+              >
+                <span>📦</span>
+                <span>Amazonで検索</span>
+              </a>
+            </div>
           )}
         </div>
       )}
