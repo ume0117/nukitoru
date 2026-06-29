@@ -3,6 +3,11 @@
 import { useState } from 'react'
 
 const RAKUTEN_AFFILIATE_ID = '554ce912.68635f88.554ce913.1ffa91d2'
+const AMAZON_ASSOCIATE_ID = 'nukitoru-22'
+
+function getAmazonURL(query: string): string {
+  return `https://www.amazon.co.jp/s?k=${encodeURIComponent(query.trim())}&tag=${AMAZON_ASSOCIATE_ID}`
+}
 
 function getRakutenURL(query: string): string {
   const isJAN = /^\d{8}$|^\d{13}$/.test(query.trim())
@@ -37,29 +42,38 @@ export function ManualSearch() {
           </span>
         )}
       </div>
-      <div className="flex gap-2">
-        <input
+      <input
           type="text"
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="4901234567890 または ABC-1234"
-          className="flex-1 h-9 px-3 rounded-lg text-base border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full h-9 px-3 rounded-lg text-base border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
-        <a
-          href={canSearch ? getRakutenURL(value) : undefined}
-          target="_blank"
-          rel="nofollow noopener noreferrer sponsored"
-          onClick={(e) => { if (!canSearch) e.preventDefault() }}
-          className={`h-9 px-3 rounded-lg text-xs font-medium text-white transition-colors whitespace-nowrap flex items-center gap-1 ${
-            canSearch
-              ? 'bg-[#bf0000] hover:bg-[#a00000] cursor-pointer'
-              : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
-          }`}
-        >
-          🛒 楽天
-        </a>
-      </div>
+        <div className="flex gap-2">
+          <a
+            href={canSearch ? getRakutenURL(value) : undefined}
+            target="_blank"
+            rel="nofollow noopener noreferrer sponsored"
+            onClick={(e) => { if (!canSearch) e.preventDefault() }}
+            className={`flex-1 h-9 rounded-lg text-xs font-medium text-white transition-colors flex items-center justify-center gap-1 ${
+              canSearch ? 'bg-[#bf0000] hover:bg-[#a00000] cursor-pointer' : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
+            }`}
+          >
+            🛒 楽天
+          </a>
+          <a
+            href={canSearch ? getAmazonURL(value) : undefined}
+            target="_blank"
+            rel="nofollow noopener noreferrer sponsored"
+            onClick={(e) => { if (!canSearch) e.preventDefault() }}
+            className={`flex-1 h-9 rounded-lg text-xs font-medium text-white transition-colors flex items-center justify-center gap-1 ${
+              canSearch ? 'bg-[#FF9900] hover:bg-[#e68a00] cursor-pointer' : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
+            }`}
+          >
+            📦 Amazon
+          </a>
+        </div>
     </div>
   )
 }
