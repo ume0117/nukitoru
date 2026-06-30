@@ -288,6 +288,15 @@ function getAmazonSearchURL(janCode: string): string {
   return `https://www.amazon.co.jp/s?k=${encodeURIComponent(janCode)}&tag=${AMAZON_ASSOCIATE_ID}`
 }
 
+const VC_SID = '3774634'
+const VC_PID = '892648162'
+
+function getYahooSearchURL(query: string): string {
+  const yahooSearchUrl = `https://shopping.yahoo.co.jp/search?p=${encodeURIComponent(query)}&sort=2`
+  const vcUrl = encodeURIComponent(yahooSearchUrl)
+  return `https://ck.jp.ap.valuecommerce.com/servlet/referral?sid=${VC_SID}&pid=${VC_PID}&vc_url=${vcUrl}`
+}
+
 function BarcodeResultCard({
   result,
   onDelete,
@@ -341,7 +350,7 @@ function BarcodeResultCard({
             <p className="text-xs text-gray-400 animate-pulse">楽天で商品を検索中...</p>
           )}
           {!loading && product && (
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <p className="text-xs text-gray-700 dark:text-gray-300 leading-snug line-clamp-2">
                 {product.name}
               </p>
@@ -358,15 +367,26 @@ function BarcodeResultCard({
                 <span>🛒</span>
                 <span>楽天市場で購入</span>
               </a>
-              <a
-                href={getAmazonSearchURL(result.value)}
-                target="_blank"
-                rel="nofollow noopener noreferrer sponsored"
-                className="flex items-center justify-center gap-2 w-full h-9 rounded-lg text-sm font-medium bg-[#FF9900] hover:bg-[#e68a00] text-white transition-colors"
-              >
-                <span>📦</span>
-                <span>Amazonで検索</span>
-              </a>
+              <div className="grid grid-cols-2 gap-2">
+                <a
+                  href={getAmazonSearchURL(result.value)}
+                  target="_blank"
+                  rel="nofollow noopener noreferrer sponsored"
+                  className="flex items-center justify-center gap-1.5 h-9 rounded-lg text-xs font-medium bg-[#FF9900] hover:bg-[#e68a00] text-white transition-colors"
+                >
+                  <span>📦</span>
+                  <span>Amazon</span>
+                </a>
+                <a
+                  href={getYahooSearchURL(result.value)}
+                  target="_blank"
+                  rel="nofollow noopener noreferrer sponsored"
+                  className="flex items-center justify-center gap-1.5 h-9 rounded-lg text-xs font-medium bg-[#FF0033] hover:bg-[#e6002e] text-white transition-colors"
+                >
+                  <span>🛍️</span>
+                  <span>Yahoo!</span>
+                </a>
+              </div>
             </div>
           )}
           {!loading && !product && (
@@ -380,15 +400,26 @@ function BarcodeResultCard({
                 <span>🛒</span>
                 <span>楽天市場で検索</span>
               </a>
-              <a
-                href={getAmazonSearchURL(result.value)}
-                target="_blank"
-                rel="nofollow noopener noreferrer sponsored"
-                className="flex items-center justify-center gap-2 w-full h-9 rounded-lg text-sm font-medium bg-[#FF9900] hover:bg-[#e68a00] text-white transition-colors"
-              >
-                <span>📦</span>
-                <span>Amazonで検索</span>
-              </a>
+              <div className="grid grid-cols-2 gap-2">
+                <a
+                  href={getAmazonSearchURL(result.value)}
+                  target="_blank"
+                  rel="nofollow noopener noreferrer sponsored"
+                  className="flex items-center justify-center gap-1.5 h-9 rounded-lg text-xs font-medium bg-[#FF9900] hover:bg-[#e68a00] text-white transition-colors"
+                >
+                  <span>📦</span>
+                  <span>Amazon</span>
+                </a>
+                <a
+                  href={getYahooSearchURL(result.value)}
+                  target="_blank"
+                  rel="nofollow noopener noreferrer sponsored"
+                  className="flex items-center justify-center gap-1.5 h-9 rounded-lg text-xs font-medium bg-[#FF0033] hover:bg-[#e6002e] text-white transition-colors"
+                >
+                  <span>🛍️</span>
+                  <span>Yahoo!</span>
+                </a>
+              </div>
             </div>
           )}
         </div>
