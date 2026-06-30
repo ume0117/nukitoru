@@ -5,6 +5,7 @@ import type { ScanResult, ScanProgress } from '@/types'
 import { validateFile } from '@/lib/utils/validation'
 import { scanCanvas, imageFileToCanvas } from '@/lib/scanner/scanner'
 import { processPdf } from '@/lib/pdf/processor'
+import { deduplicateResults } from '@/lib/utils/dedup'
 
 // ============================================================
 // 型定義
@@ -67,17 +68,18 @@ export function useFileProcessor() {
       }
 
       const elapsedSec = ((Date.now() - startMs) / 1000).toFixed(1)
+      const dedupedResults = deduplicateResults(results)
 
       setState({
-        results,
+        results: dedupedResults,
         error: null,
         progress: {
           current: 1,
           total: 1,
           status: 'done',
           message:
-            results.length > 0
-              ? `${results.length} 件のコードを検出しました（${elapsedSec} 秒）`
+            dedupedResults.length > 0
+              ? `${dedupedResults.length} 件のコードを検出しました（${elapsedSec} 秒）`
               : `コードが見つかりませんでした（${elapsedSec} 秒）`,
         },
       })
