@@ -21,7 +21,7 @@ function getAmazonURL(query: string): string {
 }
 
 function getYahooURL(query: string): string {
-  const yahooSearchUrl = `https://shopping.yahoo.co.jp/search?p=${encodeURIComponent(query.trim())}&sort=price`
+  const yahooSearchUrl = `https://search.shopping.yahoo.co.jp/search?p=${encodeURIComponent(query.trim())}&sort=price`
   const vcUrl = encodeURIComponent(yahooSearchUrl)
   return `https://ck.jp.ap.valuecommerce.com/servlet/referral?sid=${VC_SID}&pid=${VC_PID}&vc_url=${vcUrl}`
 }
