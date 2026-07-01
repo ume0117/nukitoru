@@ -1,11 +1,36 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import type { ScanResult, ScanProgress } from '@/types'
 import { validateFile } from '@/lib/utils/validation'
 import { scanCanvas, imageFileToCanvas } from '@/lib/scanner/scanner'
 import { processPdf } from '@/lib/pdf/processor'
 import { deduplicateResults } from '@/lib/utils/dedup'
+
+// ============================================================
+// localStorage キー・ヘルパー
+// ============================================================
+const STORAGE_KEY = 'nukitoru_results'
+
+function saveResults(results: ScanResult[]) {
+  try {
+    if (results.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(results))
+    } else {
+      localStorage.removeItem(STORAGE_KEY)
+    }
+  } catch {}
+}
+
+function loadResults(): ScanResult[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return []
+    return JSON.parse(raw) as ScanResult[]
+  } catch {
+    return []
+  }
+}
 
 // ============================================================
 // 型定義
@@ -28,16 +53,36 @@ const INITIAL_STATE: ProcessorState = {
 export function useFileProcessor() {
   const [state, setState] = useState<ProcessorState>(INITIAL_STATE)
 
+  // 起動時にlocalStorageから結果を復元
+  useEffect(() => {
+    const saved = loadResults()
+    if (saved.length > 0) {
+      setState({
+        results: saved,
+        error: null,
+        progress: {
+          current: 1,
+          total: 1,
+          status: 'done',
+          message: `${saved.length} 件のコードを検出しました`,
+        },
+      })
+    }
+  }, [])
+
+  // 結果が変化したらlocalStorageに保存
+  useEffect(() => {
+    saveResults(state.results)
+  }, [state.results])
+
   /** ファイルを受け取ってスキャンを実行する */
   const processFile = useCallback(async (file: File) => {
-    // バリデーション
     const validation = validateFile(file)
     if (!validation.valid) {
       setState((prev) => ({ ...prev, error: validation.error ?? 'ファイルエラー' }))
       return
     }
 
-    // スキャン開始（結果をリセット）
     setState({
       results: [],
       error: null,
@@ -50,7 +95,6 @@ export function useFileProcessor() {
       let results: ScanResult[]
 
       if (validation.fileType === 'pdf') {
-        // PDF: 全ページを逐次処理
         results = await processPdf(file, (current, total, message) => {
           setState((prev) => ({
             ...prev,
@@ -58,7 +102,6 @@ export function useFileProcessor() {
           }))
         })
       } else {
-        // 画像: 単一 Canvas に変換してスキャン
         setState((prev) => ({
           ...prev,
           progress: { ...prev.progress, message: '画像を解析中...' },
@@ -92,7 +135,7 @@ export function useFileProcessor() {
     }
   }, [])
 
-  /** 特定の結果を削除する（個別削除ボタン） */
+  /** 特定の結果を削除する */
   const deleteResult = useCallback((id: string) => {
     setState((prev) => ({
       ...prev,
@@ -116,6 +159,7 @@ export function useFileProcessor() {
 
   /** 全結果をクリアして初期状態に戻す */
   const clearAll = useCallback(() => {
+    localStorage.removeItem(STORAGE_KEY)
     setState(INITIAL_STATE)
   }, [])
 
