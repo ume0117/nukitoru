@@ -279,7 +279,7 @@ const AMAZON_ASSOCIATE_ID = 'nukitoru-22'
 
 function getRakutenSearchURL(janCode: string): string {
   const searchURL = encodeURIComponent(
-    `https://search.rakuten.co.jp/search/mall/${janCode}/?s=1`
+    `https://search.rakuten.co.jp/search/mall/${janCode}/?s=2`
   )
   return `https://hb.afl.rakuten.co.jp/ichiba/${RAKUTEN_AFFILIATE_ID}/?pc=${searchURL}`
 }
