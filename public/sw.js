@@ -2,7 +2,7 @@
 // PWA インストール要件を満たすための最小限の実装
 // すべての処理はブラウザ内で完結しているためキャッシュ戦略は不要
 
-const CACHE_NAME = 'nukitoru-v1'
+const CACHE_NAME = 'nukitoru-v3'
 
 self.addEventListener('install', (event) => {
   // 即座にアクティベート
