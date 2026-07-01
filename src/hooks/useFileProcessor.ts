@@ -70,6 +70,34 @@ export function useFileProcessor() {
     }
   }, [])
 
+  // PWAが前面に戻った時にlocalStorageから復元（iOS対応）
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        const saved = loadResults()
+        if (saved.length > 0) {
+          setState(prev => {
+            if (prev.results.length === 0) {
+              return {
+                results: saved,
+                error: null,
+                progress: {
+                  current: 1,
+                  total: 1,
+                  status: 'done',
+                  message: `${saved.length} 件のコードを検出しました`,
+                },
+              }
+            }
+            return prev
+          })
+        }
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [])
+
   // ページ離脱時に確実に保存（beforeunload）
   useEffect(() => {
     const handleBeforeUnload = () => {
