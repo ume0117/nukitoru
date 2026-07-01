@@ -70,9 +70,13 @@ export function useFileProcessor() {
     }
   }, [])
 
-  // 結果が変化したらlocalStorageに保存
+  // ページ離脱時に確実に保存（beforeunload）
   useEffect(() => {
-    saveResults(state.results)
+    const handleBeforeUnload = () => {
+      saveResults(state.results)
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [state.results])
 
   /** ファイルを受け取ってスキャンを実行する */
@@ -113,6 +117,9 @@ export function useFileProcessor() {
       const elapsedSec = ((Date.now() - startMs) / 1000).toFixed(1)
       const dedupedResults = deduplicateResults(results)
 
+      // 即座にlocalStorageに同期保存（ページ離脱前に確実に保存）
+      saveResults(dedupedResults)
+
       setState({
         results: dedupedResults,
         error: null,
@@ -145,6 +152,7 @@ export function useFileProcessor() {
 
   /** カメラスキャン結果を追加する */
   const addResults = useCallback((newResults: ScanResult[]) => {
+    saveResults(newResults)
     setState({
       results: newResults,
       error: null,
