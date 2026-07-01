@@ -289,7 +289,7 @@ function getAmazonSearchURL(janCode: string): string {
 }
 
 const VC_SID = '3774634'
-const VC_PID = '892648162'
+const VC_PID = '892648734'
 
 function getYahooSearchURL(query: string): string {
   const yahooSearchUrl = `https://shopping.yahoo.co.jp/search?p=${encodeURIComponent(query)}&sort=price`
@@ -358,67 +358,55 @@ function BarcodeResultCard({
                 ¥{product.price.toLocaleString()}
                 <span className="text-xs font-normal text-gray-400 ml-1">（税込・最安値順）</span>
               </p>
-              <a
-                href={product.affiliateUrl}
-                target="_blank"
-                rel="nofollow noopener noreferrer sponsored"
+              <button
+                onClick={() => window.open(product.affiliateUrl, '_blank', 'noopener,noreferrer')}
                 className="flex items-center justify-center gap-2 w-full h-9 rounded-lg text-sm font-medium bg-[#bf0000] hover:bg-[#a00000] text-white transition-colors"
               >
                 <span>🛒</span>
                 <span>楽天市場で購入</span>
-              </a>
+              </button>
               <div className="grid grid-cols-2 gap-2">
-                <a
-                  href={getAmazonSearchURL(result.value)}
-                  target="_blank"
-                  rel="nofollow noopener noreferrer sponsored"
+                <button
+                  onClick={() => window.open(getAmazonSearchURL(result.value), '_blank', 'noopener,noreferrer')}
                   className="flex items-center justify-center gap-1.5 h-9 rounded-lg text-xs font-medium bg-[#FF9900] hover:bg-[#e68a00] text-white transition-colors"
                 >
                   <span>📦</span>
                   <span>Amazon</span>
-                </a>
-                <a
-                  href={getYahooSearchURL(result.value)}
-                  target="_blank"
-                  rel="nofollow noopener noreferrer sponsored"
+                </button>
+                <button
+                  onClick={() => window.open(getYahooSearchURL(result.value), '_blank', 'noopener,noreferrer')}
                   className="flex items-center justify-center gap-1.5 h-9 rounded-lg text-xs font-medium bg-[#FF0033] hover:bg-[#e6002e] text-white transition-colors"
                 >
                   <span>🛍️</span>
                   <span>Yahoo!</span>
-                </a>
+                </button>
               </div>
             </div>
           )}
           {!loading && !product && (
             <div className="space-y-2">
-              <a
-                href={getRakutenSearchURL(result.value)}
-                target="_blank"
-                rel="nofollow noopener noreferrer sponsored"
+              <button
+                onClick={() => window.open(getRakutenSearchURL(result.value), '_blank', 'noopener,noreferrer')}
                 className="flex items-center justify-center gap-2 w-full h-9 rounded-lg text-sm font-medium bg-[#bf0000] hover:bg-[#a00000] text-white transition-colors"
               >
                 <span>🛒</span>
                 <span>楽天市場で検索</span>
-              </a>
+              </button>
               <div className="grid grid-cols-2 gap-2">
-                <a
-                  href={getAmazonSearchURL(result.value)}
-                  target="_blank"
-                  rel="nofollow noopener noreferrer sponsored"
+                <button
+                  onClick={() => window.open(getAmazonSearchURL(result.value), '_blank', 'noopener,noreferrer')}
                   className="flex items-center justify-center gap-1.5 h-9 rounded-lg text-xs font-medium bg-[#FF9900] hover:bg-[#e68a00] text-white transition-colors"
                 >
                   <span>📦</span>
                   <span>Amazon</span>
-                </a>
-                <a
-                  href={getYahooSearchURL(result.value)}
-                  target="_blank"
-                  rel="nofollow noopener noreferrer sponsored"
+                </button>
+                <button
+                  onClick={() => window.open(getYahooSearchURL(result.value), '_blank', 'noopener,noreferrer')}
                   className="flex items-center justify-center gap-1.5 h-9 rounded-lg text-xs font-medium bg-[#FF0033] hover:bg-[#e6002e] text-white transition-colors"
                 >
                   <span>🛍️</span>
                   <span>Yahoo!</span>
-                </a>
+                </button>
               </div>
             </div>
           )}

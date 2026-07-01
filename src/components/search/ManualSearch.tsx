@@ -5,7 +5,7 @@ import { useState } from 'react'
 const RAKUTEN_AFFILIATE_ID = '554ce912.68635f88.554ce913.1ffa91d2'
 const AMAZON_ASSOCIATE_ID = 'nukitoru-22'
 const VC_SID = '3774634'
-const VC_PID = '892648162'
+const VC_PID = '892648734'
 
 function getRakutenURL(query: string): string {
   const isJAN = /^\d{8}$|^\d{13}$/.test(query.trim())
