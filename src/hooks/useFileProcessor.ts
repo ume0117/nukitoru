@@ -51,7 +51,28 @@ const INITIAL_STATE: ProcessorState = {
 // フック
 // ============================================================
 export function useFileProcessor() {
-  const [state, setState] = useState<ProcessorState>(INITIAL_STATE)
+  // 初回レンダリング時にlocalStorageから直接読み込む（IDLE状態を表示しない）
+  const [state, setState] = useState<ProcessorState>(() => {
+    try {
+      const raw = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null
+      if (raw) {
+        const saved = JSON.parse(raw) as ScanResult[]
+        if (saved.length > 0) {
+          return {
+            results: saved,
+            error: null,
+            progress: {
+              current: 1,
+              total: 1,
+              status: 'done' as const,
+              message: `${saved.length} 件のコードを検出しました`,
+            },
+          }
+        }
+      }
+    } catch {}
+    return INITIAL_STATE
+  })
 
   // 起動時にlocalStorageから結果を復元
   useEffect(() => {
