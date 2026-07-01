@@ -292,7 +292,7 @@ const VC_SID = '3774634'
 const VC_PID = '892648162'
 
 function getYahooSearchURL(query: string): string {
-  const yahooSearchUrl = `https://shopping.yahoo.co.jp/search?p=${encodeURIComponent(query)}&sort=2`
+  const yahooSearchUrl = `https://shopping.yahoo.co.jp/search?p=${encodeURIComponent(query)}&sort=price`
   const vcUrl = encodeURIComponent(yahooSearchUrl)
   return `https://ck.jp.ap.valuecommerce.com/servlet/referral?sid=${VC_SID}&pid=${VC_PID}&vc_url=${vcUrl}`
 }
