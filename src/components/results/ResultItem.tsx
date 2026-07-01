@@ -358,55 +358,67 @@ function BarcodeResultCard({
                 ¥{product.price.toLocaleString()}
                 <span className="text-xs font-normal text-gray-400 ml-1">（税込・最安値順）</span>
               </p>
-              <button
-                onClick={() => window.open(product.affiliateUrl, '_blank', 'noopener,noreferrer')}
+              <a
+                href={getRakutenSearchURL(result.value)}
+                target="_blank"
+                rel="nofollow noopener noreferrer sponsored"
                 className="flex items-center justify-center gap-2 w-full h-9 rounded-lg text-sm font-medium bg-[#bf0000] hover:bg-[#a00000] text-white transition-colors"
               >
                 <span>🛒</span>
-                <span>楽天市場で購入</span>
-              </button>
+                <span>楽天市場で検索</span>
+              </a>
               <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => window.open(getAmazonSearchURL(result.value), '_blank', 'noopener,noreferrer')}
+                <a
+                  href={getAmazonSearchURL(result.value)}
+                  target="_blank"
+                  rel="nofollow noopener noreferrer sponsored"
                   className="flex items-center justify-center gap-1.5 h-9 rounded-lg text-xs font-medium bg-[#FF9900] hover:bg-[#e68a00] text-white transition-colors"
                 >
                   <span>📦</span>
                   <span>Amazon</span>
-                </button>
-                <button
-                  onClick={() => window.open(getYahooSearchURL(result.value), '_blank', 'noopener,noreferrer')}
+                </a>
+                <a
+                  href={getYahooSearchURL(result.value)}
+                  target="_blank"
+                  rel="nofollow noopener noreferrer sponsored"
                   className="flex items-center justify-center gap-1.5 h-9 rounded-lg text-xs font-medium bg-[#FF0033] hover:bg-[#e6002e] text-white transition-colors"
                 >
                   <span>🛍️</span>
                   <span>Yahoo!</span>
-                </button>
+                </a>
               </div>
             </div>
           )}
           {!loading && !product && (
             <div className="space-y-2">
-              <button
-                onClick={() => window.open(getRakutenSearchURL(result.value), '_blank', 'noopener,noreferrer')}
+              <a
+                href={getRakutenSearchURL(result.value)}
+                target="_blank"
+                rel="nofollow noopener noreferrer sponsored"
                 className="flex items-center justify-center gap-2 w-full h-9 rounded-lg text-sm font-medium bg-[#bf0000] hover:bg-[#a00000] text-white transition-colors"
               >
                 <span>🛒</span>
                 <span>楽天市場で検索</span>
-              </button>
+              </a>
               <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => window.open(getAmazonSearchURL(result.value), '_blank', 'noopener,noreferrer')}
+                <a
+                  href={getAmazonSearchURL(result.value)}
+                  target="_blank"
+                  rel="nofollow noopener noreferrer sponsored"
                   className="flex items-center justify-center gap-1.5 h-9 rounded-lg text-xs font-medium bg-[#FF9900] hover:bg-[#e68a00] text-white transition-colors"
                 >
                   <span>📦</span>
                   <span>Amazon</span>
-                </button>
-                <button
-                  onClick={() => window.open(getYahooSearchURL(result.value), '_blank', 'noopener,noreferrer')}
+                </a>
+                <a
+                  href={getYahooSearchURL(result.value)}
+                  target="_blank"
+                  rel="nofollow noopener noreferrer sponsored"
                   className="flex items-center justify-center gap-1.5 h-9 rounded-lg text-xs font-medium bg-[#FF0033] hover:bg-[#e6002e] text-white transition-colors"
                 >
                   <span>🛍️</span>
                   <span>Yahoo!</span>
-                </button>
+                </a>
               </div>
             </div>
           )}
