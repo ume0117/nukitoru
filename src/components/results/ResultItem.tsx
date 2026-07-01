@@ -288,13 +288,9 @@ function getAmazonSearchURL(janCode: string): string {
   return `https://www.amazon.co.jp/s?k=${encodeURIComponent(janCode)}&tag=${AMAZON_ASSOCIATE_ID}`
 }
 
-const VC_SID = '3774634'
-const VC_PID = '892648734'
 
 function getYahooSearchURL(query: string): string {
-  const yahooSearchUrl = `https://search.shopping.yahoo.co.jp/search?p=${encodeURIComponent(query)}&sort=price`
-  const vcUrl = encodeURIComponent(yahooSearchUrl)
-  return `https://ck.jp.ap.valuecommerce.com/servlet/referral?sid=${VC_SID}&pid=${VC_PID}&vc_url=${vcUrl}`
+  return `/api/yahoo?q=${encodeURIComponent(query)}`
 }
 
 function BarcodeResultCard({

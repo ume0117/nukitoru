@@ -4,8 +4,6 @@ import { useState } from 'react'
 
 const RAKUTEN_AFFILIATE_ID = '554ce912.68635f88.554ce913.1ffa91d2'
 const AMAZON_ASSOCIATE_ID = 'nukitoru-22'
-const VC_SID = '3774634'
-const VC_PID = '892648734'
 
 function getRakutenURL(query: string): string {
   const isJAN = /^\d{8}$|^\d{13}$/.test(query.trim())
@@ -21,9 +19,7 @@ function getAmazonURL(query: string): string {
 }
 
 function getYahooURL(query: string): string {
-  const yahooSearchUrl = `https://search.shopping.yahoo.co.jp/search?p=${encodeURIComponent(query.trim())}&sort=price`
-  const vcUrl = encodeURIComponent(yahooSearchUrl)
-  return `https://ck.jp.ap.valuecommerce.com/servlet/referral?sid=${VC_SID}&pid=${VC_PID}&vc_url=${vcUrl}`
+  return `/api/yahoo?q=${encodeURIComponent(query.trim())}`
 }
 
 export function ManualSearch() {
