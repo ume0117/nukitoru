@@ -102,6 +102,12 @@ export function InventoryScanner({ onFinish, onClose }: InventoryScannerProps) {
     const saved = loadSession()
     if (saved && saved.items.length > 0) {
       setStatus('resume')
+    } else {
+      // 保存データなし → 新規セッションを開始してカメラ起動
+      const newSession: InventorySession = { startedAt: new Date().toISOString(), items: [] }
+      sessionRef.current = newSession
+      setSession(newSession)
+      startCamera()
     }
   }, [])
 
