@@ -39,7 +39,9 @@ export function CameraScanner({ onResult, onClose }: CameraScannerProps) {
   const rafRef = useRef<number>(0)
   const accumulatedRef = useRef<ScanResult[]>([])
   const cooldownRef = useRef<Map<string, number>>(new Map())
-  const processingRef = useRef<boolean>(false) // 同時処理防止フラグ
+  const processingRef = useRef<boolean>(false)
+  // 確認用：直前に読んだコード（同じコードが2回連続で出たら確定）
+  const lastDetectedRef = useRef<{key: string, time: number} | null>(null)
 
   const [status, setStatus] = useState<'starting' | 'scanning' | 'error'>('starting')
   const [errorMsg, setErrorMsg] = useState('')
@@ -87,12 +89,17 @@ export function CameraScanner({ onResult, onClose }: CameraScannerProps) {
     if (results.length > 0) {
       const now = Date.now()
       const COOLDOWN_MS = 2000
+      const CONFIRM_MS = 500 // 500ms以内に同じコードが2回出たら確定
 
       results.forEach(r => {
         const key = `${r.type}::${r.value}`
         const lastTime = cooldownRef.current.get(key) ?? 0
+        if (now - lastTime <= COOLDOWN_MS) return // クールダウン中
 
-        if (now - lastTime > COOLDOWN_MS) {
+        const last = lastDetectedRef.current
+        if (last && last.key === key && now - last.time <= CONFIRM_MS) {
+          // 同じコードが500ms以内に2回検出 → 確定
+          lastDetectedRef.current = null
           cooldownRef.current.set(key, now)
           const existing = accumulatedRef.current.find(
             e => e.type === r.type && e.value === r.value
@@ -103,6 +110,9 @@ export function CameraScanner({ onResult, onClose }: CameraScannerProps) {
             setLastScanned(r.value)
             playBeep()
           }
+        } else {
+          // 1回目 → 保留
+          lastDetectedRef.current = { key, time: now }
         }
       })
     }
