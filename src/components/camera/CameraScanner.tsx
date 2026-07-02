@@ -39,6 +39,7 @@ export function CameraScanner({ onResult, onClose }: CameraScannerProps) {
   const rafRef = useRef<number>(0)
   const accumulatedRef = useRef<ScanResult[]>([])
   const cooldownRef = useRef<Map<string, number>>(new Map())
+  const processingRef = useRef<boolean>(false) // 同時処理防止フラグ
 
   const [status, setStatus] = useState<'starting' | 'scanning' | 'error'>('starting')
   const [errorMsg, setErrorMsg] = useState('')
@@ -67,10 +68,18 @@ export function CameraScanner({ onResult, onClose }: CameraScannerProps) {
       return
     }
 
+    // 前のフレームがまだ処理中なら次のフレームへ
+    if (processingRef.current) {
+      rafRef.current = requestAnimationFrame(scanFrame)
+      return
+    }
+
+    processingRef.current = true
+
     canvas.width = video.videoWidth
     canvas.height = video.videoHeight
     const ctx = canvas.getContext('2d', { willReadFrequently: true })
-    if (!ctx) return
+    if (!ctx) { processingRef.current = false; return }
     ctx.drawImage(video, 0, 0)
 
     const results = await scanCanvas(canvas)
@@ -84,7 +93,6 @@ export function CameraScanner({ onResult, onClose }: CameraScannerProps) {
         const lastTime = cooldownRef.current.get(key) ?? 0
 
         if (now - lastTime > COOLDOWN_MS) {
-          // 新規または2秒経過 → 追加
           cooldownRef.current.set(key, now)
           const existing = accumulatedRef.current.find(
             e => e.type === r.type && e.value === r.value
@@ -99,6 +107,7 @@ export function CameraScanner({ onResult, onClose }: CameraScannerProps) {
       })
     }
 
+    processingRef.current = false
     rafRef.current = requestAnimationFrame(scanFrame)
   }, [])
 
