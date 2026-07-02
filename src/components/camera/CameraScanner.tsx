@@ -129,16 +129,12 @@ export function CameraScanner({ onResult, onClose }: CameraScannerProps) {
       const now = Date.now()
       const COOLDOWN_MS = 2000
       const CONFIRM_MS = 500
-      const GLOBAL_COOLDOWN_MS = 2000 // 登録後2秒間は全コードを無視
-
-      // グローバルクールダウン中は何もしない
-      if (now - globalCooldownRef.current < GLOBAL_COOLDOWN_MS) {
-        processingRef.current = false
-        rafRef.current = requestAnimationFrame(scanFrame)
-        return
-      }
+      const GLOBAL_COOLDOWN_MS = 2000
 
       results.forEach(r => {
+        // グローバルクールダウン中は全コードを無視（forEach内でチェック）
+        if (Date.now() - globalCooldownRef.current < GLOBAL_COOLDOWN_MS) return
+
         const key = `${r.type}::${r.value}`
         const lastTime = cooldownRef.current.get(key) ?? 0
         if (now - lastTime <= COOLDOWN_MS) return
@@ -148,7 +144,7 @@ export function CameraScanner({ onResult, onClose }: CameraScannerProps) {
           // 同じコードが500ms以内に2回検出 → 確定
           lastDetectedRef.current = null
           cooldownRef.current.set(key, now)
-          globalCooldownRef.current = now // グローバルクールダウン開始
+          globalCooldownRef.current = Date.now() // 即座に更新
           const existing = accumulatedRef.current.find(
             e => e.type === r.type && e.value === r.value
           )
