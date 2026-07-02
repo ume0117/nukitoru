@@ -8,6 +8,7 @@ import { CameraScanner } from '@/components/camera/CameraScanner'
 import { ScanProgress } from '@/components/scanner/ScanProgress'
 import { ResultList } from '@/components/results/ResultList'
 import { cn } from '@/lib/utils/cn'
+import { deduplicateResults } from '@/lib/utils/dedup'
 import type { ScanResult } from '@/types'
 
 // ============================================================
@@ -89,7 +90,8 @@ export function ScannerSection() {
   const hasResults = results.length > 0
 
   const handleCameraResult = (newResults: ScanResult[]) => {
-    addResults(newResults)
+    const merged = deduplicateResults([...newResults, ...results])
+    addResults(merged)
   }
 
   // スキャン完了時に結果セクションへ smooth scroll
