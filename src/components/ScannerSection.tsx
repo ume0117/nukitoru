@@ -89,6 +89,14 @@ export function ScannerSection() {
   const isDone    = progress.status === 'done'
   const hasResults = results.length > 0
 
+  const handleDelete = (id: string) => {
+    if (results.length === 1) {
+      clearAll()
+    } else {
+      deleteResult(id)
+    }
+  }
+
   const handleCameraResult = (newResults: ScanResult[]) => {
     const merged = deduplicateResults([...newResults, ...results])
     addResults(merged)
@@ -184,7 +192,7 @@ export function ScannerSection() {
             <div className="space-y-2">
               <ResultList
                 results={results}
-                onDelete={deleteResult}
+                onDelete={handleDelete}
                 onClear={clearAll}
               />
               <div className="text-center pt-1">

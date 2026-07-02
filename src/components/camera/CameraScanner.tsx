@@ -64,6 +64,8 @@ export function CameraScanner({ onResult, onClose }: CameraScannerProps) {
   const processingRef = useRef<boolean>(false)
   // 確認用：直前に読んだコード（同じコードが2回連続で出たら確定）
   const lastDetectedRef = useRef<{key: string, time: number} | null>(null)
+  // 登録後の全体クールダウン（誤読を防ぐ）
+  const globalCooldownRef = useRef<number>(0)
 
   const [status, setStatus] = useState<'starting' | 'scanning' | 'error'>('starting')
   const [errorMsg, setErrorMsg] = useState('')
@@ -126,18 +128,27 @@ export function CameraScanner({ onResult, onClose }: CameraScannerProps) {
     if (results.length > 0) {
       const now = Date.now()
       const COOLDOWN_MS = 2000
-      const CONFIRM_MS = 500 // 500ms以内に同じコードが2回出たら確定
+      const CONFIRM_MS = 500
+      const GLOBAL_COOLDOWN_MS = 2000 // 登録後2秒間は全コードを無視
+
+      // グローバルクールダウン中は何もしない
+      if (now - globalCooldownRef.current < GLOBAL_COOLDOWN_MS) {
+        processingRef.current = false
+        rafRef.current = requestAnimationFrame(scanFrame)
+        return
+      }
 
       results.forEach(r => {
         const key = `${r.type}::${r.value}`
         const lastTime = cooldownRef.current.get(key) ?? 0
-        if (now - lastTime <= COOLDOWN_MS) return // クールダウン中
+        if (now - lastTime <= COOLDOWN_MS) return
 
         const last = lastDetectedRef.current
         if (last && last.key === key && now - last.time <= CONFIRM_MS) {
           // 同じコードが500ms以内に2回検出 → 確定
           lastDetectedRef.current = null
           cooldownRef.current.set(key, now)
+          globalCooldownRef.current = now // グローバルクールダウン開始
           const existing = accumulatedRef.current.find(
             e => e.type === r.type && e.value === r.value
           )
