@@ -69,6 +69,21 @@ export function CameraScanner({ onResult, onClose }: CameraScannerProps) {
   const [errorMsg, setErrorMsg] = useState('')
   const [count, setCount] = useState(0)
   const [lastScanned, setLastScanned] = useState<string>('')
+  const [audioReady, setAudioReady] = useState(false)
+
+  // ユーザーのタップでAudioContextを同期的に初期化（iOS必須）
+  const handleEnableAudio = useCallback(() => {
+    try {
+      sharedAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+      // サイレント音で解放
+      const buf = sharedAudioContext.createBuffer(1, 1, 22050)
+      const src = sharedAudioContext.createBufferSource()
+      src.buffer = buf
+      src.connect(sharedAudioContext.destination)
+      src.start(0)
+    } catch {}
+    setAudioReady(true)
+  }, [])
 
   const stopCamera = useCallback(() => {
     cancelAnimationFrame(rafRef.current)
@@ -228,6 +243,18 @@ export function CameraScanner({ onResult, onClose }: CameraScannerProps) {
             playsInline
             muted
           />
+        )}
+
+        {/* 音を有効化オーバーレイ（iOS対応） */}
+        {!audioReady && status === 'scanning' && (
+          <div className="absolute inset-0 flex items-end justify-center pb-24 z-10">
+            <button
+              onClick={handleEnableAudio}
+              className="flex items-center gap-2 px-6 py-3 rounded-full bg-blue-600 text-white text-sm font-semibold shadow-lg animate-bounce"
+            >
+              🔊 タップしてピッ音を有効化
+            </button>
+          </div>
         )}
 
         {/* スキャンオーバーレイ */}
