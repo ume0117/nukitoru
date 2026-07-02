@@ -27,17 +27,27 @@ function unlockAudio() {
 
 function playBeep() {
   try {
-    const ctx = sharedAudioContext || new (window.AudioContext || (window as any).webkitAudioContext)()
-    const osc = ctx.createOscillator()
-    const gain = ctx.createGain()
-    osc.connect(gain)
-    gain.connect(ctx.destination)
-    osc.frequency.value = 1200
-    osc.type = 'sine'
-    gain.gain.setValueAtTime(0.3, ctx.currentTime)
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15)
-    osc.start(ctx.currentTime)
-    osc.stop(ctx.currentTime + 0.15)
+    if (!sharedAudioContext) {
+      sharedAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+    }
+    const ctx = sharedAudioContext
+    const doPlay = () => {
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.frequency.value = 1200
+      osc.type = 'sine'
+      gain.gain.setValueAtTime(0.3, ctx.currentTime)
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15)
+      osc.start(ctx.currentTime)
+      osc.stop(ctx.currentTime + 0.15)
+    }
+    if (ctx.state === 'suspended') {
+      ctx.resume().then(doPlay).catch(() => {})
+    } else {
+      doPlay()
+    }
   } catch {}
 }
 
@@ -148,6 +158,16 @@ export function CameraScanner({ onResult, onClose }: CameraScannerProps) {
         if (cancelled) { stream.getTracks().forEach(t => t.stop()); return }
         // ユーザー操作（カメラ許可）のタイミングでAudioContextを初期化
         unlockAudio()
+        // iOSのオーディオ制限を解除するためにサイレント音を再生
+        try {
+          if (sharedAudioContext) {
+            const buf = sharedAudioContext.createBuffer(1, 1, 22050)
+            const src = sharedAudioContext.createBufferSource()
+            src.buffer = buf
+            src.connect(sharedAudioContext.destination)
+            src.start(0)
+          }
+        } catch {}
         streamRef.current = stream
         if (videoRef.current) {
           videoRef.current.srcObject = stream
