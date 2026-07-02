@@ -353,11 +353,11 @@ function BarcodeResultCard({
           {!loading && product && (
             <div className="space-y-2">
               <p className="text-xs text-gray-700 dark:text-gray-300 leading-snug line-clamp-2">
-                {product.name}
+                {product.name.replace(/【[^】]*】/g, '').trim()}
               </p>
               <p className="text-sm font-bold text-red-600 dark:text-red-400">
                 ¥{product.price.toLocaleString()}
-                <span className="text-xs font-normal text-gray-400 ml-1">（税込・最安値順）</span>
+                <span className="text-xs font-normal text-gray-400 ml-1">（参考：楽天市場）</span>
               </p>
               <a
                 href={getRakutenSearchURL(result.value)}
