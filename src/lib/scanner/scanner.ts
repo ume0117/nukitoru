@@ -108,7 +108,7 @@ async function scanQR(
     const imgData = getImageData(sub)
     const hit = jsQR(imgData.data, sub.width, sub.height, opts)
     if (hit?.data) {
-      results.push({ id: generateId(), type: 'QR_CODE', value: hit.data, page })
+      results.push({ id: generateId(), type: 'QR_CODE', value: hit.data.trim(), page })
     }
   }
 
@@ -117,7 +117,7 @@ async function scanQR(
   const eData = getImageData(enh)
   const eHit = jsQR(eData.data, enh.width, enh.height, opts)
   if (eHit?.data) {
-    results.push({ id: generateId(), type: 'QR_CODE', value: eHit.data, page })
+    results.push({ id: generateId(), type: 'QR_CODE', value: eHit.data.trim(), page })
   }
 
   return results

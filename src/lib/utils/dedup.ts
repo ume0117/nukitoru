@@ -7,7 +7,7 @@ import type { ScanResult } from '@/types'
 export function deduplicateResults(results: ScanResult[]): ScanResult[] {
   const seen = new Set<string>()
   return results.filter((r) => {
-    const key = `${r.type}::${r.value}`
+    const key = `${r.type}::${r.value.trim()}`
     if (seen.has(key)) return false
     seen.add(key)
     return true
