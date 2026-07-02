@@ -5,6 +5,7 @@ import { useFileProcessor } from '@/hooks/useFileProcessor'
 import { UploadArea } from '@/components/upload/UploadArea'
 import { ManualSearch } from '@/components/search/ManualSearch'
 import { CameraScanner } from '@/components/camera/CameraScanner'
+import { InventoryScanner, type InventorySession } from '@/components/camera/InventoryScanner'
 import { ScanProgress } from '@/components/scanner/ScanProgress'
 import { ResultList } from '@/components/results/ResultList'
 import { cn } from '@/lib/utils/cn'
@@ -84,6 +85,13 @@ export function ScannerSection() {
 
   const resultRef = useRef<HTMLDivElement>(null)
   const [cameraOpen, setCameraOpen] = useState(false)
+  const [inventoryOpen, setInventoryOpen] = useState(false)
+  const [inventoryResult, setInventoryResult] = useState<InventorySession | null>(null)
+
+  const handleInventoryFinish = (session: InventorySession) => {
+    setInventoryOpen(false)
+    setInventoryResult(session)
+  }
 
   const isIdle    = progress.status === 'idle'
   const isDone    = progress.status === 'done'
@@ -149,6 +157,13 @@ export function ScannerSection() {
         <div className="space-y-4">
           {/* カメラスキャンボタン */}
           <UploadArea onFileSelect={processFile} isScanning={isScanning} onCameraClick={() => setCameraOpen(true)} />
+          <button
+            onClick={() => setInventoryOpen(true)}
+            className="w-full h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 flex items-center justify-center gap-2 text-sm font-semibold text-white transition-colors"
+          >
+            <span>📋</span>
+            棚卸しモード
+          </button>
           <ManualSearch />
           {error && <ErrorAlert message={error} />}
           {progress.status !== 'idle' && (
@@ -215,6 +230,75 @@ export function ScannerSection() {
           )}
         </div>
       )}
+      {/* 棚卸しスキャナー */}
+      {inventoryOpen && (
+        <InventoryScanner
+          onFinish={handleInventoryFinish}
+          onClose={() => setInventoryOpen(false)}
+        />
+      )}
+
+      {/* 棚卸し結果 */}
+      {inventoryResult && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                📋 棚卸し結果{' '}
+                <span className="text-emerald-600">{inventoryResult.items.reduce((s,i)=>s+i.count,0)}件 / {inventoryResult.items.length}商品</span>
+              </h2>
+              <p className="text-xs text-gray-400">開始：{new Date(inventoryResult.startedAt).toLocaleString('ja-JP')}</p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  const bom = '\uFEFF'
+                  const header = 'JANコード,個数,最終スキャン日時'
+                  const rows = inventoryResult.items.map(i =>
+                    `${i.result.value},${i.count},${new Date(i.lastScannedAt).toLocaleString('ja-JP')}`
+                  )
+                  const csv = bom + [header, ...rows].join('\n')
+                  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url
+                  const d = new Date(inventoryResult.startedAt)
+                  a.download = `棚卸し_${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.csv`
+                  a.click()
+                  URL.revokeObjectURL(url)
+                }}
+                className="h-8 px-3 rounded-lg text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                ↓ CSV
+              </button>
+              <button
+                onClick={() => { setInventoryResult(null); setInventoryOpen(true) }}
+                className="h-8 px-3 rounded-lg text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
+              >
+                再開
+              </button>
+              <button
+                onClick={() => setInventoryResult(null)}
+                className="h-8 px-3 rounded-lg text-xs font-medium text-gray-500 hover:text-red-500"
+              >
+                クリア
+              </button>
+            </div>
+          </div>
+          <div className="space-y-2">
+            {inventoryResult.items.map((item, idx) => (
+              <div key={idx} className="rounded-xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-sm p-3 flex items-center justify-between">
+                <div>
+                  <p className="font-mono text-sm text-gray-800 dark:text-gray-100">{item.result.value}</p>
+                  <p className="text-xs text-gray-400">{new Date(item.lastScannedAt).toLocaleTimeString('ja-JP')}</p>
+                </div>
+                <span className="text-2xl font-bold text-emerald-600">×{item.count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* カメラスキャナー */}
       {cameraOpen && (
         <CameraScanner
