@@ -6,6 +6,7 @@ import { UploadArea } from '@/components/upload/UploadArea'
 import { ManualSearch } from '@/components/search/ManualSearch'
 import { CameraScanner } from '@/components/camera/CameraScanner'
 import { InventoryScanner, type InventorySession } from '@/components/camera/InventoryScanner'
+import { InventoryHistory, saveToHistory } from '@/components/inventory/InventoryHistory'
 import { ScanProgress } from '@/components/scanner/ScanProgress'
 import { ResultList } from '@/components/results/ResultList'
 import { cn } from '@/lib/utils/cn'
@@ -87,10 +88,14 @@ export function ScannerSection() {
   const [cameraOpen, setCameraOpen] = useState(false)
   const [inventoryOpen, setInventoryOpen] = useState(false)
   const [inventoryResult, setInventoryResult] = useState<InventorySession | null>(null)
+  const [showInventoryHistory, setShowInventoryHistory] = useState(false)
+  const [showInventoryComplete, setShowInventoryComplete] = useState(false)
 
   const handleInventoryFinish = (session: InventorySession) => {
     setInventoryOpen(false)
+    saveToHistory(session)
     setInventoryResult(session)
+    setShowInventoryComplete(true)
   }
 
   const isIdle    = progress.status === 'idle'
@@ -157,13 +162,21 @@ export function ScannerSection() {
         <div className="space-y-4">
           {/* カメラスキャンボタン */}
           <UploadArea onFileSelect={processFile} isScanning={isScanning} onCameraClick={() => setCameraOpen(true)} />
-          <button
-            onClick={() => setInventoryOpen(true)}
-            className="w-full h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 flex items-center justify-center gap-2 text-sm font-semibold text-white transition-colors"
-          >
-            <span>📋</span>
-            棚卸しモード
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setInventoryOpen(true)}
+              className="flex-1 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 flex items-center justify-center gap-2 text-sm font-semibold text-white transition-colors"
+            >
+              <span>📋</span>
+              棚卸しモード
+            </button>
+            <button
+              onClick={() => setShowInventoryHistory(true)}
+              className="h-11 px-4 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 text-sm font-medium transition-colors"
+            >
+              履歴
+            </button>
+          </div>
           <ManualSearch />
           {error && <ErrorAlert message={error} />}
           {progress.status !== 'idle' && (
@@ -230,6 +243,67 @@ export function ScannerSection() {
           )}
         </div>
       )}
+      {/* 棚卸し履歴 */}
+      {showInventoryHistory && (
+        <InventoryHistory onClose={() => setShowInventoryHistory(false)} />
+      )}
+
+      {/* 棚卸し完了画面 */}
+      {showInventoryComplete && inventoryResult && (
+        <div className="fixed inset-0 z-50 bg-white dark:bg-gray-950 flex flex-col items-center justify-center p-6 gap-5">
+          <div className="text-5xl">✅</div>
+          <div className="text-center space-y-1">
+            <p className="font-bold text-xl">棚卸しが完了しました</p>
+            <p className="text-sm text-gray-500">
+              {new Date(inventoryResult.startedAt).toLocaleString('ja-JP')}<br/>
+              合計 {inventoryResult.items.reduce((s,i)=>s+i.count,0)}件 / {inventoryResult.items.length}商品
+            </p>
+            <p className="text-xs text-emerald-600 font-medium">✅ 履歴に保存しました</p>
+          </div>
+          <div className="flex flex-col gap-3 w-full max-w-xs">
+            <button
+              onClick={() => {
+                const bom = '\uFEFF'
+                const header = 'JANコード,個数,最終スキャン日時'
+                const rows = inventoryResult.items.map(i =>
+                  `${i.result.value},${i.count},${new Date(i.lastScannedAt).toLocaleString('ja-JP')}`
+                )
+                const csv = bom + [header, ...rows].join('\n')
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                const d = new Date(inventoryResult.startedAt)
+                a.download = `棚卸し_${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.csv`
+                a.click()
+                URL.revokeObjectURL(url)
+              }}
+              className="w-full h-12 rounded-xl bg-emerald-600 text-white font-semibold"
+            >
+              ↓ CSVダウンロード
+            </button>
+            <button
+              onClick={() => { setShowInventoryComplete(false); setShowInventoryHistory(true) }}
+              className="w-full h-12 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold"
+            >
+              📋 履歴を見る
+            </button>
+            <button
+              onClick={() => { setShowInventoryComplete(false); setInventoryOpen(true) }}
+              className="w-full h-12 rounded-xl border border-gray-200 text-gray-600 font-semibold"
+            >
+              新しい棚卸しを始める
+            </button>
+            <button
+              onClick={() => { setShowInventoryComplete(false); setInventoryResult(null) }}
+              className="w-full h-10 text-gray-400 text-sm"
+            >
+              トップに戻る
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 棚卸しスキャナー */}
       {inventoryOpen && (
         <InventoryScanner
