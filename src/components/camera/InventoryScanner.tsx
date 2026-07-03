@@ -4,6 +4,9 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { scanCanvas } from '@/lib/scanner/scanner'
 import type { ScanResult } from '@/types'
 
+// ============================================================
+// 型定義
+// ============================================================
 interface InventoryItem {
   result: ScanResult
   count: number
@@ -15,21 +18,32 @@ interface InventorySession {
   items: InventoryItem[]
 }
 
-const STORAGE_KEY = 'nukitoru_inventory'
+interface InventorySettings {
+  autoConfirm: boolean // false=手動確定, true=3秒自動確定
+}
+
+// ============================================================
+// localStorage
+// ============================================================
+const SESSION_KEY = 'nukitoru_inventory'
+const SETTINGS_KEY = 'nukitoru_inventory_settings'
+
+const DEFAULT_SETTINGS: InventorySettings = { autoConfirm: false }
 
 function saveSession(session: InventorySession) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(session)) } catch {}
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify(session)) } catch {}
 }
-
 function loadSession(): InventorySession | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : null
-  } catch { return null }
+  try { const r = localStorage.getItem(SESSION_KEY); return r ? JSON.parse(r) : null } catch { return null }
 }
-
 function clearSession() {
-  try { localStorage.removeItem(STORAGE_KEY) } catch {}
+  try { localStorage.removeItem(SESSION_KEY) } catch {}
+}
+function loadSettings(): InventorySettings {
+  try { const r = localStorage.getItem(SETTINGS_KEY); return r ? { ...DEFAULT_SETTINGS, ...JSON.parse(r) } : DEFAULT_SETTINGS } catch { return DEFAULT_SETTINGS }
+}
+function saveSettings(s: InventorySettings) {
+  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)) } catch {}
 }
 
 function formatDateTime(iso: string) {
@@ -38,90 +52,93 @@ function formatDateTime(iso: string) {
 }
 
 // ============================================================
-// ピッ音
+// 音
 // ============================================================
-let inventoryAudioCtx: AudioContext | null = null
+let audioCtx: AudioContext | null = null
 
-function unlockInventoryAudio() {
+function unlockAudio() {
   try {
-    inventoryAudioCtx = new (window.AudioContext || (window as any).webkitAudioContext)()
-    const buf = inventoryAudioCtx.createBuffer(1, 1, 22050)
-    const src = inventoryAudioCtx.createBufferSource()
+    audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)()
+    const buf = audioCtx.createBuffer(1, 1, 22050)
+    const src = audioCtx.createBufferSource()
     src.buffer = buf
-    src.connect(inventoryAudioCtx.destination)
+    src.connect(audioCtx.destination)
     src.start(0)
   } catch {}
 }
 
-function playInventoryBeep() {
-  if (!inventoryAudioCtx) return
+function playTone(freq: number, duration: number, volume = 0.4) {
+  if (!audioCtx) return
   try {
-    const ctx = inventoryAudioCtx
-    const doPlay = () => {
+    const ctx = audioCtx
+    const play = () => {
       const osc = ctx.createOscillator()
       const gain = ctx.createGain()
       osc.connect(gain)
       gain.connect(ctx.destination)
-      osc.frequency.value = 1000
+      osc.frequency.value = freq
       osc.type = 'sine'
-      gain.gain.setValueAtTime(0.4, ctx.currentTime)
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12)
+      gain.gain.setValueAtTime(volume, ctx.currentTime)
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration)
       osc.start(ctx.currentTime)
-      osc.stop(ctx.currentTime + 0.12)
+      osc.stop(ctx.currentTime + duration)
     }
-    if (ctx.state === 'suspended') ctx.resume().then(doPlay).catch(() => {})
-    else doPlay()
+    if (ctx.state === 'suspended') ctx.resume().then(play).catch(() => {})
+    else play()
   } catch {}
 }
+
+const playNewItem  = () => playTone(600,  0.2, 0.4)  // 低音：新商品
+const playExisting = () => playTone(1200, 0.15, 0.4) // 高音：既存商品
+const playError    = () => { playTone(200, 0.1, 0.4); setTimeout(() => playTone(200, 0.1, 0.4), 150) } // エラー
 
 // ============================================================
 // コンポーネント
 // ============================================================
-interface InventoryScannerProps {
+interface Props {
   onFinish: (session: InventorySession) => void
   onClose: () => void
 }
 
-export function InventoryScanner({ onFinish, onClose }: InventoryScannerProps) {
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const streamRef = useRef<MediaStream | null>(null)
-  const rafRef = useRef<number>(0)
-  const processingRef = useRef<boolean>(false)
-  const globalCooldownRef = useRef<number>(0)
-  const sessionRef = useRef<InventorySession | null>(null)
+export function InventoryScanner({ onFinish, onClose }: Props) {
+  const videoRef    = useRef<HTMLVideoElement>(null)
+  const canvasRef   = useRef<HTMLCanvasElement>(null)
+  const streamRef   = useRef<MediaStream | null>(null)
+  const rafRef      = useRef<number>(0)
+  const processingRef = useRef(false)
+  const cooldownRef   = useRef(0)
+  const sessionRef    = useRef<InventorySession | null>(null)
+  const autoTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const [status, setStatus] = useState<'resume' | 'starting' | 'scanning' | 'error'>('starting')
-  const [session, setSession] = useState<InventorySession | null>(null)
-  const [lastItem, setLastItem] = useState<InventoryItem | null>(null)
+  const [status, setStatus]       = useState<'resume'|'starting'|'scanning'|'error'>('starting')
+  const [session, setSession]     = useState<InventorySession | null>(null)
+  const [pending, setPending]     = useState<{result: ScanResult, isNew: boolean} | null>(null)
   const [audioReady, setAudioReady] = useState(false)
-  const [errorMsg, setErrorMsg] = useState('')
+  const [errorMsg, setErrorMsg]   = useState('')
+  const [settings, setSettings]   = useState<InventorySettings>(DEFAULT_SETTINGS)
+  const [showSettings, setShowSettings] = useState(false)
 
-  // 起動時に前回セッションを確認
   useEffect(() => {
+    setSettings(loadSettings())
     const saved = loadSession()
     if (saved && saved.items.length > 0) {
       setStatus('resume')
     } else {
-      // 保存データなし → 新規セッションを開始してカメラ起動
-      const newSession: InventorySession = { startedAt: new Date().toISOString(), items: [] }
-      sessionRef.current = newSession
-      setSession(newSession)
-      startCamera()
+      initSession(false)
     }
   }, [])
 
-  const startSession = useCallback((resume: boolean) => {
+  const initSession = (resume: boolean) => {
     const saved = loadSession()
-    const newSession: InventorySession = resume && saved
+    const s: InventorySession = resume && saved
       ? saved
       : { startedAt: new Date().toISOString(), items: [] }
     if (!resume) clearSession()
-    sessionRef.current = newSession
-    setSession(newSession)
+    sessionRef.current = s
+    setSession(s)
     setStatus('starting')
     startCamera()
-  }, [])
+  }
 
   const startCamera = useCallback(async () => {
     try {
@@ -145,56 +162,66 @@ export function InventoryScanner({ onFinish, onClose }: InventoryScannerProps) {
   const scanFrame = useCallback(async () => {
     const video = videoRef.current
     const canvas = canvasRef.current
-    if (!video || !canvas || video.readyState < 2) {
-      rafRef.current = requestAnimationFrame(scanFrame)
-      return
-    }
-    if (processingRef.current) {
-      rafRef.current = requestAnimationFrame(scanFrame)
-      return
-    }
+    if (!video || !canvas || video.readyState < 2) { rafRef.current = requestAnimationFrame(scanFrame); return }
+    if (processingRef.current) { rafRef.current = requestAnimationFrame(scanFrame); return }
     processingRef.current = true
 
     canvas.width = video.videoWidth
     canvas.height = video.videoHeight
     const ctx = canvas.getContext('2d', { willReadFrequently: true })
-    if (!ctx) { processingRef.current = false; return }
-    ctx.drawImage(video, 0, 0)
-
-    const results = await scanCanvas(canvas)
-
-    if (results.length > 0 && Date.now() - globalCooldownRef.current > 1500) {
-      const r = results[0]
-      const now = new Date().toISOString()
-      globalCooldownRef.current = Date.now()
-
-      setSession(prev => {
-        if (!prev) return prev
-        const existing = prev.items.findIndex(
-          i => i.result.type === r.type && i.result.value === r.value
-        )
-        let newItems: InventoryItem[]
-        if (existing >= 0) {
-          newItems = prev.items.map((item, idx) =>
-            idx === existing
-              ? { ...item, count: item.count + 1, lastScannedAt: now }
-              : item
+    if (ctx) {
+      ctx.drawImage(video, 0, 0)
+      if (Date.now() - cooldownRef.current > 1500) {
+        const results = await scanCanvas(canvas)
+        if (results.length > 0) {
+          const r = results[0]
+          const isNew = !sessionRef.current?.items.some(
+            i => i.result.type === r.type && i.result.value === r.value
           )
-        } else {
-          newItems = [...prev.items, { result: r, count: 1, lastScannedAt: now }]
+          cooldownRef.current = Date.now()
+          if (isNew) playNewItem(); else playExisting()
+          setPending({ result: r, isNew })
         }
-        const updated = { ...prev, items: newItems }
-        sessionRef.current = updated
-        saveSession(updated) // リアルタイム自動保存
-        const updatedItem = newItems[existing >= 0 ? existing : newItems.length - 1]
-        setLastItem(updatedItem)
-        playInventoryBeep()
-        return updated
-      })
+      }
     }
 
     processingRef.current = false
     rafRef.current = requestAnimationFrame(scanFrame)
+  }, [])
+
+  // 自動確定タイマー
+  useEffect(() => {
+    if (pending && settings.autoConfirm) {
+      autoTimerRef.current = setTimeout(() => handleConfirm(), 3000)
+    }
+    return () => { if (autoTimerRef.current) clearTimeout(autoTimerRef.current) }
+  }, [pending, settings.autoConfirm])
+
+  const handleConfirm = useCallback(() => {
+    if (autoTimerRef.current) clearTimeout(autoTimerRef.current)
+    setPending(prev => {
+      if (!prev) return null
+      const r = prev.result
+      const now = new Date().toISOString()
+      setSession(s => {
+        if (!s) return s
+        const idx = s.items.findIndex(i => i.result.type === r.type && i.result.value === r.value)
+        const newItems = idx >= 0
+          ? s.items.map((item, i) => i === idx ? { ...item, count: item.count + 1, lastScannedAt: now } : item)
+          : [...s.items, { result: r, count: 1, lastScannedAt: now }]
+        const updated = { ...s, items: newItems }
+        sessionRef.current = updated
+        saveSession(updated)
+        return updated
+      })
+      return null
+    })
+  }, [])
+
+  const handleCancel = useCallback(() => {
+    if (autoTimerRef.current) clearTimeout(autoTimerRef.current)
+    playError()
+    setPending(null)
   }, [])
 
   const handleFinish = useCallback(() => {
@@ -208,7 +235,12 @@ export function InventoryScanner({ onFinish, onClose }: InventoryScannerProps) {
     }
   }, [onFinish, onClose])
 
-  const totalCount = session?.items.reduce((sum, i) => sum + i.count, 0) ?? 0
+  const updateSettings = (s: InventorySettings) => {
+    setSettings(s)
+    saveSettings(s)
+  }
+
+  const totalCount = session?.items.reduce((s, i) => s + i.count, 0) ?? 0
   const totalItems = session?.items.length ?? 0
 
   // 再開確認画面
@@ -221,22 +253,13 @@ export function InventoryScanner({ onFinish, onClose }: InventoryScannerProps) {
           <p className="font-bold text-lg">前回の棚卸しデータがあります</p>
           <p className="text-sm text-gray-500">
             開始：{formatDateTime(saved.startedAt)}<br/>
-            {saved.items.reduce((s,i)=>s+i.count,0)}件スキャン済み
+            {saved.items.reduce((s,i) => s+i.count, 0)}件スキャン済み
           </p>
         </div>
         <div className="flex flex-col gap-3 w-full max-w-xs">
-          <button onClick={() => startSession(true)}
-            className="w-full h-12 rounded-xl bg-blue-600 text-white font-semibold">
-            続きから再開
-          </button>
-          <button onClick={() => startSession(false)}
-            className="w-full h-12 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold">
-            新規開始（データを破棄）
-          </button>
-          <button onClick={onClose}
-            className="w-full h-12 rounded-xl text-gray-400 text-sm">
-            キャンセル
-          </button>
+          <button onClick={() => initSession(true)} className="w-full h-12 rounded-xl bg-blue-600 text-white font-semibold">続きから再開</button>
+          <button onClick={() => initSession(false)} className="w-full h-12 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold">新規開始（データを破棄）</button>
+          <button onClick={onClose} className="w-full h-12 rounded-xl text-gray-400 text-sm">キャンセル</button>
         </div>
       </div>
     )
@@ -248,19 +271,15 @@ export function InventoryScanner({ onFinish, onClose }: InventoryScannerProps) {
       <div className="flex items-center justify-between px-4 py-3 bg-black/80">
         <div className="space-y-0.5">
           <div className="flex items-center gap-2">
-            <span className="text-white text-sm font-bold">📋 棚卸しモード</span>
-            {session && (
-              <span className="text-gray-400 text-xs">{formatDateTime(session.startedAt)}〜</span>
-            )}
+            <span className="text-white text-sm font-bold">📋 棚卸し</span>
+            {session && <span className="text-gray-400 text-xs">{formatDateTime(session.startedAt)}〜</span>}
           </div>
-          <p className="text-blue-400 text-xs font-semibold">
-            合計 {totalCount}件 / {totalItems}商品
-          </p>
+          <p className="text-emerald-400 text-xs font-semibold">合計 {totalCount}件 / {totalItems}商品</p>
         </div>
-        <button onClick={handleFinish}
-          className="px-4 py-1.5 rounded-full bg-white text-black text-sm font-semibold">
-          終了・保存
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setShowSettings(true)} className="w-8 h-8 rounded-full bg-gray-700 text-white text-sm flex items-center justify-center">⚙️</button>
+          <button onClick={handleFinish} className="px-4 py-1.5 rounded-full bg-white text-black text-sm font-semibold">終了・保存</button>
+        </div>
       </div>
 
       {/* カメラ映像 */}
@@ -270,7 +289,7 @@ export function InventoryScanner({ onFinish, onClose }: InventoryScannerProps) {
         )}
 
         {/* スキャン枠 */}
-        {status === 'scanning' && (
+        {status === 'scanning' && !pending && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="relative w-64 h-64">
               <div className="absolute inset-0 border-[80px] border-black/50 rounded-lg" />
@@ -279,31 +298,50 @@ export function InventoryScanner({ onFinish, onClose }: InventoryScannerProps) {
                 'bottom-0 left-0 border-b-4 border-l-4 rounded-bl-lg',
                 'bottom-0 right-0 border-b-4 border-r-4 rounded-br-lg',
               ].map((cls, i) => (
-                <div key={i} className={`absolute w-8 h-8 border-green-400 ${cls}`} />
+                <div key={i} className={`absolute w-8 h-8 border-emerald-400 ${cls}`} />
               ))}
               <div className="absolute inset-x-4 top-1/2 h-0.5 bg-red-500/80 animate-pulse" />
             </div>
           </div>
         )}
 
-        {/* 音を有効化ボタン */}
-        {!audioReady && status === 'scanning' && (
+        {/* 音を有効化 */}
+        {!audioReady && status === 'scanning' && !pending && (
           <div className="absolute inset-0 flex items-end justify-center pb-36 z-10">
-            <button onClick={() => { unlockInventoryAudio(); setAudioReady(true) }}
+            <button onClick={() => { unlockAudio(); setAudioReady(true) }}
               className="flex items-center gap-2 px-6 py-3 rounded-full bg-blue-600 text-white text-sm font-semibold shadow-lg animate-bounce">
               🔊 タップしてピッ音を有効化
             </button>
           </div>
         )}
 
-        {/* 最後にスキャンした商品 */}
-        {lastItem && (
-          <div className="absolute bottom-4 left-0 right-0 flex justify-center">
-            <div className="bg-black/80 rounded-xl px-5 py-3 mx-4 w-full max-w-xs">
-              <p className="text-green-400 text-xs font-mono truncate">✓ {lastItem.result.value}</p>
-              <p className="text-white text-2xl font-bold text-center mt-1">
-                ×{lastItem.count}
-              </p>
+        {/* 確認ダイアログ */}
+        {pending && (
+          <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center p-6">
+            <div className="w-full max-w-sm bg-white dark:bg-gray-900 rounded-2xl p-6 space-y-4">
+              <div className="text-center space-y-1">
+                <p className={`text-xs font-semibold ${pending.isNew ? 'text-blue-600' : 'text-emerald-600'}`}>
+                  {pending.isNew ? '🆕 新しい商品' : '✅ 既存の商品'}
+                </p>
+                <p className="font-mono text-sm text-gray-600 dark:text-gray-400 break-all">{pending.result.value}</p>
+                <p className="text-4xl font-bold text-gray-900 dark:text-white">
+                  {pending.isNew ? '×1' : `×${(session?.items.find(i => i.result.value === pending.result.value)?.count ?? 0) + 1}`}
+                </p>
+                {settings.autoConfirm && (
+                  <p className="text-xs text-gray-400">3秒後に自動確定</p>
+                )}
+              </div>
+
+              {/* 正しいボタン（下・大きく） */}
+              <button onClick={handleConfirm}
+                className="w-full h-16 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-lg font-bold">
+                ✅ 正しい
+              </button>
+              {/* 違うボタン（上・小さく） */}
+              <button onClick={handleCancel}
+                className="w-full h-10 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-sm">
+                ❌ 違う（取り消す）
+              </button>
             </div>
           </div>
         )}
@@ -324,6 +362,37 @@ export function InventoryScanner({ onFinish, onClose }: InventoryScannerProps) {
           </div>
         )}
       </div>
+
+      {/* 設定パネル */}
+      {showSettings && (
+        <div className="absolute inset-0 z-50 bg-black/80 flex items-end">
+          <div className="w-full bg-white dark:bg-gray-900 rounded-t-2xl p-6 space-y-6">
+            <h3 className="font-bold text-lg">棚卸し設定</h3>
+
+            <div className="space-y-3">
+              <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">確定モード</p>
+              <button onClick={() => updateSettings({ ...settings, autoConfirm: false })}
+                className={`w-full h-12 rounded-xl text-sm font-medium border-2 ${!settings.autoConfirm ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600'}`}>
+                ● 手動確定（推奨・正確性重視）
+              </button>
+              <button onClick={() => updateSettings({ ...settings, autoConfirm: true })}
+                className={`w-full h-12 rounded-xl text-sm font-medium border-2 ${settings.autoConfirm ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600'}`}>
+                ● 3秒自動確定（スピード重視）
+              </button>
+            </div>
+
+            <button onClick={() => { updateSettings(DEFAULT_SETTINGS) }}
+              className="w-full h-10 rounded-xl text-sm text-gray-500 border border-gray-200">
+              初期設定に戻す
+            </button>
+
+            <button onClick={() => setShowSettings(false)}
+              className="w-full h-12 rounded-xl bg-gray-900 text-white font-semibold">
+              閉じる
+            </button>
+          </div>
+        </div>
+      )}
 
       <canvas ref={canvasRef} className="hidden" />
     </div>
