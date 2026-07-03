@@ -15,7 +15,13 @@ function getRakutenURL(query: string): string {
 }
 
 function getAmazonURL(query: string): string {
-  return `https://www.amazon.co.jp/s?k=${encodeURIComponent(query.trim())}&tag=${AMAZON_ASSOCIATE_ID}`
+  const q = query.trim()
+  // ASIN判定（10文字の英数字）→ 商品ページ直接リンク
+  const isASIN = /^[A-Z0-9]{10}$/i.test(q)
+  if (isASIN) {
+    return `https://www.amazon.co.jp/dp/${q}?tag=${AMAZON_ASSOCIATE_ID}`
+  }
+  return `https://www.amazon.co.jp/s?k=${encodeURIComponent(q)}&tag=${AMAZON_ASSOCIATE_ID}`
 }
 
 const VC_SID = '3774634'
@@ -49,14 +55,24 @@ export function ManualSearch() {
         )}
       </div>
 
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder="4901234567890 または ABC-1234"
-        className="w-full h-9 px-3 rounded-lg text-base border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-      />
+      <div className="relative">
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="JAN / 品番 / ASIN"
+          className="w-full h-9 px-3 pr-8 rounded-lg text-base border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
+        {value && (
+          <button
+            onClick={() => setValue('')}
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-gray-600 dark:text-gray-300 text-xs font-bold"
+          >
+            ×
+          </button>
+        )}
+      </div>
 
       <div className="grid grid-cols-3 gap-1.5">
         <a
