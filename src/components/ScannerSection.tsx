@@ -162,7 +162,8 @@ export function ScannerSection() {
         <div className="space-y-4">
           {/* カメラスキャンボタン */}
           <UploadArea onFileSelect={processFile} isScanning={isScanning} onCameraClick={() => setCameraOpen(true)} />
-          <div className="flex gap-2">
+          <ManualSearch />
+          <div className="flex gap-2 pt-2">
             <button
               onClick={() => setInventoryOpen(true)}
               className="flex-1 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 flex items-center justify-center gap-2 text-sm font-semibold text-white transition-colors"
@@ -177,7 +178,6 @@ export function ScannerSection() {
               履歴
             </button>
           </div>
-          <ManualSearch />
           {error && <ErrorAlert message={error} />}
           {progress.status !== 'idle' && (
             <ScanProgress
