@@ -32,25 +32,34 @@ function getYahooURL(query: string): string {
 
 export function ManualSearch() {
   const [value, setValue] = useState('')
-  const isJAN = /^\d{8}$|^\d{13}$/.test(value.trim())
-  const canSearch = value.trim().length > 0
+  const trimmed = value.trim()
+  const isJAN   = /^\d{8}$|^\d{13}$/.test(trimmed)
+  const isASIN  = /^[A-Z0-9]{10}$/i.test(trimmed) && !/^\d+$/.test(trimmed)
+  const canSearch = trimmed.length > 0
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && canSearch) {
-      window.open(getRakutenURL(value), '_blank', 'noopener,noreferrer')
+      if (isASIN) window.open(getAmazonURL(value), '_blank', 'noopener,noreferrer')
+      else window.open(getRakutenURL(value), '_blank', 'noopener,noreferrer')
     }
   }
+
+  const inputType = isASIN ? 'ASIN' : isJAN ? 'JANコード' : trimmed.length > 0 ? '品番' : null
 
   return (
     <div className="rounded-xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-sm p-3 space-y-2">
       <div className="flex items-center gap-2">
         <span className="text-sm">🔍</span>
         <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">
-          JAN・品番で検索
+          JAN・品番・ASINで検索
         </span>
-        {value.trim().length > 0 && (
-          <span className="text-[10px] text-gray-400 ml-auto">
-            {isJAN ? 'JANコード' : '品番（完全一致）'}
+        {inputType && (
+          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ml-auto ${
+            isASIN
+              ? 'bg-[#FF9900] text-white'
+              : 'text-gray-400'
+          }`}>
+            {inputType}
           </span>
         )}
       </div>
@@ -76,12 +85,12 @@ export function ManualSearch() {
 
       <div className="grid grid-cols-3 gap-1.5">
         <a
-          href={canSearch ? getRakutenURL(value) : undefined}
+          href={canSearch && !isASIN ? getRakutenURL(value) : undefined}
           target="_blank"
           rel="nofollow noopener noreferrer sponsored"
-          onClick={(e) => { if (!canSearch) e.preventDefault() }}
+          onClick={(e) => { if (!canSearch || isASIN) e.preventDefault() }}
           className={`h-9 rounded-lg text-[11px] font-medium text-white transition-colors flex items-center justify-center gap-1 ${
-            canSearch ? 'bg-[#bf0000] hover:bg-[#a00000] cursor-pointer' : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
+            canSearch && !isASIN ? 'bg-[#bf0000] hover:bg-[#a00000] cursor-pointer' : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
           }`}
         >
           🛒 楽天
@@ -95,15 +104,15 @@ export function ManualSearch() {
             canSearch ? 'bg-[#FF9900] hover:bg-[#e68a00] cursor-pointer' : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
           }`}
         >
-          📦 Amazon
+          {isASIN ? '📦 商品ページ' : '📦 Amazon'}
         </a>
         <a
-          href={canSearch ? getYahooURL(value) : undefined}
+          href={canSearch && !isASIN ? getYahooURL(value) : undefined}
           target="_blank"
           rel="nofollow noopener noreferrer sponsored"
-          onClick={(e) => { if (!canSearch) e.preventDefault() }}
+          onClick={(e) => { if (!canSearch || isASIN) e.preventDefault() }}
           className={`h-9 rounded-lg text-[11px] font-medium text-white transition-colors flex items-center justify-center gap-1 ${
-            canSearch ? 'bg-[#FF0033] hover:bg-[#e6002e] cursor-pointer' : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
+            canSearch && !isASIN ? 'bg-[#FF0033] hover:bg-[#e6002e] cursor-pointer' : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
           }`}
         >
           🛍️ Yahoo!
