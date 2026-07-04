@@ -105,6 +105,7 @@ function URLResultCard({
 }) {
   const [showConfirm, setShowConfirm] = useState(false)
   const analysis = analyzeURL(result.value)
+  const { preview, loading: previewLoading } = useUrlPreview(result.value, true)
 
   const openURL = () => {
     window.open(result.value, '_blank', 'noopener,noreferrer')
@@ -128,6 +129,36 @@ function URLResultCard({
       )}
 
       <div className="rounded-xl bg-white dark:bg-gray-900 border border-blue-100 dark:border-blue-900/40 shadow-sm p-4 space-y-2.5">
+        {/* URLプレビュー */}
+        {previewLoading && (
+          <div className="flex items-center gap-2 text-xs text-gray-400 animate-pulse">
+            <span>🔍</span>
+            <span>ページ情報を取得中...</span>
+          </div>
+        )}
+        {!previewLoading && preview && (preview.title || preview.image) && (
+          <div className="flex gap-3 p-2.5 rounded-lg bg-gray-50 dark:bg-gray-800">
+            {preview.image && (
+              <img
+                src={preview.image}
+                alt={preview.title ?? ''}
+                className="w-16 h-16 rounded-lg object-cover shrink-0"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+              />
+            )}
+            <div className="flex-1 min-w-0 space-y-1">
+              {preview.siteName && (
+                <p className="text-[10px] text-gray-400 uppercase tracking-wide">{preview.siteName}</p>
+              )}
+              {preview.title && (
+                <p className="text-xs font-semibold text-gray-800 dark:text-gray-100 line-clamp-2">{preview.title}</p>
+              )}
+              {preview.description && (
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 line-clamp-2">{preview.description}</p>
+              )}
+            </div>
+          </div>
+        )}
         {/* ヘッダー */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
@@ -241,8 +272,31 @@ function QRResultCard({
 }
 
 // ============================================================
-// 楽天商品情報フック
+// URLプレビューフック
 // ============================================================
+interface UrlPreview {
+  title: string | null
+  description: string | null
+  image: string | null
+  siteName: string | null
+}
+
+function useUrlPreview(url: string, isUrl: boolean) {
+  const [preview, setPreview] = useState<UrlPreview | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (!isUrl) return
+    setLoading(true)
+    fetch(`/api/preview?url=${encodeURIComponent(url)}`)
+      .then(r => r.json())
+      .then(data => { if (!data.error) setPreview(data) })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [url, isUrl])
+
+  return { preview, loading }
+}
 interface RakutenProduct {
   name: string
   price: number
