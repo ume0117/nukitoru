@@ -349,13 +349,25 @@ function BarcodeResultCard({
           )}
           {!loading && product && (
             <div className="space-y-2">
-              <p className="text-xs text-gray-700 dark:text-gray-300 leading-snug line-clamp-2">
-                {product.name.replace(/【[^】]*】/g, '').trim()}
-              </p>
-              <p className="text-sm font-bold text-red-600 dark:text-red-400">
-                ¥{product.price.toLocaleString()}
-                <span className="text-xs font-normal text-gray-400 ml-1">（参考：楽天市場）</span>
-              </p>
+              {/* 商品画像＋テキスト横並び */}
+              <div className="flex gap-3">
+                {product.imageUrl && (
+                  <img
+                    src={product.imageUrl}
+                    alt={product.name}
+                    className="w-16 h-16 rounded-lg object-contain bg-gray-50 dark:bg-gray-800 shrink-0 border border-gray-100 dark:border-gray-700"
+                  />
+                )}
+                <div className="flex-1 min-w-0 space-y-1">
+                  <p className="text-xs text-gray-700 dark:text-gray-300 leading-snug line-clamp-3">
+                    {product.name.replace(/【[^】]*】/g, '').trim()}
+                  </p>
+                  <p className="text-sm font-bold text-red-600 dark:text-red-400">
+                    ¥{product.price.toLocaleString()}
+                    <span className="text-xs font-normal text-gray-400 ml-1">（参考：楽天市場）</span>
+                  </p>
+                </div>
+              </div>
               <a
                 href={getRakutenSearchURL(result.value)}
                 target="_blank"
