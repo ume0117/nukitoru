@@ -234,11 +234,10 @@ export function ScannerSection() {
             </div>
           )}
 
-          {/* 区切り + 別ファイル選択（結果ありの場合） */}
+          {/* 区切り + 手動検索のみ（UploadAreaは削除） */}
           {hasResults && (
-            <div className="border-t border-gray-100 dark:border-gray-800 pt-4 space-y-4">
+            <div className="border-t border-gray-100 dark:border-gray-800 pt-4">
               <ManualSearch />
-              <UploadArea onFileSelect={processFile} isScanning={isScanning} />
             </div>
           )}
         </div>
