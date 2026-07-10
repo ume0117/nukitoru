@@ -17,12 +17,12 @@ export const viewport: Viewport = {
 
 // ── SEO・OGP・PWA メタデータ ──
 export const metadata: Metadata = {
-  title: 'Nukitoru（ヌキトル）- PDF・画像からURLやコードを一発抽出',
+  title: 'NUKITORU（ヌキトル）- PDF・画像からURLやコードを一発抽出',
   description:
     'PDFや画像・スクリーンショットからQRコード・JANコード・EAN・バーコードを無料で一括抽出。URLはすぐ開ける。Chrome・Safari対応。ブラウザだけで動作。',
   keywords: [
     'QRコード抽出', 'JANコード', 'バーコード読み取り', 'PDF QR',
-    'EAN-13', 'CODE128', '無料ツール', 'ヌキトル', 'Nukitoru',
+    'EAN-13', 'CODE128', '無料ツール', 'ヌキトル', 'NUKITORU',
   ],
   // ── ファビコン ──
   icons: {
@@ -50,7 +50,7 @@ export const metadata: Metadata = {
   },
   // ── OGP ──
   openGraph: {
-    title: 'Nukitoru（ヌキトル）- PDF・画像からURLを一発抽出',
+    title: 'NUKITORU（ヌキトル）- PDF・画像からURLを一発抽出',
     description: 'PDFや画像からQRコード・JANコード・バーコードを無料で一括抽出。Chrome・Safari対応。',
     type: 'website',
     locale: 'ja_JP',
@@ -67,7 +67,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Nukitoru（ヌキトル）- PDF・画像からURLを一発抽出',
+    title: 'NUKITORU（ヌキトル）- PDF・画像からURLを一発抽出',
     description: 'PDFや画像からQRコード・JANコード・バーコードを無料で一括抽出。',
     images: [`${BASE_URL}/ogp.png`],
   },
