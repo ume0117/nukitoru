@@ -1,6 +1,6 @@
 import type { NextConfig } from 'next'
-
 const nextConfig: NextConfig = {
+  output: 'export',
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.alias['canvas'] = false
@@ -13,5 +13,4 @@ const nextConfig: NextConfig = {
     return config
   },
 }
-
 export default nextConfig
