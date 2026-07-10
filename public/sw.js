@@ -1,11 +1,7 @@
 // sw.js - Nukitoru Service Worker
-// PWA インストール要件を満たすための最小限の実装
-// すべての処理はブラウザ内で完結しているためキャッシュ戦略は不要
-
-const CACHE_NAME = 'nukitoru-v3'
+const CACHE_NAME = 'nukitoru-v4'
 
 self.addEventListener('install', (event) => {
-  // 即座にアクティベート
   self.skipWaiting()
 })
 
@@ -23,6 +19,5 @@ self.addEventListener('activate', (event) => {
 })
 
 self.addEventListener('fetch', (event) => {
-  // ネットワーク優先（オフラインキャッシュなし）
   event.respondWith(fetch(event.request))
 })
