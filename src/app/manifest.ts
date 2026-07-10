@@ -4,7 +4,7 @@ export const dynamic = 'force-static'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Nukitoru - PDF・画像からURLを一発抽出',
+    name: 'NUKITORU - PDF・画像からURLを一発抽出',
     short_name: 'NUKITORU',
     description: 'PDF・画像からQRコード・JANコード・URLをすぐ抽出。ブラウザだけで動作。',
     start_url: '/',
