@@ -1,16 +1,16 @@
-<h1 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">
-          PDF・画像からURLを一発抽出
+<h1 className="text-[11px] tracking-[0.3em] text-gray-400 dark:text-gray-600 uppercase">
+          PDF · Image · Barcode Extractor
         </h1>
-<div className="flex flex-wrap gap-2 mt-4">
+        <div className="flex flex-wrap gap-2 mt-4">
           {[
-            '🔗 URLをすぐ開ける',
-            '📄 PDF全ページ対応',
-            '🔒 プライバシー安全',
-            '⚡ ブラウザ内処理',
+            'URL open',
+            'PDF all pages',
+            'Privacy safe',
+            'Browser only',
           ].map((label) => (
             <span
               key={label}
-              className="text-xs px-3 py-1 rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 shadow-sm"
+              className="text-[9px] tracking-[0.15em] px-2.5 py-1 border border-gray-100 dark:border-gray-800 text-gray-400 dark:text-gray-600 uppercase"
             >
               {label}
             </span>
