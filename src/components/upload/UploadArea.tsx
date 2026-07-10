@@ -87,7 +87,65 @@ export function UploadArea({ onFileSelect, isScanning, onCameraClick }: UploadAr
         tabIndex={-1}
       />
 
-      {/* アイコン */}
       <svg
         className={cn(
           'w-6 h-6 transition-colors',
+          isDragging ? 'text-blue-600' : 'text-gray-300 dark:text-gray-700',
+        )}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1}
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
+        />
+      </svg>
+
+      <div className="text-center space-y-1.5">
+        <p className="text-[11px] tracking-[0.2em] text-gray-400 dark:text-gray-600 uppercase">
+          {isDragging ? 'Drop here' : (
+            <>
+              <span className="hidden md:inline">Drag & drop or </span>
+              <span className="text-blue-600">Select file</span>
+            </>
+          )}
+        </p>
+        <p className="text-[10px] tracking-widest text-gray-300 dark:text-gray-700 uppercase">
+          PDF 50mb · JPG / PNG / WEBP 20mb
+        </p>
+      </div>
+
+      <div className="flex flex-wrap justify-center gap-1.5">
+        {['QR', 'JAN / EAN-13', 'EAN-8', 'CODE 128'].map((label) => (
+          <span
+            key={label}
+            className="text-[9px] tracking-[0.15em] px-2 py-0.5 border border-gray-100 dark:border-gray-800 text-gray-400 dark:text-gray-600 uppercase"
+          >
+            {label}
+          </span>
+        ))}
+      </div>
+
+      {onCameraClick && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            onCameraClick()
+          }}
+          className="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[11px] tracking-[0.15em] uppercase transition-colors"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          Camera Scan
+        </button>
+      )}
+    </div>
+  )
+}
