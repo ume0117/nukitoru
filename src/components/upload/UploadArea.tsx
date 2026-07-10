@@ -26,7 +26,6 @@ export function UploadArea({ onFileSelect, isScanning, onCameraClick }: UploadAr
     [onFileSelect, isScanning],
   )
 
-  // ---- Drag & Drop (PC のみ) ----
   const onDragOver = (e: DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -47,11 +46,10 @@ export function UploadArea({ onFileSelect, isScanning, onCameraClick }: UploadAr
     if (file) handleFile(file)
   }
 
-  // ---- File input ----
   const onChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) handleFile(file)
-    e.target.value = '' // 同一ファイルの再選択を許可
+    e.target.value = ''
   }
 
   const onClick = () => {
@@ -69,24 +67,15 @@ export function UploadArea({ onFileSelect, isScanning, onCameraClick }: UploadAr
       onClick={onClick}
       onKeyDown={(e) => e.key === 'Enter' && onClick()}
       className={cn(
-        'relative w-full rounded-2xl border-2 border-dashed',
-        'flex flex-col items-center justify-center gap-3',
-        'min-h-[180px]',
-        'cursor-pointer select-none transition-all duration-200',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
-        // 通常状態
-        'bg-white dark:bg-gray-900',
-        'border-gray-300 dark:border-gray-700',
-        'hover:border-blue-400 dark:hover:border-blue-500',
-        'hover:bg-blue-50/40 dark:hover:bg-blue-950/20',
-        // ドラッグ中
-        isDragging && [
-          'border-blue-500 dark:border-blue-400',
-          'bg-blue-50 dark:bg-blue-950/30',
-          'scale-[1.01]',
-        ],
-        // スキャン中は無効化
-        isScanning && 'opacity-50 cursor-not-allowed pointer-events-none',
+        'relative w-full border',
+        'flex flex-col items-center justify-center gap-4',
+        'min-h-[200px] py-8',
+        'cursor-pointer select-none transition-all duration-300',
+        'focus-visible:outline-none',
+        isDragging
+          ? 'border-blue-600 bg-blue-50 dark:bg-blue-950/10'
+          : 'border-gray-200 dark:border-gray-800 bg-white dark:bg-black hover:border-blue-600 dark:hover:border-blue-600',
+        isScanning && 'opacity-40 cursor-not-allowed pointer-events-none',
       )}
     >
       <input
@@ -98,85 +87,7 @@ export function UploadArea({ onFileSelect, isScanning, onCameraClick }: UploadAr
         tabIndex={-1}
       />
 
-      {/* アップロードアイコン */}
-      <div
+      {/* アイコン */}
+      <svg
         className={cn(
-          'w-14 h-14 rounded-2xl flex items-center justify-center transition-colors',
-          isDragging
-            ? 'bg-blue-100 dark:bg-blue-900/50'
-            : 'bg-gray-100 dark:bg-gray-800',
-        )}
-      >
-        <svg
-          className={cn(
-            'w-7 h-7 transition-colors',
-            isDragging
-              ? 'text-blue-600 dark:text-blue-400'
-              : 'text-gray-400 dark:text-gray-500',
-          )}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={1.5}
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
-          />
-        </svg>
-      </div>
-
-      {/* テキスト */}
-      <div className="text-center px-6">
-        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          {isDragging ? (
-            'ここにドロップ'
-          ) : (
-            <>
-              <span className="hidden md:inline">ドラッグ&ドロップ、または</span>
-              <span className="text-blue-600 dark:text-blue-400 font-semibold">
-                {' '}ファイルを選択
-              </span>
-            </>
-          )}
-        </p>
-        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5 text-center leading-relaxed">
-          PDF（最大 50 MB）<br />
-          JPG / PNG / WEBP（最大 20 MB）
-        </p>
-      </div>
-
-      {/* 対応フォーマットバッジ */}
-      <div className="flex flex-wrap justify-center gap-1.5 px-6">
-        {['QR Code', 'JAN / EAN-13', 'EAN-8', 'CODE 128'].map((label) => (
-          <span
-            key={label}
-            className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700"
-          >
-            {label}
-          </span>
-        ))}
-      </div>
-
-      {/* カメラボタン */}
-      {onCameraClick && (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation()
-            onCameraClick()
-          }}
-          className="flex items-center gap-2 px-5 py-2 rounded-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-semibold transition-colors shadow-sm"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-          カメラでスキャン
-        </button>
-      )}
-    </div>
-  )
-}
+          'w-6 h-6 transition-colors',
