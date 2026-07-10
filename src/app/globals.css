@@ -13,43 +13,41 @@
     box-sizing: border-box;
   }
 
-  /* スムーススクロール */
   html {
     scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  /* テキスト選択カラー */
+  body {
+    letter-spacing: 0.01em;
+  }
+
   ::selection {
-    background-color: #BFDBFE;
-    color: #1E3A8A;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    ::selection {
-      background-color: #1E3A8A;
-      color: #BFDBFE;
-    }
+    background-color: #2563EB;
+    color: #ffffff;
   }
 }
 
 @layer utilities {
-  /* PDF スキャン中のスピナー */
   .animate-spin-slow {
     animation: spin 2s linear infinite;
   }
+
+  .tracking-super {
+    letter-spacing: 0.2em;
+  }
 }
 
-/* iOS Safari スクロール防止（JS で mobile クラスを付与時のみ適用） */
+/* iOS Safari スクロール防止 */
 html.mobile-lock {
   height: 100%;
   overflow: hidden;
 }
-
 html.mobile-lock body {
   height: 100%;
   overflow: hidden;
 }
-
 html.mobile-lock #scroll-root {
   height: 100%;
   overflow-y: auto;
