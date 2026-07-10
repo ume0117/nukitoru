@@ -6,7 +6,7 @@ import './globals.css'
 
 const GA_ID = 'G-5H84XXS8W2'
 
-const BASE_URL = 'https://nukitoru.vercel.app'
+const BASE_URL = 'https://nukitoru.pages.dev'
 
 // ── ビューポート・テーマカラー設定 ──
 export const viewport: Viewport = {
