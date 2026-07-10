@@ -38,7 +38,7 @@ export const metadata: Metadata = {
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
-    title: 'Nukitoru',
+    title: 'NUKITORU',
     statusBarStyle: 'default',
   },
   formatDetection: {
@@ -55,13 +55,13 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'ja_JP',
     url: BASE_URL,
-    siteName: 'Nukitoru',
+    siteName: 'NUKITORU',
     images: [
       {
         url: `${BASE_URL}/ogp.png`,
         width: 1200,
         height: 630,
-        alt: 'Nukitoru - PDF・画像からコードを一発抽出',
+        alt: 'NUKITORU - PDF・画像からコードを一発抽出',
       },
     ],
   },
@@ -113,7 +113,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 お問い合わせ・バグ報告
               </a>
             </p>
-            <p className="mt-1">© 2026 Nukitoru by 4REAL. All rights reserved.</p>
+            <p className="mt-1">© 2026 NUKITORU by 4REAL. All rights reserved.</p>
           </div>
         </footer>
 
