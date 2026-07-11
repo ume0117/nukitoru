@@ -43,7 +43,7 @@ export function ManualSearch() {
     }
   }
 
-  const inputType = isASIN ? 'ASIN' : isJAN ? 'JAN' : trimmed.length > 0 ? '品番' : null
+  const inputType = isASIN ? 'ASIN' : isJAN ? 'JAN' : trimmed.length > 0 ? 'SKU' : null
 
   return (
     <div className="border border-gray-100 dark:border-gray-800 bg-white dark:bg-black p-3 space-y-2">
@@ -64,7 +64,7 @@ export function ManualSearch() {
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="JAN / 品番 / ASIN"
+          placeholder="JAN / SKU / ASIN"
           className="w-full h-10 px-3 pr-8 text-sm border border-gray-100 dark:border-gray-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-700 focus:outline-none focus:border-blue-600 transition-colors"
         />
         {value && (
@@ -78,7 +78,7 @@ export function ManualSearch() {
       </div>
 
       <div className="grid grid-cols-3 gap-1.5">
-        <a href={canSearch && !isASIN ? getRakutenURL(value) : undefined} target="_blank" rel="nofollow noopener noreferrer sponsored" onClick={(e) => { if (!canSearch || isASIN) e.preventDefault() }} className={`h-9 text-[10px] tracking-[0.15em] uppercase font-medium transition-colors flex items-center justify-center border ${ canSearch && !isASIN ? 'border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:border-blue-600 hover:text-blue-600 cursor-pointer' : 'border-gray-100 dark:border-gray-900 text-gray-300 dark:text-gray-700 cursor-not-allowed' }`}>楽天</a>
+        <a href={canSearch && !isASIN ? getRakutenURL(value) : undefined} target="_blank" rel="nofollow noopener noreferrer sponsored" onClick={(e) => { if (!canSearch || isASIN) e.preventDefault() }} className={`h-9 text-[10px] tracking-[0.15em] uppercase font-medium transition-colors flex items-center justify-center border ${ canSearch && !isASIN ? 'border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:border-blue-600 hover:text-blue-600 cursor-pointer' : 'border-gray-100 dark:border-gray-900 text-gray-300 dark:text-gray-700 cursor-not-allowed' }`}>RAKUTEN</a>
         <a href={canSearch ? getAmazonURL(value) : undefined} target="_blank" rel="nofollow noopener noreferrer sponsored" onClick={(e) => { if (!canSearch) e.preventDefault() }} className={`h-9 text-[10px] tracking-[0.15em] uppercase font-medium transition-colors flex items-center justify-center border ${ canSearch ? 'border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:border-blue-600 hover:text-blue-600 cursor-pointer' : 'border-gray-100 dark:border-gray-900 text-gray-300 dark:text-gray-700 cursor-not-allowed' }`}>{isASIN ? 'Amazon商品' : 'Amazon'}</a>
         <a href={canSearch && !isASIN ? getYahooURL(value) : undefined} target="_blank" rel="nofollow noopener noreferrer sponsored" onClick={(e) => { if (!canSearch || isASIN) e.preventDefault() }} className={`h-9 text-[10px] tracking-[0.15em] uppercase font-medium transition-colors flex items-center justify-center border ${ canSearch && !isASIN ? 'border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:border-blue-600 hover:text-blue-600 cursor-pointer' : 'border-gray-100 dark:border-gray-900 text-gray-300 dark:text-gray-700 cursor-not-allowed' }`}>Yahoo!</a>
       </div>
