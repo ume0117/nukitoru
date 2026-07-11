@@ -78,10 +78,5 @@ export function ManualSearch() {
       </div>
 
       <div className="grid grid-cols-3 gap-1.5">
-        <a href={canSearch && !isASIN ? getRakutenURL(value) : undefined} target="_blank" rel="nofollow noopener noreferrer sponsored" onClick={(e) => { if (!canSearch || isASIN) e.preventDefault() }} className={`h-9 text-[10px] tracking-[0.15em] uppercase font-medium transition-all flex items-center justify-center border ${canSearch && !isASIN ? 'border-blue-600 bg-blue-600 text-white cursor-pointer' : 'border-gray-100 dark:border-gray-900 text-gray-300 dark:text-gray-700 cursor-not-allowed'}`}>RAKUTEN</a>
-        <a href={canSearch ? getAmazonURL(value) : undefined} target="_blank" rel="nofollow noopener noreferrer sponsored" onClick={(e) => { if (!canSearch) e.preventDefault() }} className={`h-9 text-[10px] tracking-[0.15em] uppercase font-medium transition-all flex items-center justify-center border ${canSearch ? 'border-blue-600 bg-blue-600 text-white cursor-pointer' : 'border-gray-100 dark:border-gray-900 text-gray-300 dark:text-gray-700 cursor-not-allowed'}`}>{isASIN ? 'PRODUCT PAGE' : 'AMAZON'}</a>
-        <a href={canSearch && !isASIN ? getYahooURL(value) : undefined} target="_blank" rel="nofollow noopener noreferrer sponsored" onClick={(e) => { if (!canSearch || isASIN) e.preventDefault() }} className={`h-9 text-[10px] tracking-[0.15em] uppercase font-medium transition-all flex items-center justify-center border ${canSearch && !isASIN ? 'border-blue-600 bg-blue-600 text-white cursor-pointer' : 'border-gray-100 dark:border-gray-900 text-gray-300 dark:text-gray-700 cursor-not-allowed'}`}>YAHOO!</a>
-      </div>
-    </div>
-  )
-}
+        <a href={canSearch && !isASIN ? getRakutenURL(value) : undefined} target="_blank" rel="nofollow noopener noreferrer sponsored" onClick={(e) => { if (!canSearch || isASIN) e.preventDefault() }} className={`h-9 text-[10px] tracking-[0.15em] uppercase font-medium transition-all flex items-center justify-center border ${canSearch && !isASIN ? 'border-[#bf0000] text-[#bf0000] hover:bg-[#bf0000] hover:text-white cursor-pointer' : 'border-gray-100 dark:border-gray-900 text-gray-300 dark:text-gray-700 cursor-not-allowed'}`}>RAKUTEN</a>
+        <a href={canSearch ?
