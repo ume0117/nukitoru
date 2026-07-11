@@ -16,7 +16,6 @@ function getRakutenURL(query: string): string {
 
 function getAmazonURL(query: string): string {
   const q = query.trim()
-  // ASIN判定（10文字の英数字）→ 商品ページ直接リンク
   const isASIN = /^[A-Z0-9]{10}$/i.test(q)
   if (isASIN) {
     return `https://www.amazon.co.jp/dp/${q}?tag=${AMAZON_ASSOCIATE_ID}`
@@ -44,21 +43,16 @@ export function ManualSearch() {
     }
   }
 
-  const inputType = isASIN ? 'ASIN' : isJAN ? 'JANコード' : trimmed.length > 0 ? '品番' : null
+  const inputType = isASIN ? 'ASIN' : isJAN ? 'JAN' : trimmed.length > 0 ? '品番' : null
 
   return (
-    <div className="rounded-xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-sm p-3 space-y-2">
+    <div className="border border-gray-100 dark:border-gray-800 bg-white dark:bg-black p-3 space-y-2">
       <div className="flex items-center gap-2">
-        <span className="text-sm">🔍</span>
-        <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">
-          JAN・品番・ASINで検索
+        <span className="text-[9px] tracking-[0.2em] text-gray-400 dark:text-gray-600 uppercase">
+          Search by JAN / SKU / ASIN
         </span>
         {inputType && (
-          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ml-auto ${
-            isASIN
-              ? 'bg-[#FF9900] text-white'
-              : 'text-gray-400'
-          }`}>
+          <span className="text-[9px] tracking-[0.15em] px-2 py-0.5 border border-blue-600 text-blue-600 uppercase ml-auto">
             {inputType}
           </span>
         )}
@@ -71,12 +65,12 @@ export function ManualSearch() {
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="JAN / 品番 / ASIN"
-          className="w-full h-9 px-3 pr-8 rounded-lg text-base border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full h-10 px-3 pr-8 text-sm border border-gray-100 dark:border-gray-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-700 focus:outline-none focus:border-blue-600 transition-colors"
         />
         {value && (
           <button
             onClick={() => setValue('')}
-            className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-gray-600 dark:text-gray-300 text-xs font-bold"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 dark:text-gray-700 hover:text-gray-500 text-xs"
           >
             ×
           </button>
@@ -84,38 +78,44 @@ export function ManualSearch() {
       </div>
 
       <div className="grid grid-cols-3 gap-1.5">
-        <a
+        
           href={canSearch && !isASIN ? getRakutenURL(value) : undefined}
           target="_blank"
           rel="nofollow noopener noreferrer sponsored"
           onClick={(e) => { if (!canSearch || isASIN) e.preventDefault() }}
-          className={`h-9 rounded-lg text-[11px] font-medium text-white transition-colors flex items-center justify-center gap-1 ${
-            canSearch && !isASIN ? 'bg-[#bf0000] hover:bg-[#a00000] cursor-pointer' : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
+          className={`h-9 text-[10px] tracking-[0.15em] uppercase font-medium transition-colors flex items-center justify-center border ${
+            canSearch && !isASIN
+              ? 'border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:border-blue-600 hover:text-blue-600 cursor-pointer'
+              : 'border-gray-100 dark:border-gray-900 text-gray-300 dark:text-gray-700 cursor-not-allowed'
           }`}
         >
-          🛒 楽天
+          楽天
         </a>
-        <a
+        
           href={canSearch ? getAmazonURL(value) : undefined}
           target="_blank"
           rel="nofollow noopener noreferrer sponsored"
           onClick={(e) => { if (!canSearch) e.preventDefault() }}
-          className={`h-9 rounded-lg text-[11px] font-medium text-white transition-colors flex items-center justify-center gap-1 ${
-            canSearch ? 'bg-[#FF9900] hover:bg-[#e68a00] cursor-pointer' : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
+          className={`h-9 text-[10px] tracking-[0.15em] uppercase font-medium transition-colors flex items-center justify-center border ${
+            canSearch
+              ? 'border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:border-blue-600 hover:text-blue-600 cursor-pointer'
+              : 'border-gray-100 dark:border-gray-900 text-gray-300 dark:text-gray-700 cursor-not-allowed'
           }`}
         >
-          {isASIN ? '📦 商品ページ' : '📦 Amazon'}
+          {isASIN ? 'Amazon商品' : 'Amazon'}
         </a>
-        <a
+        
           href={canSearch && !isASIN ? getYahooURL(value) : undefined}
           target="_blank"
           rel="nofollow noopener noreferrer sponsored"
           onClick={(e) => { if (!canSearch || isASIN) e.preventDefault() }}
-          className={`h-9 rounded-lg text-[11px] font-medium text-white transition-colors flex items-center justify-center gap-1 ${
-            canSearch && !isASIN ? 'bg-[#FF0033] hover:bg-[#e6002e] cursor-pointer' : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
+          className={`h-9 text-[10px] tracking-[0.15em] uppercase font-medium transition-colors flex items-center justify-center border ${
+            canSearch && !isASIN
+              ? 'border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:border-blue-600 hover:text-blue-600 cursor-pointer'
+              : 'border-gray-100 dark:border-gray-900 text-gray-300 dark:text-gray-700 cursor-not-allowed'
           }`}
         >
-          🛍️ Yahoo!
+          Yahoo!
         </a>
       </div>
     </div>
