@@ -72,51 +72,15 @@ export function ManualSearch() {
             onClick={() => setValue('')}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 dark:text-gray-700 hover:text-gray-500 text-xs"
           >
-            ×
+            x
           </button>
         )}
       </div>
 
       <div className="grid grid-cols-3 gap-1.5">
-        
-          href={canSearch && !isASIN ? getRakutenURL(value) : undefined}
-          target="_blank"
-          rel="nofollow noopener noreferrer sponsored"
-          onClick={(e) => { if (!canSearch || isASIN) e.preventDefault() }}
-          className={`h-9 text-[10px] tracking-[0.15em] uppercase font-medium transition-colors flex items-center justify-center border ${
-            canSearch && !isASIN
-              ? 'border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:border-blue-600 hover:text-blue-600 cursor-pointer'
-              : 'border-gray-100 dark:border-gray-900 text-gray-300 dark:text-gray-700 cursor-not-allowed'
-          }`}
-        >
-          楽天
-        </a>
-        
-          href={canSearch ? getAmazonURL(value) : undefined}
-          target="_blank"
-          rel="nofollow noopener noreferrer sponsored"
-          onClick={(e) => { if (!canSearch) e.preventDefault() }}
-          className={`h-9 text-[10px] tracking-[0.15em] uppercase font-medium transition-colors flex items-center justify-center border ${
-            canSearch
-              ? 'border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:border-blue-600 hover:text-blue-600 cursor-pointer'
-              : 'border-gray-100 dark:border-gray-900 text-gray-300 dark:text-gray-700 cursor-not-allowed'
-          }`}
-        >
-          {isASIN ? 'Amazon商品' : 'Amazon'}
-        </a>
-        
-          href={canSearch && !isASIN ? getYahooURL(value) : undefined}
-          target="_blank"
-          rel="nofollow noopener noreferrer sponsored"
-          onClick={(e) => { if (!canSearch || isASIN) e.preventDefault() }}
-          className={`h-9 text-[10px] tracking-[0.15em] uppercase font-medium transition-colors flex items-center justify-center border ${
-            canSearch && !isASIN
-              ? 'border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:border-blue-600 hover:text-blue-600 cursor-pointer'
-              : 'border-gray-100 dark:border-gray-900 text-gray-300 dark:text-gray-700 cursor-not-allowed'
-          }`}
-        >
-          Yahoo!
-        </a>
+        <a href={canSearch && !isASIN ? getRakutenURL(value) : undefined} target="_blank" rel="nofollow noopener noreferrer sponsored" onClick={(e) => { if (!canSearch || isASIN) e.preventDefault() }} className={`h-9 text-[10px] tracking-[0.15em] uppercase font-medium transition-colors flex items-center justify-center border ${ canSearch && !isASIN ? 'border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:border-blue-600 hover:text-blue-600 cursor-pointer' : 'border-gray-100 dark:border-gray-900 text-gray-300 dark:text-gray-700 cursor-not-allowed' }`}>楽天</a>
+        <a href={canSearch ? getAmazonURL(value) : undefined} target="_blank" rel="nofollow noopener noreferrer sponsored" onClick={(e) => { if (!canSearch) e.preventDefault() }} className={`h-9 text-[10px] tracking-[0.15em] uppercase font-medium transition-colors flex items-center justify-center border ${ canSearch ? 'border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:border-blue-600 hover:text-blue-600 cursor-pointer' : 'border-gray-100 dark:border-gray-900 text-gray-300 dark:text-gray-700 cursor-not-allowed' }`}>{isASIN ? 'Amazon商品' : 'Amazon'}</a>
+        <a href={canSearch && !isASIN ? getYahooURL(value) : undefined} target="_blank" rel="nofollow noopener noreferrer sponsored" onClick={(e) => { if (!canSearch || isASIN) e.preventDefault() }} className={`h-9 text-[10px] tracking-[0.15em] uppercase font-medium transition-colors flex items-center justify-center border ${ canSearch && !isASIN ? 'border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:border-blue-600 hover:text-blue-600 cursor-pointer' : 'border-gray-100 dark:border-gray-900 text-gray-300 dark:text-gray-700 cursor-not-allowed' }`}>Yahoo!</a>
       </div>
     </div>
   )
