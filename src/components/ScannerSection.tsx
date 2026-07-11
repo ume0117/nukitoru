@@ -1,6 +1,21 @@
-<button
-              onClick={() => setInventoryOpen(true)}
-              className="flex-1 h-11 border border-gray-200 dark:border-gray-800 hover:border-gray-400 dark:hover:border-gray-600 flex items-center justify-center gap-2 text-[11px] tracking-[0.2em] font-medium text-gray-400 dark:text-gray-600 uppercase transition-colors"
-            >
-              Inventory
-            </button>
+'use client'
+
+import { useRef, useEffect, useState } from 'react'
+import { useFileProcessor } from '@/hooks/useFileProcessor'
+import { UploadArea } from '@/components/upload/UploadArea'
+import { ManualSearch } from '@/components/search/ManualSearch'
+import { CameraScanner } from '@/components/camera/CameraScanner'
+import { InventoryScanner, type InventorySession } from '@/components/camera/InventoryScanner'
+import { InventoryHistory, saveToHistory } from '@/components/inventory/InventoryHistory'
+import { ScanProgress } from '@/components/scanner/ScanProgress'
+import { ResultList } from '@/components/results/ResultList'
+import { cn } from '@/lib/utils/cn'
+import { deduplicateResults } from '@/lib/utils/dedup'
+import type { ScanResult } from '@/types'
+
+function CompactUploadButton({ onFile }: { onFile: (f: File) => void }) {
+  const ref = useRef<HTMLInputElement>(null)
+  return (
+    <>
+      <input ref={ref} type="file" accept=".pdf,image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); e.target.value = '' }} />
+      <button onClick={() => ref.current?.click()} className={cn('w-full h-12 border',
