@@ -138,6 +138,12 @@ function BarcodeResultCard({ result, onDelete }: { result: ScanResult; onDelete:
               {priceLoading ? 'Loading...' : '¥ Check Price'}
             </button>
           )}
+          {priceData && priceData.rakuten.length > 0 && priceData.rakuten[0].image && (
+            <div className="flex items-center gap-3 border border-gray-100 dark:border-gray-800 p-2">
+              <img src={priceData.rakuten[0].image} alt={priceData.rakuten[0].name} className="w-12 h-12 object-contain shrink-0" />
+              <p className="text-[11px] text-gray-700 dark:text-gray-300 leading-tight line-clamp-2">{priceData.rakuten[0].name}</p>
+            </div>
+          )}
           {priceData && priceData.minPrice && (
             <div className="space-y-1">
               <p className="text-[9px] tracking-[0.15em] text-gray-400 uppercase">Price Comparison <span className="text-blue-600">Min ¥{priceData.minPrice.toLocaleString()}</span></p>
