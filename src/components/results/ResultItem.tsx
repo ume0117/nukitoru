@@ -9,7 +9,7 @@ import { detectQRContentType, analyzeURL } from '@/lib/utils/qr-content'
 const WORKER_URL = 'https://nukitoru-api.ume0117.workers.dev'
 
 function usePriceData(jan: string) {
-  const [data, setData] = useState<{minPrice: number | null, rakuten: Array<{name: string, price: number, url: string, shop: string}>, yahoo: Array<{name: string, price: number, url: string, shop: string}>} | null>(null)
+  const [data, setData] = useState<{minPrice: number | null, rakuten: Array<{name: string, price: number, url: string, shop: string, image: string | null}>, yahoo: Array<{name: string, price: number, url: string, shop: string, image: string | null}>} | null>(null)
   const [loading, setLoading] = useState(false)
 
   const fetchPrice = async () => {
