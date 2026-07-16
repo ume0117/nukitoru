@@ -47,8 +47,10 @@ export function UploadArea({ onFileSelect, isScanning, onCameraClick }: UploadAr
   }
 
   const onChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) handleFile(file)
+    const files = e.target.files
+    if (files && files.length > 0) {
+      Array.from(files).forEach(file => handleFile(file))
+    }
     e.target.value = ''
   }
 
@@ -82,6 +84,7 @@ export function UploadArea({ onFileSelect, isScanning, onCameraClick }: UploadAr
         ref={inputRef}
         type="file"
         accept=".pdf,image/jpeg,image/png,image/webp"
+        multiple
         onChange={onChange}
         className="sr-only"
         tabIndex={-1}

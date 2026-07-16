@@ -136,11 +136,11 @@ export function useFileProcessor() {
       return
     }
 
-    setState({
-      results: [],
+    setState((prev) => ({
+      ...prev,
       error: null,
       progress: { current: 0, total: 1, status: 'scanning', message: '解析を開始しています...' },
-    })
+    }))
 
     const startMs = Date.now()
 
@@ -167,10 +167,11 @@ export function useFileProcessor() {
       const dedupedResults = deduplicateResults(results)
 
       // 即座にlocalStorageに同期保存（ページ離脱前に確実に保存）
-      saveResults(dedupedResults)
-
-      setState({
-        results: dedupedResults,
+      setState((prev) => {
+        const merged = [...prev.results, ...dedupedResults]
+        saveResults(merged)
+        return {
+          results: merged,
         error: null,
         progress: {
           current: 1,
@@ -180,7 +181,8 @@ export function useFileProcessor() {
             dedupedResults.length > 0
               ? `${dedupedResults.length} 件のコードを検出しました（${elapsedSec} 秒）`
               : `コードが見つかりませんでした（${elapsedSec} 秒）`,
-        },
+          },
+        }
       })
     } catch (err) {
       setState({
