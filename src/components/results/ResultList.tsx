@@ -1,4 +1,5 @@
 'use client'
+import * as XLSX from 'xlsx'
 
 import { useState } from 'react'
 import type { ScanResult } from '@/types'
@@ -51,6 +52,24 @@ function applyFilter(results: ScanResult[], filter: FilterType): ScanResult[] {
   if (filter === 'URL') return results.filter(r => r.type === 'QR_CODE' && r.value.startsWith('http'))
   if (filter === 'CODE128') return results.filter(r => r.type === 'CODE_128')
   return results
+}
+
+
+function downloadExcel(results: ScanResult[]) {
+  const now = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const filename = `nukitoru_${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}.xlsx`
+  const datetime = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`
+  const data = results.map(r => ({
+    'Type': TYPE_LABEL[r.type] ?? r.type,
+    'Value': r.value,
+    'Page': r.page != null ? r.page : '',
+    'DateTime': datetime,
+  }))
+  const ws = XLSX.utils.json_to_sheet(data)
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'NUKITORU')
+  XLSX.writeFile(wb, filename)
 }
 
 export function ResultList({ results, onDelete, onClear }: ResultListProps) {
@@ -118,6 +137,7 @@ export function ResultList({ results, onDelete, onClear }: ResultListProps) {
         {/* アクションボタン */}
         <div className="flex items-center gap-2">
           <button onClick={() => downloadCSV(filtered)} className="h-8 px-3 border border-blue-600 text-blue-600 text-[10px] tracking-[0.15em] uppercase font-medium hover:bg-blue-600 hover:text-white transition-colors">↓ CSV</button>
+          <button onClick={() => downloadExcel(filtered)} className="h-8 px-3 border border-green-600 text-green-600 text-[10px] tracking-[0.15em] uppercase font-medium hover:bg-green-600 hover:text-white transition-colors">↓ Excel</button>
           <button onClick={handleCopyAll} className={cn('h-8 px-3 border text-[10px] tracking-[0.15em] uppercase font-medium transition-colors', allCopied ? 'border-blue-600 text-blue-600' : 'border-gray-400 dark:border-gray-600 text-gray-400 dark:text-gray-600 hover:border-blue-600 hover:text-blue-600')}>
             {allCopied ? '✓ Copied' : 'Copy All'}
           </button>
