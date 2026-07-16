@@ -42,8 +42,10 @@ export function UploadArea({ onFileSelect, isScanning, onCameraClick }: UploadAr
     e.preventDefault()
     e.stopPropagation()
     setIsDragging(false)
-    const file = e.dataTransfer.files[0]
-    if (file) handleFile(file)
+    const files = e.dataTransfer.files
+    if (files && files.length > 0) {
+      Array.from(files).forEach(file => handleFile(file))
+    }
   }
 
   const onChange = (e: ChangeEvent<HTMLInputElement>) => {
