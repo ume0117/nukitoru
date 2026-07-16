@@ -5,6 +5,27 @@ import { cn } from '@/lib/utils/cn'
 import type { ScanResult } from '@/types'
 import { detectQRContentType, analyzeURL } from '@/lib/utils/qr-content'
 
+
+const WORKER_URL = 'https://nukitoru-api.ume0117.workers.dev'
+
+function usePriceData(jan: string) {
+  const [data, setData] = useState<{minPrice: number | null, rakuten: Array<{name: string, price: number, url: string, shop: string}> } | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  const fetchPrice = async () => {
+    if (loading || data) return
+    setLoading(true)
+    try {
+      const res = await fetch(`${WORKER_URL}/?jan=${jan}`)
+      const json = await res.json()
+      setData(json)
+    } catch {}
+    setLoading(false)
+  }
+
+  return { data, loading, fetchPrice }
+}
+
 const RAKUTEN_AFFILIATE_ID = '554ce912.68635f88.554ce913.1ffa91d2'
 const AMAZON_ASSOCIATE_ID = 'nukitoru-22'
 const VC_SID = '3774634'
@@ -95,6 +116,7 @@ function BarcodeResultCard({ result, onDelete }: { result: ScanResult; onDelete:
   const TYPE_LABEL: Record<string, string> = { EAN_13: 'JAN', EAN_8: 'EAN-8', CODE_128: 'CODE128' }
   const label = TYPE_LABEL[result.type] ?? result.type
   const isJAN = result.type === 'EAN_13' || result.type === 'EAN_8'
+  const { data: priceData, loading: priceLoading, fetchPrice } = usePriceData(result.value)
 
   return (
     <div className="border border-gray-200 dark:border-gray-800 bg-white dark:bg-black p-3.5 space-y-2.5">
@@ -111,6 +133,24 @@ function BarcodeResultCard({ result, onDelete }: { result: ScanResult; onDelete:
       <p className="font-mono text-sm text-gray-800 dark:text-gray-100 break-all leading-relaxed">{result.value}</p>
       {isJAN && (
         <div className="space-y-1.5 border-t border-gray-100 dark:border-gray-800 pt-2.5">
+          {!priceData && (
+            <button onClick={fetchPrice} disabled={priceLoading} className="w-full h-8 border border-gray-400 dark:border-gray-600 text-gray-400 dark:text-gray-600 text-[9px] tracking-[0.15em] uppercase hover:border-blue-600 hover:text-blue-600 transition-colors">
+              {priceLoading ? 'Loading...' : '¥ Check Price'}
+            </button>
+          )}
+          {priceData && priceData.minPrice && (
+            <div className="space-y-1">
+              <p className="text-[9px] tracking-[0.15em] text-gray-400 uppercase">Rakuten Min Price</p>
+              <div className="space-y-1">
+                {priceData.rakuten.map((item, i) => (
+                  <a key={i} href={item.url} target="_blank" rel="nofollow noopener noreferrer sponsored" className={`flex items-center justify-between h-8 px-3 border text-[10px] transition-colors ${item.price === priceData.minPrice ? 'border-blue-600 text-blue-600' : 'border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-500'}`}>
+                    <span className="truncate mr-2">{item.shop}</span>
+                    <span className="shrink-0 font-medium">¥{item.price.toLocaleString()}{item.price === priceData.minPrice ? ' ★' : ''}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
           <a href={getRakutenURL(result.value)} target="_blank" rel="nofollow noopener noreferrer sponsored" className="flex items-center justify-center w-full h-9 border border-[#bf0000] text-[#bf0000] hover:bg-[#bf0000] hover:text-white text-[10px] tracking-[0.15em] uppercase font-medium transition-colors">RAKUTEN</a>
           <div className="grid grid-cols-2 gap-1.5">
             <a href={getAmazonURL(result.value)} target="_blank" rel="nofollow noopener noreferrer sponsored" className="flex items-center justify-center h-9 border border-[#FF9900] text-[#FF9900] hover:bg-[#FF9900] hover:text-white text-[10px] tracking-[0.15em] uppercase font-medium transition-colors">AMAZON</a>
