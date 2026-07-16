@@ -9,7 +9,7 @@ import { detectQRContentType, analyzeURL } from '@/lib/utils/qr-content'
 const WORKER_URL = 'https://nukitoru-api.ume0117.workers.dev'
 
 function usePriceData(jan: string) {
-  const [data, setData] = useState<{minPrice: number | null, rakuten: Array<{name: string, price: number, url: string, shop: string}> } | null>(null)
+  const [data, setData] = useState<{minPrice: number | null, rakuten: Array<{name: string, price: number, url: string, shop: string}>, yahoo: Array<{name: string, price: number, url: string, shop: string}>} | null>(null)
   const [loading, setLoading] = useState(false)
 
   const fetchPrice = async () => {
@@ -116,7 +116,7 @@ function BarcodeResultCard({ result, onDelete }: { result: ScanResult; onDelete:
   const TYPE_LABEL: Record<string, string> = { EAN_13: 'JAN', EAN_8: 'EAN-8', CODE_128: 'CODE128' }
   const label = TYPE_LABEL[result.type] ?? result.type
   const isJAN = result.type === 'EAN_13' || result.type === 'EAN_8'
-  const { data: priceData, loading: priceLoading, fetchPrice } = usePriceData(result.value)
+  const { data: priceData, loading: priceLoading, fetchPrice } = usePriceData(result.value as string)
 
   return (
     <div className="border border-gray-200 dark:border-gray-800 bg-white dark:bg-black p-3.5 space-y-2.5">
