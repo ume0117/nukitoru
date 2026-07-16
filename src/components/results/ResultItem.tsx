@@ -140,15 +140,29 @@ function BarcodeResultCard({ result, onDelete }: { result: ScanResult; onDelete:
           )}
           {priceData && priceData.minPrice && (
             <div className="space-y-1">
-              <p className="text-[9px] tracking-[0.15em] text-gray-400 uppercase">Rakuten Min Price</p>
-              <div className="space-y-1">
-                {priceData.rakuten.map((item, i) => (
-                  <a key={i} href={item.url} target="_blank" rel="nofollow noopener noreferrer sponsored" className={`flex items-center justify-between h-8 px-3 border text-[10px] transition-colors ${item.price === priceData.minPrice ? 'border-blue-600 text-blue-600' : 'border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-500'}`}>
-                    <span className="truncate mr-2">{item.shop}</span>
-                    <span className="shrink-0 font-medium">¥{item.price.toLocaleString()}{item.price === priceData.minPrice ? ' ★' : ''}</span>
-                  </a>
-                ))}
-              </div>
+              <p className="text-[9px] tracking-[0.15em] text-gray-400 uppercase">Price Comparison <span className="text-blue-600">Min ¥{priceData.minPrice.toLocaleString()}</span></p>
+              {priceData.rakuten.length > 0 && (
+                <div className="space-y-0.5">
+                  <p className="text-[8px] tracking-[0.1em] text-gray-300 dark:text-gray-700 uppercase px-1">Rakuten</p>
+                  {priceData.rakuten.map((item, i) => (
+                    <a key={i} href={item.url} target="_blank" rel="nofollow noopener noreferrer sponsored" className={`flex items-center justify-between h-8 px-3 border text-[10px] transition-colors ${item.price === priceData.minPrice ? 'border-blue-600 text-blue-600' : 'border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-500'}`}>
+                      <span className="truncate mr-2">{item.shop}</span>
+                      <span className="shrink-0 font-medium">¥{item.price.toLocaleString()}{item.price === priceData.minPrice ? ' ★' : ''}</span>
+                    </a>
+                  ))}
+                </div>
+              )}
+              {priceData.yahoo && priceData.yahoo.length > 0 && (
+                <div className="space-y-0.5">
+                  <p className="text-[8px] tracking-[0.1em] text-gray-300 dark:text-gray-700 uppercase px-1">Yahoo!</p>
+                  {priceData.yahoo.map((item, i) => (
+                    <a key={i} href={item.url} target="_blank" rel="nofollow noopener noreferrer" className={`flex items-center justify-between h-8 px-3 border text-[10px] transition-colors ${item.price === priceData.minPrice ? 'border-blue-600 text-blue-600' : 'border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-500'}`}>
+                      <span className="truncate mr-2">{item.shop}</span>
+                      <span className="shrink-0 font-medium">¥{item.price.toLocaleString()}{item.price === priceData.minPrice ? ' ★' : ''}</span>
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
           )}
           <a href={getRakutenURL(result.value)} target="_blank" rel="nofollow noopener noreferrer sponsored" className="flex items-center justify-center w-full h-9 border border-[#bf0000] text-[#bf0000] hover:bg-[#bf0000] hover:text-white text-[10px] tracking-[0.15em] uppercase font-medium transition-colors">RAKUTEN</a>
