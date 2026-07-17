@@ -125,14 +125,11 @@ async function downloadCSVWithPrice(results: ScanResult[]) {
   URL.revokeObjectURL(url)
 }
 
-export function ResultList({ results, onDelete, onClear }: ResultListProps) {
-  const [allCopied, setAllCopied] = useState(false)
-  const getInitialFilter = (results: ScanResult[]): FilterType => {
+function getInitialFilter(results: ScanResult[]): FilterType {
   const types = new Set(results.map(r => r.type))
   if (types.size === 1) {
     if (types.has('EAN_13') || types.has('EAN_8')) return 'JAN'
     if (types.has('QR_CODE')) {
-      const hasURL = results.some(r => r.value.startsWith('http'))
       const allURL = results.every(r => r.value.startsWith('http'))
       if (allURL) return 'URL'
     }
@@ -140,7 +137,11 @@ export function ResultList({ results, onDelete, onClear }: ResultListProps) {
   }
   return 'ALL'
 }
-const [filter, setFilter] = useState<FilterType>(() => getInitialFilter(results))
+
+export function ResultList({ results, onDelete, onClear }: ResultListProps) {
+  const [allCopied, setAllCopied] = useState(false)
+  const [filter, setFilter] = useState<FilterType>(() => getInitialFilter(results))
+  const [priceLoading, setPriceLoading] = useState(false)
 
   if (results.length === 0) return null
 
