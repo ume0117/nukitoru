@@ -204,7 +204,7 @@ export function ResultList({ results, onDelete, onClear }: ResultListProps) {
         {/* アクションボタン */}
         <div className="flex items-center gap-2">
           <button onClick={() => downloadCSV(filtered)} className="h-8 px-3 border border-blue-600 text-blue-600 text-[10px] tracking-[0.15em] uppercase font-medium hover:bg-blue-600 hover:text-white transition-colors">↓ CSV</button>
-          <button onClick={async () => { setPriceLoading(true); await downloadCSVWithPrice(filtered); setPriceLoading(false) }} disabled={priceLoading} className="h-8 px-3 border border-blue-600 text-blue-600 text-[10px] tracking-[0.15em] uppercase font-medium hover:bg-blue-600 hover:text-white transition-colors disabled:opacity-50">{priceLoading ? '取得中...' : '↓ CSV+価格'}</button>
+          <button onClick={async () => { setPriceLoading(true); await downloadCSVWithPrice(filtered); setPriceLoading(false) }} disabled={priceLoading} className="h-8 px-3 border border-blue-600 text-blue-600 text-[10px] tracking-[0.15em] uppercase font-medium hover:bg-blue-600 hover:text-white transition-colors disabled:opacity-50">{priceLoading ? '取得中...' : '↓ CSV+¥'}</button>
           <button onClick={() => downloadExcel(filtered)} className="h-8 px-3 border border-green-600 text-green-600 text-[10px] tracking-[0.15em] uppercase font-medium hover:bg-green-600 hover:text-white transition-colors">↓ Excel</button>
           <button onClick={handleCopyAll} className={cn('h-8 px-3 border text-[10px] tracking-[0.15em] uppercase font-medium transition-colors', allCopied ? 'border-blue-600 text-blue-600' : 'border-gray-400 dark:border-gray-600 text-gray-400 dark:text-gray-600 hover:border-blue-600 hover:text-blue-600')}>
             {allCopied ? '✓ Copied' : 'Copy All'}
