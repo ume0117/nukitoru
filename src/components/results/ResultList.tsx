@@ -1,4 +1,6 @@
 'use client'
+
+const WORKER_URL = 'https://nukitoru-api.ume0117.workers.dev'
 import * as XLSX from 'xlsx'
 
 import { useState } from 'react'
@@ -70,6 +72,57 @@ function downloadExcel(results: ScanResult[]) {
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, 'NUKITORU')
   XLSX.writeFile(wb, filename)
+}
+
+
+async function downloadCSVWithPrice(results: ScanResult[]) {
+  const now = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const datetime = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`
+  const filename = `nukitoru_price_${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}.csv`
+
+  const janResults = results.filter(r => r.type === 'EAN_13' || r.type === 'EAN_8')
+  const otherResults = results.filter(r => r.type !== 'EAN_13' && r.type !== 'EAN_8')
+
+  // JAN価格を並列取得
+  const priceMap: Record<string, {name: string, rakutenMin: number | null, yahooMin: number | null, overallMin: number | null}> = {}
+  await Promise.all(janResults.map(async (r) => {
+    try {
+      const res = await fetch(WORKER_URL + '/?jan=' + r.value)
+      const data = await res.json()
+      const rakutenMin = data.rakuten?.length > 0 ? Math.min(...data.rakuten.map((i: {price: number}) => i.price)) : null
+      const yahooMin = data.yahoo?.length > 0 ? Math.min(...data.yahoo.map((i: {price: number}) => i.price)) : null
+      const allPrices = [rakutenMin, yahooMin].filter(Boolean) as number[]
+      priceMap[r.value] = {
+        name: data.rakuten?.[0]?.name ?? '',
+        rakutenMin,
+        yahooMin,
+        overallMin: allPrices.length > 0 ? Math.min(...allPrices) : null,
+      }
+    } catch {}
+  }))
+
+  const bom = '\uFEFF'
+  const header = 'Type,Value,ProductName,RakutenMinPrice,YahooMinPrice,OverallMinPrice,Page,DateTime'
+  const rows = results.map(r => {
+    const type = TYPE_LABEL[r.type] ?? r.type
+    const page = r.page != null ? String(r.page) : ''
+    const value = r.value.includes(',') ? `"${r.value}"` : r.value
+    const p = priceMap[r.value]
+    const name = p?.name ? `"${p.name.replace(/"/g, '""')}"` : ''
+    const rakutenMin = p?.rakutenMin ? `¥${p.rakutenMin.toLocaleString()}` : ''
+    const yahooMin = p?.yahooMin ? `¥${p.yahooMin.toLocaleString()}` : ''
+    const overallMin = p?.overallMin ? `¥${p.overallMin.toLocaleString()}` : ''
+    return `${type},${value},${name},${rakutenMin},${yahooMin},${overallMin},${page},${datetime}`
+  })
+  const csv = bom + [header, ...rows].join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 export function ResultList({ results, onDelete, onClear }: ResultListProps) {
@@ -150,6 +203,7 @@ const [filter, setFilter] = useState<FilterType>(() => getInitialFilter(results)
         {/* アクションボタン */}
         <div className="flex items-center gap-2">
           <button onClick={() => downloadCSV(filtered)} className="h-8 px-3 border border-blue-600 text-blue-600 text-[10px] tracking-[0.15em] uppercase font-medium hover:bg-blue-600 hover:text-white transition-colors">↓ CSV</button>
+          <button onClick={async () => { setPriceLoading(true); await downloadCSVWithPrice(filtered); setPriceLoading(false) }} disabled={priceLoading} className="h-8 px-3 border border-blue-600 text-blue-600 text-[10px] tracking-[0.15em] uppercase font-medium hover:bg-blue-600 hover:text-white transition-colors disabled:opacity-50">{priceLoading ? '取得中...' : '↓ CSV+価格'}</button>
           <button onClick={() => downloadExcel(filtered)} className="h-8 px-3 border border-green-600 text-green-600 text-[10px] tracking-[0.15em] uppercase font-medium hover:bg-green-600 hover:text-white transition-colors">↓ Excel</button>
           <button onClick={handleCopyAll} className={cn('h-8 px-3 border text-[10px] tracking-[0.15em] uppercase font-medium transition-colors', allCopied ? 'border-blue-600 text-blue-600' : 'border-gray-400 dark:border-gray-600 text-gray-400 dark:text-gray-600 hover:border-blue-600 hover:text-blue-600')}>
             {allCopied ? '✓ Copied' : 'Copy All'}
