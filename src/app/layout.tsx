@@ -114,6 +114,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </a>
             </p>
             <p className="mt-1">© 2026 NUKITORU by 4REAL. All rights reserved.</p>
+            <p className="mt-2 text-[10px] text-gray-400 dark:text-gray-600">本サービスは楽天アフィリエイト・Amazonアソシエイト・Yahoo!ショッピングアフィリエイトプログラムに参加しています。リンク経由で購入された場合、紹介料を受け取ることがあります。</p>
           </div>
         </footer>
 
