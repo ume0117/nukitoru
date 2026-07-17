@@ -110,9 +110,9 @@ async function downloadCSVWithPrice(results: ScanResult[]) {
     const value = r.value.includes(',') ? `"${r.value}"` : r.value
     const p = priceMap[r.value]
     const name = p?.name ? `"${p.name.replace(/"/g, '""')}"` : ''
-    const rakutenMin = p?.rakutenMin ? `¥${p.rakutenMin.toLocaleString()}` : ''
-    const yahooMin = p?.yahooMin ? `¥${p.yahooMin.toLocaleString()}` : ''
-    const overallMin = p?.overallMin ? `¥${p.overallMin.toLocaleString()}` : ''
+    const rakutenMin = p?.rakutenMin ? `"¥${p.rakutenMin.toLocaleString()}"` : ''
+    const yahooMin = p?.yahooMin ? `"¥${p.yahooMin.toLocaleString()}"` : ''
+    const overallMin = p?.overallMin ? `"¥${p.overallMin.toLocaleString()}"` : ''
     return `${type},${value},${name},${rakutenMin},${yahooMin},${overallMin},${page},${datetime}`
   })
   const csv = bom + [header, ...rows].join('\n')
