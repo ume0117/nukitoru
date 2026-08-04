@@ -136,12 +136,12 @@ export function ManualSearch() {
       <div className="relative">
         <input ref={inputRef} type="text" value={value} onChange={(e) => setValue(e.target.value)} onKeyDown={handleKeyDown} onFocus={() => setShowHistory(true)} onBlur={() => setTimeout(() => setShowHistory(false), 200)} placeholder="JAN / SKU / ASIN" className="w-full h-10 px-3 pr-8 text-sm border border-gray-100 dark:border-gray-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-700 focus:outline-none focus:border-blue-600 transition-colors" />
         {showHistory && history.length > 0 && !value && (
-          <div className="absolute top-11 left-0 right-0 z-10 bg-white dark:bg-black border border-gray-100 dark:border-gray-800 shadow-lg">
+          <div className="absolute bottom-11 left-0 right-0 z-10 bg-white dark:bg-black border border-gray-100 dark:border-gray-800 shadow-lg">
             <p className="text-[8px] tracking-[0.15em] text-gray-400 dark:text-gray-600 uppercase px-3 pt-2">Recent</p>
             {history.map((jan) => (
               <div key={jan} className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-900">
-                <button className="text-sm font-mono text-gray-700 dark:text-gray-300 flex-1 text-left" onClick={() => { setValue(jan); setShowHistory(false) }}>{jan}</button>
-                <button className="text-gray-300 dark:text-gray-700 hover:text-red-500 text-xs ml-2" onClick={() => { deleteHistoryItem(jan); setHistory(loadHistory()) }}>×</button>
+                <button className="text-sm font-mono text-gray-700 dark:text-gray-300 flex-1 text-left" onMouseDown={(e) => { e.preventDefault(); setValue(jan); setShowHistory(false) }}>{jan}</button>
+                <button className="text-gray-300 dark:text-gray-700 hover:text-red-500 text-xs ml-2" onMouseDown={(e) => { e.preventDefault(); deleteHistoryItem(jan); setHistory(loadHistory()) }}>×</button>
               </div>
             ))}
           </div>
