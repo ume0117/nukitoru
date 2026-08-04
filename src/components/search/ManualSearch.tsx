@@ -60,8 +60,21 @@ export function ManualSearch() {
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && canSearch) {
-      if (isASIN) window.open(getAmazonURL(value), '_blank', 'noopener,noreferrer')
-      else window.open(getRakutenURL(value), '_blank', 'noopener,noreferrer')
+      if (isASIN) {
+        window.open(getAmazonURL(value), '_blank', 'noopener,noreferrer')
+      } else if (priceData && priceData.minPrice) {
+        const rakutenMin = priceData.rakuten.length > 0 ? Math.min(...priceData.rakuten.map(i => i.price)) : null
+        const yahooMin = priceData.yahoo && priceData.yahoo.length > 0 ? Math.min(...priceData.yahoo.map(i => i.price)) : null
+        if (yahooMin && rakutenMin && yahooMin <= rakutenMin) {
+          const bestYahoo = priceData.yahoo.find(i => i.price === yahooMin)
+          window.open(bestYahoo?.url || getYahooURL(value), '_blank', 'noopener,noreferrer')
+        } else {
+          const bestRakuten = priceData.rakuten.find(i => i.price === rakutenMin)
+          window.open(bestRakuten?.url || getRakutenURL(value), '_blank', 'noopener,noreferrer')
+        }
+      } else {
+        window.open(getRakutenURL(value), '_blank', 'noopener,noreferrer')
+      }
     }
   }
 
