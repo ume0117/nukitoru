@@ -97,7 +97,7 @@ export function ManualSearch() {
       </div>
       <div className="relative">
         <input type="text" value={value} onChange={(e) => setValue(e.target.value)} onKeyDown={handleKeyDown} placeholder="JAN / SKU / ASIN" className="w-full h-10 px-3 pr-8 text-sm border border-gray-100 dark:border-gray-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-700 focus:outline-none focus:border-blue-600 transition-colors" />
-        {value && (<button onClick={() => setValue('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 dark:text-gray-700 hover:text-gray-500 text-xs">x</button>)}
+        {value && (<button onClick={() => { setValue(''); setData(null); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 dark:text-gray-700 hover:text-gray-500 text-xs">x</button>)}
       </div>
       <div className="grid grid-cols-3 gap-1.5">
         <a href={canSearch && !isASIN ? getRakutenURL(value) : undefined} target="_blank" rel="nofollow noopener noreferrer sponsored" onClick={(e) => { if (!canSearch || isASIN) e.preventDefault() }} className={`h-9 text-[10px] tracking-[0.15em] uppercase font-medium transition-all flex items-center justify-center border ${canSearch && !isASIN ? 'border-[#bf0000] text-[#bf0000] hover:bg-[#bf0000] hover:text-white cursor-pointer' : 'border-gray-100 dark:border-gray-900 text-gray-300 dark:text-gray-700 cursor-not-allowed'}`}>RAKUTEN</a>
