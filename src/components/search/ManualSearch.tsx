@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 const WORKER_URL = 'https://nukitoru-api.ume0117.workers.dev'
 const RAKUTEN_AFFILIATE_ID = '554ce912.68635f88.554ce913.1ffa91d2'
@@ -14,6 +14,10 @@ function usePriceData(jan: string) {
   const [data, setData] = useState<PriceData | null>(null)
   const [loading, setLoading] = useState(false)
   const fetchPrice = async () => {
+    if (jan && (jan.length === 8 || jan.length === 13)) {
+      saveHistory(jan)
+      setHistory(loadHistory())
+    }
     if (loading || data) return
     setLoading(true)
     try {
@@ -49,6 +53,28 @@ function getYahooURL(query: string): string {
   return 'https://search.shopping.yahoo.co.jp/search?p=' + encodeURIComponent(query.trim()) + '&sort=price&sc_e=afvc_shp_' + VC_SID
 }
 
+
+const HISTORY_KEY = 'nukitoru_search_history'
+const MAX_HISTORY = 20
+
+function loadHistory(): string[] {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
+function saveHistory(jan: string) {
+  const history = loadHistory().filter(h => h !== jan)
+  const updated = [jan, ...history].slice(0, MAX_HISTORY)
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(updated))
+}
+
+function deleteHistoryItem(jan: string) {
+  const history = loadHistory().filter(h => h !== jan)
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history))
+}
+
 export function ManualSearch() {
   const [value, setValue] = useState('')
   const trimmed = value.trim()
@@ -58,6 +84,13 @@ export function ManualSearch() {
   const isASIN = /^[A-Z0-9]{10}$/i.test(trimmed) && !/^\d+$/.test(trimmed)
   const canSearch = trimmed.length > 0
   const { data: priceData, loading: priceLoading, fetchPrice, resetData } = usePriceData(trimmed)
+  const [history, setHistory] = useState<string[]>([])
+  const [showHistory, setShowHistory] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    setHistory(loadHistory())
+  }, [])
 
   useEffect(() => {
     resetData()
@@ -101,7 +134,18 @@ export function ManualSearch() {
         {inputType && (<span className="text-[9px] tracking-[0.15em] px-2 py-0.5 border border-blue-600 text-blue-600 uppercase ml-auto">{inputType}</span>)}
       </div>
       <div className="relative">
-        <input type="text" value={value} onChange={(e) => setValue(e.target.value)} onKeyDown={handleKeyDown} placeholder="JAN / SKU / ASIN" className="w-full h-10 px-3 pr-8 text-sm border border-gray-100 dark:border-gray-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-700 focus:outline-none focus:border-blue-600 transition-colors" />
+        <input ref={inputRef} type="text" value={value} onChange={(e) => setValue(e.target.value)} onKeyDown={handleKeyDown} onFocus={() => setShowHistory(true)} onBlur={() => setTimeout(() => setShowHistory(false), 200)} placeholder="JAN / SKU / ASIN" className="w-full h-10 px-3 pr-8 text-sm border border-gray-100 dark:border-gray-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-700 focus:outline-none focus:border-blue-600 transition-colors" />
+        {showHistory && history.length > 0 && !value && (
+          <div className="absolute top-11 left-0 right-0 z-10 bg-white dark:bg-black border border-gray-100 dark:border-gray-800 shadow-lg">
+            <p className="text-[8px] tracking-[0.15em] text-gray-400 dark:text-gray-600 uppercase px-3 pt-2">Recent</p>
+            {history.map((jan) => (
+              <div key={jan} className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-900">
+                <button className="text-sm font-mono text-gray-700 dark:text-gray-300 flex-1 text-left" onClick={() => { setValue(jan); setShowHistory(false) }}>{jan}</button>
+                <button className="text-gray-300 dark:text-gray-700 hover:text-red-500 text-xs ml-2" onClick={() => { deleteHistoryItem(jan); setHistory(loadHistory()) }}>×</button>
+              </div>
+            ))}
+          </div>
+        )}
         {value && (<button onClick={() => { setValue(''); resetData(); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 dark:text-gray-700 hover:text-gray-500 text-xs">x</button>)}
       </div>
       <div className="grid grid-cols-3 gap-1.5">
