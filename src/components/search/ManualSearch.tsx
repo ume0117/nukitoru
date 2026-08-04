@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const WORKER_URL = 'https://nukitoru-api.ume0117.workers.dev'
 const RAKUTEN_AFFILIATE_ID = '554ce912.68635f88.554ce913.1ffa91d2'
@@ -58,6 +58,10 @@ export function ManualSearch() {
   const isASIN = /^[A-Z0-9]{10}$/i.test(trimmed) && !/^\d+$/.test(trimmed)
   const canSearch = trimmed.length > 0
   const { data: priceData, loading: priceLoading, fetchPrice, resetData } = usePriceData(trimmed)
+
+  useEffect(() => {
+    resetData()
+  }, [value])
 
   const openCheapest = async () => {
     if (isASIN) {
