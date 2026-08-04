@@ -141,7 +141,7 @@ export function ManualSearch() {
             {history.map((jan) => (
               <div key={jan} className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-900">
                 <button className="text-sm font-mono text-gray-700 dark:text-gray-300 flex-1 text-left" onMouseDown={(e) => { e.preventDefault(); setValue(jan); setShowHistory(false) }}>{jan}</button>
-                <button className="text-gray-300 dark:text-gray-700 hover:text-red-500 text-xs ml-2" onMouseDown={(e) => { e.preventDefault(); deleteHistoryItem(jan); setHistory(loadHistory()) }}>×</button>
+                <button className="text-gray-400 dark:text-gray-600 hover:text-red-500 text-sm font-medium ml-2 px-3 py-1 min-w-[36px] flex items-center justify-center" onMouseDown={(e) => { e.preventDefault(); deleteHistoryItem(jan); setHistory(loadHistory()) }}>×</button>
               </div>
             ))}
           </div>
