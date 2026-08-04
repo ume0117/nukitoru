@@ -5,6 +5,7 @@ import { useFileProcessor } from '@/hooks/useFileProcessor'
 import { UploadArea } from '@/components/upload/UploadArea'
 import { ManualSearch } from '@/components/search/ManualSearch'
 import { CameraScanner } from '@/components/camera/CameraScanner'
+import { CatalogMode } from '@/components/catalog/CatalogMode'
 import { InventoryScanner, type InventorySession } from '@/components/camera/InventoryScanner'
 import { InventoryHistory, saveToHistory } from '@/components/inventory/InventoryHistory'
 import { ScanProgress } from '@/components/scanner/ScanProgress'
@@ -43,6 +44,7 @@ export function ScannerSection() {
   const [inventoryResult, setInventoryResult] = useState<InventorySession | null>(null)
   const [showInventoryHistory, setShowInventoryHistory] = useState(false)
   const [showInventoryComplete, setShowInventoryComplete] = useState(false)
+  const [catalogOpen, setCatalogOpen] = useState(false)
 
   const handleInventoryFinish = (session: InventorySession) => {
     setInventoryOpen(false)
@@ -185,6 +187,7 @@ export function ScannerSection() {
       )}
 
       {cameraOpen && <CameraScanner onResult={handleCameraResult} onClose={() => setCameraOpen(false)} />}
+      {catalogOpen && <CatalogMode onClose={() => setCatalogOpen(false)} />}
     </div>
   )
 }
