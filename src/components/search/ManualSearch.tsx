@@ -16,6 +16,7 @@ function usePriceData(jan: string) {
   const fetchPrice = async () => {
     if (jan && (jan.length === 8 || jan.length === 13)) {
       saveHistory(jan)
+      setHistory(loadHistory())
     }
     if (loading || data) return
     setLoading(true)
@@ -93,6 +94,7 @@ export function ManualSearch() {
 
   useEffect(() => {
     resetData()
+    setHistory(loadHistory())
   }, [value])
 
   const openCheapest = async () => {
