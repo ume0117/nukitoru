@@ -103,6 +103,7 @@ export function ScannerSection() {
           <UploadArea onFileSelect={processFile} isScanning={isScanning} onCameraClick={() => setCameraOpen(true)} />
           <ManualSearch />
           <div className="flex gap-2 pt-1">
+            <button onClick={() => setCatalogOpen(true)} className="flex-1 h-11 border border-blue-600/50 hover:border-blue-600 hover:bg-blue-600/10 flex items-center justify-center gap-2 text-[11px] tracking-[0.2em] font-medium text-blue-600 uppercase transition-colors">Catalog</button>
             <button onClick={() => setInventoryOpen(true)} className="flex-1 h-11 border border-gray-400 dark:border-gray-600 bg-gray-900/30 hover:border-gray-300 dark:hover:border-gray-400 flex items-center justify-center gap-2 text-[11px] tracking-[0.2em] font-medium text-gray-300 dark:text-gray-400 uppercase transition-colors">Inventory</button>
             <button onClick={() => setShowInventoryHistory(true)} className="h-11 px-4 border border-gray-400 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-400 text-gray-300 dark:text-gray-400 text-[11px] tracking-[0.15em] uppercase transition-colors">History</button>
           </div>
