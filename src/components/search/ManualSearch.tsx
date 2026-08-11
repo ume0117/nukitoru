@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { checkIsPro, getRemainingUses, consumeUse } from '@/lib/license'
 
 const WORKER_URL = 'https://nukitoru-api.ume0117.workers.dev'
 const RAKUTEN_AFFILIATE_ID = '554ce912.68635f88.554ce913.1ffa91d2'
@@ -91,6 +92,26 @@ export function ManualSearch() {
     setHistory(loadHistory())
   }, [])
 
+  const [isPro, setIsPro] = useState(false)
+  const [remaining, setRemaining] = useState(10)
+
+  useEffect(() => {
+    checkIsPro().then(setIsPro)
+    setRemaining(getRemainingUses('priceCheck'))
+  }, [])
+
+  const handleFetchPrice = async () => {
+    if (!isPro && getRemainingUses('priceCheck') <= 0) {
+      alert('本日の無料枠(10回)を使い切りました。Proにアップグレードすると無制限に使えます。')
+      return
+    }
+    await fetchPrice()
+    if (!isPro) {
+      consumeUse('priceCheck')
+      setRemaining(getRemainingUses('priceCheck'))
+    }
+  }
+
   useEffect(() => {
     resetData()
     setHistory(loadHistory())
@@ -103,7 +124,7 @@ export function ManualSearch() {
     }
     let price = priceData
     if (!price) {
-      await fetchPrice()
+      await handleFetchPrice()
       return
     }
     const rakutenMin = price.rakuten.length > 0 ? Math.min(...price.rakuten.map(i => i.price)) : null
@@ -154,8 +175,8 @@ export function ManualSearch() {
         <a href={canSearch && !isASIN ? getYahooURL(value) : undefined} target="_blank" rel="nofollow noopener noreferrer sponsored" onClick={(e) => { if (!canSearch || isASIN) e.preventDefault() }} className={`h-9 text-[10px] tracking-[0.15em] uppercase font-medium transition-all flex items-center justify-center border 'border-gray-400 dark:border-gray-600 text-gray-400 dark:text-gray-600 hover:border-[#FF0033] hover:text-[#FF0033] cursor-pointer'`}>YAHOO!</a>
       </div>
       {isJAN && canSearch && !priceData && (
-        <button onClick={fetchPrice} disabled={priceLoading} className="w-full h-8 border border-gray-400 dark:border-gray-600 text-gray-400 dark:text-gray-600 text-[9px] tracking-[0.15em] uppercase hover:border-blue-600 hover:text-blue-600 transition-colors">
-          {priceLoading ? 'Loading...' : '¥ Check Price'}
+        <button onClick={handleFetchPrice} disabled={priceLoading || (!isPro && remaining <= 0)} className="w-full h-8 border border-gray-400 dark:border-gray-600 text-gray-400 dark:text-gray-600 text-[9px] tracking-[0.15em] uppercase hover:border-blue-600 hover:text-blue-600 transition-colors disabled:opacity-40">
+          {priceLoading ? 'Loading...' : !isPro && remaining <= 0 ? '本日の無料枠を使い切りました' : !isPro ? '¥ Check Price (残り' + remaining + '回)' : '¥ Check Price'}
         </button>
       )}
       {priceData && priceData.rakuten.length > 0 && priceData.rakuten[0].image && (
