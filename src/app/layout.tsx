@@ -17,12 +17,15 @@ export const viewport: Viewport = {
 
 // ── SEO・OGP・PWA メタデータ ──
 export const metadata: Metadata = {
-  title: 'NUKITORU（ヌキトル）- PDF・画像からURLやコードを一発抽出',
+  title: 'NUKITORU - PDF・画像からJANコード一括抽出｜楽天・Amazon・Yahoo!価格比較',
   description:
-    'PDFや画像・スクリーンショットからQRコード・JANコード・EAN・バーコードを無料で一括抽出。URLはすぐ開ける。Chrome・Safari対応。ブラウザだけで動作。',
+    'PDFや画像からJANコード・QRコード・バーコードを無料で一括抽出。楽天・Amazon・Yahoo!ショッピングの最安値をその場で比較。EC事業者・商品登録代行・棚卸し作業に最適。ブラウザ完結・登録不要・インストール不要。',
   keywords: [
-    'QRコード抽出', 'JANコード', 'バーコード読み取り', 'PDF QR',
+    'JANコード抽出', 'QRコード抽出', 'バーコード読み取り', 'PDF JANコード',
     'EAN-13', 'CODE128', '無料ツール', 'ヌキトル', 'NUKITORU',
+    '楽天価格比較', 'Amazon価格比較', 'Yahoo!ショッピング',
+    'EC事業者', '商品登録', '棚卸し', 'バーコードスキャン',
+    'せどり', 'メーカーカタログ', '在庫管理', '無料バーコードリーダー',
   ],
   // ── ファビコン ──
   icons: {
@@ -50,8 +53,8 @@ export const metadata: Metadata = {
   },
   // ── OGP ──
   openGraph: {
-    title: 'NUKITORU（ヌキトル）- PDF・画像からURLを一発抽出',
-    description: 'PDFや画像からQRコード・JANコード・バーコードを無料で一括抽出。Chrome・Safari対応。',
+    title: 'NUKITORU - PDF・画像からJANコード一括抽出｜楽天・Amazon・Yahoo!価格比較',
+    description: 'PDFや画像からJANコード・バーコードを無料で一括抽出。楽天・Amazon・Yahoo!最安値比較。EC事業者・棚卸し・商品登録に最適。',
     type: 'website',
     locale: 'ja_JP',
     url: BASE_URL,
@@ -67,8 +70,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'NUKITORU（ヌキトル）- PDF・画像からURLを一発抽出',
-    description: 'PDFや画像からQRコード・JANコード・バーコードを無料で一括抽出。',
+    title: 'NUKITORU - PDF・画像からJANコード一括抽出｜楽天・Amazon・Yahoo!価格比較',
+    description: 'PDFや画像からJANコード・バーコードを無料で一括抽出。楽天・Amazon・Yahoo!最安値比較。EC事業者・棚卸し・商品登録に最適。',
     images: [`${BASE_URL}/ogp.png`],
   },
   robots: {
