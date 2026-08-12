@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { checkIsPro, getRemainingUses, consumeUse } from '@/lib/license'
+import { checkIsPro, getRemainingUses, consumeUse, getHistorySyncEnabled, fetchRemoteHistory, pushRemoteHistory } from '@/lib/license'
 
 const WORKER_URL = 'https://nukitoru-api.ume0117.workers.dev'
 const RAKUTEN_AFFILIATE_ID = '554ce912.68635f88.554ce913.1ffa91d2'
@@ -68,11 +68,17 @@ function saveHistory(jan: string) {
   const history = loadHistory().filter(h => h !== jan)
   const updated = [jan, ...history].slice(0, MAX_HISTORY)
   localStorage.setItem(HISTORY_KEY, JSON.stringify(updated))
+  if (getHistorySyncEnabled()) {
+    pushRemoteHistory(updated)
+  }
 }
 
 function deleteHistoryItem(jan: string) {
   const history = loadHistory().filter(h => h !== jan)
   localStorage.setItem(HISTORY_KEY, JSON.stringify(history))
+  if (getHistorySyncEnabled()) {
+    pushRemoteHistory(history)
+  }
 }
 
 export function ManualSearch() {
@@ -89,7 +95,16 @@ export function ManualSearch() {
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    setHistory(loadHistory())
+    const local = loadHistory()
+    setHistory(local)
+    if (getHistorySyncEnabled()) {
+      fetchRemoteHistory().then((remote) => {
+        if (!remote) return
+        const merged = Array.from(new Set([...remote, ...local])).slice(0, MAX_HISTORY)
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(merged))
+        setHistory(merged)
+      })
+    }
   }, [])
 
   const [isPro, setIsPro] = useState(false)
