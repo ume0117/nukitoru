@@ -209,8 +209,8 @@ export function ManualSearch() {
           <p className="text-[9px] tracking-[0.15em] text-gray-400 uppercase">Price Comparison <span className="text-blue-600">Min ¥{priceData.minPrice.toLocaleString()}</span></p>
           {priceData.rakuten.length > 0 && (
             <div className="space-y-0.5">
-              <p className="text-[8px] tracking-[0.1em] text-gray-300 dark:text-gray-700 uppercase px-1">Rakuten</p>
-              {priceData.rakuten.map((item, i) => (
+              <p className="text-[8px] tracking-[0.1em] text-gray-300 dark:text-gray-700 uppercase px-1">Rakuten{!isPro && priceData.rakuten.length > 1 ? ` (最安値のみ表示 / 全${priceData.rakuten.length}件)` : ''}</p>
+              {(isPro ? priceData.rakuten : priceData.rakuten.filter(item => item.price === priceData.minPrice).slice(0, 1)).map((item, i) => (
                 <a key={i} href={item.url} target="_blank" rel="nofollow noopener noreferrer sponsored" className={`flex items-center justify-between h-8 px-3 border text-[10px] transition-colors ${item.price === priceData.minPrice ? 'border-blue-600 text-blue-600' : 'border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-500'}`}>
                   <span className="truncate mr-2">{item.shop}</span>
                   <span className="shrink-0 font-medium">¥{item.price.toLocaleString()}{item.price === priceData.minPrice ? ' ★' : ''}</span>
@@ -220,14 +220,17 @@ export function ManualSearch() {
           )}
           {priceData.yahoo && priceData.yahoo.length > 0 && (
             <div className="space-y-0.5">
-              <p className="text-[8px] tracking-[0.1em] text-gray-300 dark:text-gray-700 uppercase px-1">Yahoo!</p>
-              {priceData.yahoo.map((item, i) => (
+              <p className="text-[8px] tracking-[0.1em] text-gray-300 dark:text-gray-700 uppercase px-1">Yahoo!{!isPro && priceData.yahoo.length > 1 ? ` (最安値のみ表示 / 全${priceData.yahoo.length}件)` : ''}</p>
+              {(isPro ? priceData.yahoo : priceData.yahoo.filter(item => item.price === priceData.minPrice).slice(0, 1)).map((item, i) => (
                 <a key={i} href={item.url} target="_blank" rel="nofollow noopener noreferrer" className={`flex items-center justify-between h-8 px-3 border text-[10px] transition-colors ${item.price === priceData.minPrice ? 'border-blue-600 text-blue-600' : 'border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-500'}`}>
                   <span className="truncate mr-2">{item.shop}</span>
                   <span className="shrink-0 font-medium">¥{item.price.toLocaleString()}{item.price === priceData.minPrice ? ' ★' : ''}</span>
                 </a>
               ))}
             </div>
+          )}
+          {!isPro && (priceData.rakuten.length > 1 || (priceData.yahoo && priceData.yahoo.length > 1)) && (
+            <a href="/upgrade" className="block text-center text-[9px] tracking-[0.1em] text-blue-500 hover:text-blue-600 uppercase transition-colors pt-1">全店舗の価格分布を見る（Pro限定）→</a>
           )}
         </div>
       )}
