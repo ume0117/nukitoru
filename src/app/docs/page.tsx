@@ -66,6 +66,7 @@ const JA = {
         { step: 'CATALOGモード', desc: '無料版は1回あたり3ページまで。PRO版は無制限で使えます。' },
         { step: '複数ファイル一括処理', desc: '無料版は1回あたり5ファイルまで。PRO版は無制限で使えます。' },
         { step: '料金・トライアル', desc: '月額¥390、7日間の無料トライアル付き。トライアル中の解約でも課金は発生しません。いつでも解約できます。' },
+        { step: '検索履歴のクラウド同期', desc: 'PRO限定機能。ライセンスキーページで同期をオンにすると、検索履歴がサーバーに保存され、別のデバイス・ブラウザでも同じ履歴を引き継げます。' },
         { step: '解約方法', desc: '決済完了時に届くメール内の「サブスクリプションを管理」リンクから、いつでもご自身で解約できます。解約してもトライアル期間・請求期間の終了日までは引き続きPRO機能をご利用いただけます。' },
       ]
     },
@@ -142,6 +143,7 @@ const EN = {
         { step: 'CATALOG mode', desc: 'Free: up to 3 pages per run. PRO: unlimited.' },
         { step: 'Batch multi-file processing', desc: 'Free: up to 5 files per run. PRO: unlimited.' },
         { step: 'Pricing & trial', desc: '¥390/month with a 7-day free trial. No charge if you cancel during the trial. Cancel anytime.' },
+        { step: 'Cloud sync for search history', desc: 'PRO-only feature. Turn on sync on the license key page to save your search history to the server and carry it across devices and browsers.' },
         { step: 'How to cancel', desc: 'You can cancel anytime yourself via the "Manage subscription" link in the receipt email you received at checkout. PRO features remain available until the end of your current trial or billing period.' },
       ]
     },
