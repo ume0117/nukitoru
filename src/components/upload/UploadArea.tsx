@@ -22,6 +22,7 @@ interface UploadAreaProps {
 export function UploadArea({ onFileSelect, isScanning, onCameraClick }: UploadAreaProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [isPro, setIsPro] = useState(false)
+  const [limitedNotice, setLimitedNotice] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -39,8 +40,10 @@ export function UploadArea({ onFileSelect, isScanning, onCameraClick }: UploadAr
     (fileList: FileList) => {
       let files = Array.from(fileList)
       if (!isPro && files.length > FREE_FILE_LIMIT) {
-        alert(`無料版は一度に${FREE_FILE_LIMIT}ファイルまで処理できます。先頭${FREE_FILE_LIMIT}件のみ処理します。全ファイルまとめて処理するにはProへアップグレードしてください。`)
+        setLimitedNotice(true)
         files = files.slice(0, FREE_FILE_LIMIT)
+      } else {
+        setLimitedNotice(false)
       }
       files.forEach(file => handleFile(file))
     },
@@ -171,6 +174,12 @@ export function UploadArea({ onFileSelect, isScanning, onCameraClick }: UploadAr
           </svg>
           Camera Scan
         </button>
+      )}
+      {limitedNotice && (
+        <p className="text-[10px] text-yellow-500 text-center leading-relaxed">
+          無料版は一度に{FREE_FILE_LIMIT}ファイルまでです。先頭{FREE_FILE_LIMIT}件のみ処理しました。
+          <a href="/upgrade" onClick={(e) => e.stopPropagation()} className="text-blue-500 hover:text-blue-600 underline ml-1">Proにアップグレード →</a>
+        </p>
       )}
     </div>
   )
