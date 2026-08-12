@@ -102,7 +102,6 @@ export function ManualSearch() {
 
   const handleFetchPrice = async () => {
     if (!isPro && getRemainingUses('priceCheck') <= 0) {
-      alert('本日の無料枠(10回)を使い切りました。Proにアップグレードすると無制限に使えます。')
       return
     }
     await fetchPrice()
@@ -175,9 +174,14 @@ export function ManualSearch() {
         <a href={canSearch && !isASIN ? getYahooURL(value) : undefined} target="_blank" rel="nofollow noopener noreferrer sponsored" onClick={(e) => { if (!canSearch || isASIN) e.preventDefault() }} className={`h-9 text-[10px] tracking-[0.15em] uppercase font-medium transition-all flex items-center justify-center border 'border-gray-400 dark:border-gray-600 text-gray-400 dark:text-gray-600 hover:border-[#FF0033] hover:text-[#FF0033] cursor-pointer'`}>YAHOO!</a>
       </div>
       {isJAN && canSearch && !priceData && (
-        <button onClick={handleFetchPrice} disabled={priceLoading || (!isPro && remaining <= 0)} className="w-full h-8 border border-gray-400 dark:border-gray-600 text-gray-400 dark:text-gray-600 text-[9px] tracking-[0.15em] uppercase hover:border-blue-600 hover:text-blue-600 transition-colors disabled:opacity-40">
-          {priceLoading ? 'Loading...' : !isPro && remaining <= 0 ? '本日の無料枠を使い切りました' : !isPro ? '¥ Check Price (残り' + remaining + '回)' : '¥ Check Price'}
-        </button>
+        <div className="space-y-1.5">
+          <button onClick={handleFetchPrice} disabled={priceLoading || (!isPro && remaining <= 0)} className="w-full h-8 border border-gray-400 dark:border-gray-600 text-gray-400 dark:text-gray-600 text-[9px] tracking-[0.15em] uppercase hover:border-blue-600 hover:text-blue-600 transition-colors disabled:opacity-40">
+            {priceLoading ? 'Loading...' : !isPro && remaining <= 0 ? '本日の無料枠を使い切りました' : !isPro ? '¥ Check Price (残り' + remaining + '回)' : '¥ Check Price'}
+          </button>
+          {!isPro && remaining <= 0 && (
+            <a href="/upgrade" className="block text-center text-[9px] tracking-[0.1em] text-blue-500 hover:text-blue-600 uppercase transition-colors">Proにアップグレードして無制限に →</a>
+          )}
+        </div>
       )}
       {priceData && priceData.rakuten.length > 0 && priceData.rakuten[0].image && (
         <div className="flex items-center gap-3 border border-gray-100 dark:border-gray-800 p-2">
