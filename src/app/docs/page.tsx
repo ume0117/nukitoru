@@ -58,6 +58,17 @@ const JA = {
       ]
     },
     {
+      id: 'pro',
+      title: 'PRO版について',
+      content: [
+        { step: '価格比較', desc: '無料版は1日10回まで。PRO版は無制限で使えます。' },
+        { step: 'CSV+価格出力', desc: '無料版は1日3回まで。PRO版は無制限で使えます。' },
+        { step: 'CATALOGモード', desc: '無料版は1回あたり3ページまで。PRO版は無制限で使えます。' },
+        { step: '複数ファイル一括処理', desc: '無料版は1回あたり5ファイルまで。PRO版は無制限で使えます。' },
+        { step: '料金・トライアル', desc: '月額¥390、7日間の無料トライアル付き。トライアル中の解約でも課金は発生しません。いつでも解約できます。' },
+      ]
+    },
+    {
       id: 'privacy',
       title: 'プライバシー',
       content: [
@@ -119,6 +130,17 @@ const EN = {
       content: [
         { step: 'How to use', desc: 'Tap "INVENTORY" to start the camera and continuously scan barcodes. Each scan of the same product adds to its count. Download results as CSV when done.' },
         { step: 'History', desc: 'Tap "HISTORY" to view the last 30 inventory sessions. Re-download any session as CSV.' },
+      ]
+    },
+    {
+      id: 'pro',
+      title: 'About PRO',
+      content: [
+        { step: 'Price comparison', desc: 'Free: up to 10 times/day. PRO: unlimited.' },
+        { step: 'CSV + price export', desc: 'Free: up to 3 times/day. PRO: unlimited.' },
+        { step: 'CATALOG mode', desc: 'Free: up to 3 pages per run. PRO: unlimited.' },
+        { step: 'Batch multi-file processing', desc: 'Free: up to 5 files per run. PRO: unlimited.' },
+        { step: 'Pricing & trial', desc: '¥390/month with a 7-day free trial. No charge if you cancel during the trial. Cancel anytime.' },
       ]
     },
     {
