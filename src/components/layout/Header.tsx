@@ -3,8 +3,6 @@
 import { useEffect, useState } from 'react'
 import { checkIsPro } from '@/lib/license'
 
-const PAYMENT_LINK_URL = 'https://buy.stripe.com/3cI5kEf6mdLj9j9ar4d3i00'
-
 export function Header() {
   const [isPro, setIsPro] = useState<boolean | null>(null)
 
@@ -39,7 +37,7 @@ export function Header() {
             Pro
           </span>
         ) : (
-          <a href={PAYMENT_LINK_URL} target="_blank" rel="noopener noreferrer" className="text-[9px] tracking-[0.2em] text-gray-400 dark:text-gray-600 hover:text-blue-600 dark:hover:text-blue-500 uppercase transition-colors">
+          <a href="/upgrade" className="text-[9px] tracking-[0.2em] text-gray-400 dark:text-gray-600 hover:text-blue-600 dark:hover:text-blue-500 uppercase transition-colors">
             Proになる
           </a>
         )}
