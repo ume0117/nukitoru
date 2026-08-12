@@ -2,19 +2,27 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { getSavedLicenseKey, saveLicenseKey, clearLicenseKey, checkIsPro } from '@/lib/license'
+import { getSavedLicenseKey, saveLicenseKey, clearLicenseKey, checkIsPro, getHistorySyncEnabled, setHistorySyncEnabled } from '@/lib/license'
 
 export default function LicensePage() {
   const [input, setInput] = useState('')
   const [status, setStatus] = useState<'idle' | 'checking' | 'valid' | 'invalid'>('idle')
   const [currentKey, setCurrentKey] = useState<string | null>(null)
   const [isPro, setIsPro] = useState(false)
+  const [syncEnabled, setSyncEnabled] = useState(false)
 
   useEffect(() => {
     const key = getSavedLicenseKey()
     setCurrentKey(key)
     checkIsPro().then(setIsPro)
+    setSyncEnabled(getHistorySyncEnabled())
   }, [])
+
+  const handleToggleSync = () => {
+    const next = !syncEnabled
+    setHistorySyncEnabled(next)
+    setSyncEnabled(next)
+  }
 
   const handleActivate = async () => {
     const trimmed = input.trim()
@@ -60,6 +68,18 @@ export default function LicensePage() {
               <p className="text-[13px] text-gray-900 dark:text-white font-medium">{isPro ? 'PRO 有効' : 'キーは保存されていますが無効です'}</p>
               <p className="text-[10px] font-mono text-gray-500 break-all">{currentKey}</p>
             </div>
+
+            {isPro && (
+              <div className="border border-gray-200 dark:border-gray-800 p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-[11px] text-gray-900 dark:text-white font-medium mb-1">検索履歴を同期する</p>
+                  <p className="text-[10px] text-gray-500 leading-relaxed">オンにすると、検索履歴をこのライセンスキーに紐付けてサーバーに保存し、別のデバイスでも同じ履歴を見られるようになります。</p>
+                </div>
+                <button onClick={handleToggleSync} className={`shrink-0 ml-4 w-11 h-6 rounded-full transition-colors relative ${syncEnabled ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-700'}`}>
+                  <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${syncEnabled ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                </button>
+              </div>
+            )}
             <button onClick={handleRemove} className="w-full h-10 border border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-500 text-[10px] tracking-[0.15em] uppercase hover:border-red-500 hover:text-red-500 transition-colors">
               このキーを削除
             </button>

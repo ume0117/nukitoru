@@ -111,3 +111,40 @@ export function consumeUse(feature: FeatureKey, amount: number = 1) {
 export function getDailyLimit(feature: FeatureKey): number {
   return DAILY_LIMITS[feature]
 }
+
+// ── 検索履歴クラウド同期 ──────────
+
+const HISTORY_SYNC_STORAGE = "nukitoru_history_sync_enabled"
+
+export function getHistorySyncEnabled(): boolean {
+  if (typeof window === "undefined") return false
+  return localStorage.getItem(HISTORY_SYNC_STORAGE) === "true"
+}
+
+export function setHistorySyncEnabled(enabled: boolean) {
+  localStorage.setItem(HISTORY_SYNC_STORAGE, enabled ? "true" : "false")
+}
+
+export async function fetchRemoteHistory(): Promise<string[] | null> {
+  const key = getSavedLicenseKey()
+  if (!key || !getHistorySyncEnabled()) return null
+  try {
+    const res = await fetch(WORKER_URL + "/history-sync?key=" + encodeURIComponent(key))
+    const data = await res.json()
+    return Array.isArray(data.history) ? data.history : null
+  } catch {
+    return null
+  }
+}
+
+export async function pushRemoteHistory(history: string[]): Promise<void> {
+  const key = getSavedLicenseKey()
+  if (!key || !getHistorySyncEnabled()) return
+  try {
+    await fetch(WORKER_URL + "/history-sync?key=" + encodeURIComponent(key), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ history }),
+    })
+  } catch {}
+}
