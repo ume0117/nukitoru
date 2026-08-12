@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { checkIsPro } from '@/lib/license'
 import type { ScanResult } from '@/types'
 
 const WORKER_URL = 'https://nukitoru-api.ume0117.workers.dev'
@@ -67,9 +68,17 @@ export function CatalogMode({ onClose }: { onClose: () => void }) {
   const [phase, setPhase] = useState<'idle' | 'scanning' | 'pricing' | 'done' | 'error'>('idle')
   const [progress, setProgress] = useState({ current: 0, total: 0, message: '' })
   const [results, setResults] = useState<PriceResult[]>([])
+  const [isPro, setIsPro] = useState(false)
+  const [limitedByFreePlan, setLimitedByFreePlan] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const FREE_PAGE_LIMIT = 3
+
+  useEffect(() => {
+    checkIsPro().then(setIsPro)
+  }, [])
 
   const handleFile = async (file: File) => {
+    setLimitedByFreePlan(false)
     setPhase('scanning')
     setProgress({ current: 0, total: 1, message: 'PDFをスキャン中...' })
     try {
@@ -77,7 +86,14 @@ export function CatalogMode({ onClose }: { onClose: () => void }) {
       const scanned = await processPdf(file, (current, total, message) => {
         setProgress({ current, total, message })
       })
-      const janOnly = scanned.filter((r: ScanResult) => r.type === 'EAN_13' || r.type === 'EAN_8')
+      let janOnly = scanned.filter((r: ScanResult) => r.type === 'EAN_13' || r.type === 'EAN_8')
+      if (!isPro) {
+        const limited = janOnly.filter((r: ScanResult) => (r.page ?? 1) <= FREE_PAGE_LIMIT)
+        if (limited.length < janOnly.length) {
+          setLimitedByFreePlan(true)
+        }
+        janOnly = limited
+      }
       if (janOnly.length === 0) {
         setProgress({ current: 0, total: 0, message: 'JANコードが見つかりませんでした' })
         setPhase('error')
@@ -133,6 +149,9 @@ export function CatalogMode({ onClose }: { onClose: () => void }) {
           <div className="w-full max-w-xs space-y-4">
             <p className="text-[11px] tracking-[0.2em] text-blue-600 uppercase text-center">Complete</p>
             <p className="text-[10px] text-gray-400 text-center">{progress.message}</p>
+            {limitedByFreePlan && (
+              <p className="text-[10px] text-yellow-500 text-center leading-relaxed">無料版は{FREE_PAGE_LIMIT}ページまでの処理です。全ページ処理するにはProへアップグレードしてください。</p>
+            )}
             <button onClick={() => downloadCatalogCSV(results)} className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white text-[11px] tracking-[0.2em] uppercase transition-colors">↓ CSVダウンロード</button>
             <button onClick={() => { setPhase('idle'); setResults([]) }} className="w-full h-10 border border-gray-800 text-gray-600 text-[10px] tracking-[0.15em] uppercase transition-colors">別のPDFを処理</button>
           </div>
