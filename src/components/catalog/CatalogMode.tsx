@@ -150,7 +150,10 @@ export function CatalogMode({ onClose }: { onClose: () => void }) {
             <p className="text-[11px] tracking-[0.2em] text-blue-600 uppercase text-center">Complete</p>
             <p className="text-[10px] text-gray-400 text-center">{progress.message}</p>
             {limitedByFreePlan && (
-              <p className="text-[10px] text-yellow-500 text-center leading-relaxed">無料版は{FREE_PAGE_LIMIT}ページまでの処理です。全ページ処理するにはProへアップグレードしてください。</p>
+              <p className="text-[10px] text-yellow-500 text-center leading-relaxed">
+                無料版は{FREE_PAGE_LIMIT}ページまでの処理です。
+                <a href="/upgrade" className="text-blue-500 hover:text-blue-600 underline ml-1">Proにアップグレード →</a>
+              </p>
             )}
             <button onClick={() => downloadCatalogCSV(results)} className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white text-[11px] tracking-[0.2em] uppercase transition-colors">↓ CSVダウンロード</button>
             <button onClick={() => { setPhase('idle'); setResults([]) }} className="w-full h-10 border border-gray-800 text-gray-600 text-[10px] tracking-[0.15em] uppercase transition-colors">別のPDFを処理</button>
