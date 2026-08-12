@@ -3,7 +3,8 @@
 const WORKER_URL = 'https://nukitoru-api.ume0117.workers.dev'
 import * as XLSX from 'xlsx'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { checkIsPro, getRemainingUses, consumeUse } from '@/lib/license'
 import type { ScanResult } from '@/types'
 import { ResultItem } from './ResultItem'
 import { getResultPriority } from '@/lib/utils/qr-content'
@@ -142,6 +143,27 @@ export function ResultList({ results, onDelete, onClear }: ResultListProps) {
   const [allCopied, setAllCopied] = useState(false)
   const [filter, setFilter] = useState<FilterType>(() => getInitialFilter(results))
   const [priceLoading, setPriceLoading] = useState(false)
+  const [isPro, setIsPro] = useState(false)
+  const [csvPriceRemaining, setCsvPriceRemaining] = useState(3)
+
+  useEffect(() => {
+    checkIsPro().then(setIsPro)
+    setCsvPriceRemaining(getRemainingUses('csvPrice'))
+  }, [])
+
+  const handleDownloadCSVWithPrice = async () => {
+    if (!isPro && getRemainingUses('csvPrice') <= 0) {
+      alert('本日の無料枠(3回)を使い切りました。Proにアップグレードすると無制限に使えます。')
+      return
+    }
+    setPriceLoading(true)
+    await downloadCSVWithPrice(filtered)
+    setPriceLoading(false)
+    if (!isPro) {
+      consumeUse('csvPrice')
+      setCsvPriceRemaining(getRemainingUses('csvPrice'))
+    }
+  }
 
   if (results.length === 0) return null
 
@@ -204,7 +226,7 @@ export function ResultList({ results, onDelete, onClear }: ResultListProps) {
         {/* アクションボタン */}
         <div className="flex items-center gap-2">
           <button onClick={() => downloadCSV(filtered)} className="h-8 px-3 border border-blue-600 text-blue-600 text-[10px] tracking-[0.15em] uppercase font-medium hover:bg-blue-600 hover:text-white transition-colors">↓ CSV</button>
-          <button onClick={async () => { setPriceLoading(true); await downloadCSVWithPrice(filtered); setPriceLoading(false) }} disabled={priceLoading} className="h-8 px-3 border border-blue-600 text-blue-600 text-[10px] tracking-[0.15em] uppercase font-medium hover:bg-blue-600 hover:text-white transition-colors disabled:opacity-50 whitespace-nowrap">{priceLoading ? '取得中...' : '↓ CSV+¥'}</button>
+          <button onClick={handleDownloadCSVWithPrice} disabled={priceLoading || (!isPro && csvPriceRemaining <= 0)} className="h-8 px-3 border border-blue-600 text-blue-600 text-[10px] tracking-[0.15em] uppercase font-medium hover:bg-blue-600 hover:text-white transition-colors disabled:opacity-50 whitespace-nowrap">{priceLoading ? '取得中...' : !isPro && csvPriceRemaining <= 0 ? '無料枠終了' : !isPro ? `↓ CSV+¥ (残り${csvPriceRemaining})` : '↓ CSV+¥'}</button>
           <button onClick={() => downloadExcel(filtered)} className="h-8 px-3 border border-green-600 text-green-600 text-[10px] tracking-[0.15em] uppercase font-medium hover:bg-green-600 hover:text-white transition-colors">↓ Excel</button>
           <button onClick={handleCopyAll} className={cn('h-8 px-3 border text-[10px] tracking-[0.15em] uppercase font-medium transition-colors', allCopied ? 'border-blue-600 text-blue-600' : 'border-gray-400 dark:border-gray-600 text-gray-400 dark:text-gray-600 hover:border-blue-600 hover:text-blue-600')}>
             {allCopied ? '✓ Copied' : 'Copy All'}
