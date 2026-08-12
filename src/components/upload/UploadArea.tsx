@@ -4,10 +4,14 @@ import {
   useRef,
   useState,
   useCallback,
+  useEffect,
   type DragEvent,
   type ChangeEvent,
 } from 'react'
 import { cn } from '@/lib/utils/cn'
+import { checkIsPro } from '@/lib/license'
+
+const FREE_FILE_LIMIT = 5
 
 interface UploadAreaProps {
   onFileSelect: (file: File) => void
@@ -17,13 +21,30 @@ interface UploadAreaProps {
 
 export function UploadArea({ onFileSelect, isScanning, onCameraClick }: UploadAreaProps) {
   const [isDragging, setIsDragging] = useState(false)
+  const [isPro, setIsPro] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    checkIsPro().then(setIsPro)
+  }, [])
 
   const handleFile = useCallback(
     (file: File) => {
       if (!isScanning) onFileSelect(file)
     },
     [onFileSelect, isScanning],
+  )
+
+  const handleFiles = useCallback(
+    (fileList: FileList) => {
+      let files = Array.from(fileList)
+      if (!isPro && files.length > FREE_FILE_LIMIT) {
+        alert(`無料版は一度に${FREE_FILE_LIMIT}ファイルまで処理できます。先頭${FREE_FILE_LIMIT}件のみ処理します。全ファイルまとめて処理するにはProへアップグレードしてください。`)
+        files = files.slice(0, FREE_FILE_LIMIT)
+      }
+      files.forEach(file => handleFile(file))
+    },
+    [isPro, handleFile],
   )
 
   const onDragOver = (e: DragEvent) => {
@@ -44,14 +65,14 @@ export function UploadArea({ onFileSelect, isScanning, onCameraClick }: UploadAr
     setIsDragging(false)
     const files = e.dataTransfer.files
     if (files && files.length > 0) {
-      Array.from(files).forEach(file => handleFile(file))
+      handleFiles(files)
     }
   }
 
   const onChange = (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (files && files.length > 0) {
-      Array.from(files).forEach(file => handleFile(file))
+      handleFiles(files)
     }
     e.target.value = ''
   }
