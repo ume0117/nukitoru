@@ -108,6 +108,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <p>サーバーへの送信は一切行いません。</p>
             <p className="mt-2">
               <a href="/docs" className="text-[10px] tracking-[0.15em] text-gray-400 dark:text-gray-600 hover:text-blue-600 transition-colors">使い方</a>
+              <span className="text-gray-600 dark:text-gray-700"> · </span>
+              <a href="/license" className="text-[10px] tracking-[0.15em] text-gray-400 dark:text-gray-600 hover:text-blue-600 transition-colors">ライセンスキー</a>
                 <span className="text-gray-600 dark:text-gray-700"> · </span>
                 <a href="/changelog" className="text-[10px] tracking-[0.15em] text-gray-400 dark:text-gray-600 hover:text-blue-600 transition-colors">更新履歴</a>
                 <span className="text-gray-600 dark:text-gray-700"> · </span>
