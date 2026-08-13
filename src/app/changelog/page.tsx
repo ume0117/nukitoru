@@ -2,9 +2,24 @@ import Link from 'next/link'
 
 const versions = [
   {
+    version: 'v1.6.0',
+    date: '2026-08-13',
+    label: 'Latest',
+    changes: [
+      { type: 'new', text: 'NUKITORU Pro 公開（月額¥390・7日間無料トライアル）' },
+      { type: 'new', text: '出品下書き生成（PRO）：JANコードから楽天・Amazon・Yahoo!向けタイトル案と説明文雛形を自動生成' },
+      { type: 'new', text: '一括再チェック（PRO）：過去にダウンロードしたCSVを再アップロードして最新価格を一括取得' },
+      { type: 'new', text: '価格改定アラート（PRO）：登録した商品の値下がりを毎日自動チェックしメールで通知（最大20件）' },
+      { type: 'new', text: '全店舗の価格分布表示（PRO）：楽天・Yahoo!の全取得店舗の価格を確認可能' },
+      { type: 'new', text: '検索履歴のクラウド同期（PRO）：別デバイス・ブラウザでも検索履歴を共有' },
+      { type: 'new', text: 'バーコード画像生成：テキストからCODE128バーコード画像を作成（無料版2件まで、PROは無制限+ZIP出力）' },
+      { type: 'new', text: 'ライセンスキー管理ページ（/license）追加' },
+    ]
+  },
+  {
     version: 'v1.5.0',
     date: '2026-08-11',
-    label: 'Latest',
+    label: '',
     changes: [
       { type: 'new', text: 'SNSシェアボタン追加（X / Bluesky / Facebook / LINE）' },
       { type: 'new', text: '使い方ガイドページ（/docs）追加・日英対応' },
@@ -78,9 +93,8 @@ const upcoming = [
   { title: '楽天RMS形式CSV出力', desc: '楽天市場への商品一括登録に対応したCSVフォーマット' },
   { title: 'Amazon形式CSV出力', desc: 'Amazon出品用フォーマットのCSV出力' },
   { title: 'Yahoo!ショッピング形式CSV出力', desc: 'Yahoo!ショッピング出品用フォーマットのCSV出力' },
-  { title: 'Pro版リリース', desc: '月額¥980・7日間無料体験・無制限の価格比較・CATALOGモード' },
   { title: 'Amazon価格取得', desc: 'Amazon Creators APIを使った価格比較（条件達成後）' },
-  { title: 'AI商品名生成', desc: 'JANコードから商品名をAIで自動生成' },
+  { title: 'AI商品名生成', desc: 'JANコードから商品名をAIで自動生成（今後の利用状況次第で検討）' },
 ]
 
 const typeColors: Record<string, string> = {
