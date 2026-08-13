@@ -58,6 +58,35 @@ const JA = {
       ]
     },
     {
+      id: 'draft',
+      title: '出品下書き生成（PRO）',
+      content: [
+        { step: '使い方', desc: 'トップページの「出品下書き生成」から、過去にダウンロードしたCSVを選択すると、楽天・Amazon・Yahoo!向けのタイトル案と商品説明文の雛形をまとめて自動生成します。生成されたCSVをダウンロードして、各モールの規約に合わせて内容を調整してからご利用ください。' },
+      ]
+    },
+    {
+      id: 'recheck',
+      title: '一括再チェック（PRO）',
+      content: [
+        { step: '使い方', desc: 'トップページの「一括再チェック」から、過去にダウンロードしたCSVを再アップロードすると、含まれる商品の最新価格をまとめて再取得し、新しいCSVとして出力します。' },
+      ]
+    },
+    {
+      id: 'watch',
+      title: '価格改定アラート（PRO）',
+      content: [
+        { step: '使い方', desc: 'トップページの「価格改定アラート」からJANコードを登録すると、毎日自動で価格をチェックし、値下がりした際にメールでお知らせします。1ライセンスにつき最大20件まで登録できます。' },
+        { step: '通知条件', desc: '登録時に「◯円以上下がったら通知」の金額を指定できます。空欄の場合は1円でも下がれば通知します。' },
+      ]
+    },
+    {
+      id: 'barcode',
+      title: 'バーコード生成',
+      content: [
+        { step: '使い方', desc: 'トップページの「バーコード生成」から、数字やコードを1行ずつ入力するとバーコード画像（CODE128形式）を生成できます。無料版は1回に2件まで、PRO版は無制限に生成し、まとめてZIPでダウンロードできます。' },
+      ]
+    },
+    {
       id: 'pro',
       title: 'PRO版について',
       content: [
@@ -65,8 +94,12 @@ const JA = {
         { step: 'CSV+価格出力', desc: '無料版は1日3回まで。PRO版は無制限で使えます。' },
         { step: 'CATALOGモード', desc: '無料版は1回あたり3ページまで。PRO版は無制限で使えます。' },
         { step: '複数ファイル一括処理', desc: '無料版は1回あたり5ファイルまで。PRO版は無制限で使えます。' },
-        { step: '料金・トライアル', desc: '月額¥390、7日間の無料トライアル付き。トライアル中の解約でも課金は発生しません。いつでも解約できます。' },
+        { step: '全店舗の価格分布表示', desc: '無料版は最安値のみ表示。PRO版は楽天・Yahoo!それぞれの取得した全店舗の価格を確認できます。' },
+        { step: '出品下書き生成', desc: 'PRO限定。JANコードから楽天・Amazon・Yahoo!向けのタイトル案・商品説明文の雛形をまとめて生成します。' },
+        { step: '一括再チェック', desc: 'PRO限定。過去にダウンロードしたCSVを再アップロードして、最新価格をまとめて再取得します。' },
+        { step: '価格改定アラート', desc: 'PRO限定。登録した商品（最大20件）の値下がりを毎日自動チェックし、メールでお知らせします。' },
         { step: '検索履歴のクラウド同期', desc: 'PRO限定機能。ライセンスキーページで同期をオンにすると、検索履歴がサーバーに保存され、別のデバイス・ブラウザでも同じ履歴を引き継げます。' },
+        { step: '料金・トライアル', desc: '月額¥390、7日間の無料トライアル付き。トライアル中の解約でも課金は発生しません。いつでも解約できます。' },
         { step: '解約方法', desc: '決済完了時に届くメール内の「サブスクリプションを管理」リンクから、いつでもご自身で解約できます。解約してもトライアル期間・請求期間の終了日までは引き続きPRO機能をご利用いただけます。' },
       ]
     },
@@ -135,6 +168,35 @@ const EN = {
       ]
     },
     {
+      id: 'draft',
+      title: 'Listing Draft Generator (PRO)',
+      content: [
+        { step: 'How to use', desc: 'From "Listing Draft" on the home page, upload a CSV you previously downloaded to auto-generate title drafts and description templates for Rakuten, Amazon, and Yahoo!. Adjust the generated content to match each marketplace\'s rules before use.' },
+      ]
+    },
+    {
+      id: 'recheck',
+      title: 'Bulk Recheck (PRO)',
+      content: [
+        { step: 'How to use', desc: 'From "Bulk Recheck" on the home page, re-upload a CSV you previously downloaded to fetch the latest prices for all included products and export a new CSV.' },
+      ]
+    },
+    {
+      id: 'watch',
+      title: 'Price Drop Alert (PRO)',
+      content: [
+        { step: 'How to use', desc: 'From "Price Alert" on the home page, register a JAN code to automatically check its price daily and get an email when it drops. Up to 20 items per license.' },
+        { step: 'Notification threshold', desc: 'You can set a minimum price drop (in yen) to trigger a notification. Leave it blank to be notified on any drop.' },
+      ]
+    },
+    {
+      id: 'barcode',
+      title: 'Barcode Generator',
+      content: [
+        { step: 'How to use', desc: 'From "Barcode Generator" on the home page, enter one code per line to generate CODE128 barcode images. Free: up to 2 at a time. PRO: unlimited, with bulk ZIP download.' },
+      ]
+    },
+    {
       id: 'pro',
       title: 'About PRO',
       content: [
@@ -142,8 +204,12 @@ const EN = {
         { step: 'CSV + price export', desc: 'Free: up to 3 times/day. PRO: unlimited.' },
         { step: 'CATALOG mode', desc: 'Free: up to 3 pages per run. PRO: unlimited.' },
         { step: 'Batch multi-file processing', desc: 'Free: up to 5 files per run. PRO: unlimited.' },
-        { step: 'Pricing & trial', desc: '¥390/month with a 7-day free trial. No charge if you cancel during the trial. Cancel anytime.' },
+        { step: 'Full price distribution', desc: 'Free: lowest price only. PRO: see every store price from Rakuten and Yahoo!.' },
+        { step: 'Listing draft generator', desc: 'PRO-only. Generates title drafts and description templates for Rakuten, Amazon, and Yahoo! from JAN codes.' },
+        { step: 'Bulk recheck', desc: 'PRO-only. Re-upload a previously downloaded CSV to fetch the latest prices for all products at once.' },
+        { step: 'Price drop alert', desc: 'PRO-only. Automatically checks up to 20 registered products daily and emails you when prices drop.' },
         { step: 'Cloud sync for search history', desc: 'PRO-only feature. Turn on sync on the license key page to save your search history to the server and carry it across devices and browsers.' },
+        { step: 'Pricing & trial', desc: '¥390/month with a 7-day free trial. No charge if you cancel during the trial. Cancel anytime.' },
         { step: 'How to cancel', desc: 'You can cancel anytime yourself via the "Manage subscription" link in the receipt email you received at checkout. PRO features remain available until the end of your current trial or billing period.' },
       ]
     },
