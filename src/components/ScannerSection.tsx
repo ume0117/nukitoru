@@ -107,6 +107,12 @@ export function ScannerSection() {
             <button onClick={() => setInventoryOpen(true)} className="flex-1 h-11 border border-gray-400 dark:border-gray-600 bg-gray-900/30 hover:border-gray-300 dark:hover:border-gray-400 flex items-center justify-center gap-2 text-[11px] tracking-[0.2em] font-medium text-gray-300 dark:text-gray-400 uppercase transition-colors">Inventory</button>
             <button onClick={() => setShowInventoryHistory(true)} className="h-11 px-4 border border-gray-400 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-400 text-gray-300 dark:text-gray-400 text-[11px] tracking-[0.15em] uppercase transition-colors">History</button>
           </div>
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            <a href="/draft" className="h-10 border border-gray-100 dark:border-gray-800 hover:border-blue-600 flex items-center justify-center gap-1.5 text-[9px] tracking-[0.15em] text-gray-400 dark:text-gray-600 hover:text-blue-600 uppercase transition-colors">出品下書き生成<span className="text-blue-500">PRO</span></a>
+            <a href="/recheck" className="h-10 border border-gray-100 dark:border-gray-800 hover:border-blue-600 flex items-center justify-center gap-1.5 text-[9px] tracking-[0.15em] text-gray-400 dark:text-gray-600 hover:text-blue-600 uppercase transition-colors">一括再チェック<span className="text-blue-500">PRO</span></a>
+            <a href="/watch" className="h-10 border border-gray-100 dark:border-gray-800 hover:border-blue-600 flex items-center justify-center gap-1.5 text-[9px] tracking-[0.15em] text-gray-400 dark:text-gray-600 hover:text-blue-600 uppercase transition-colors">価格改定アラート<span className="text-blue-500">PRO</span></a>
+            <a href="/barcode-generator" className="h-10 border border-gray-100 dark:border-gray-800 hover:border-blue-600 flex items-center justify-center gap-1.5 text-[9px] tracking-[0.15em] text-gray-400 dark:text-gray-600 hover:text-blue-600 uppercase transition-colors">バーコード生成</a>
+          </div>
           {error && <ErrorAlert message={error} />}
           {progress.status !== 'idle' && <ScanProgress current={progress.current} total={progress.total} message={progress.message} status={progress.status} />}
         </div>
