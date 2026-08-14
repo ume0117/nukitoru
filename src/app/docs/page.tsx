@@ -101,6 +101,7 @@ const JA = {
         { step: '検索履歴のクラウド同期', desc: 'PRO限定機能。ライセンスキーページで同期をオンにすると、検索履歴がサーバーに保存され、別のデバイス・ブラウザでも同じ履歴を引き継げます。' },
         { step: '料金・トライアル', desc: '月額¥390、7日間の無料トライアル付き。トライアル中の解約でも課金は発生しません。いつでも解約できます。' },
         { step: '解約方法', desc: '決済完了時に届くメール内の「サブスクリプションを管理」リンクから、いつでもご自身で解約できます。解約してもトライアル期間・請求期間の終了日までは引き続きPRO機能をご利用いただけます。' },
+        { step: 'ライセンスキーの利用範囲', desc: 'ライセンスキーは1名（1事業者）につき1つのご利用を前提としています。複数人・複数事業者での共有や譲渡・転売など、不正な利用が確認された場合、予告なくライセンスを無効化させていただく場合があります。' },
       ]
     },
     {
@@ -211,6 +212,7 @@ const EN = {
         { step: 'Cloud sync for search history', desc: 'PRO-only feature. Turn on sync on the license key page to save your search history to the server and carry it across devices and browsers.' },
         { step: 'Pricing & trial', desc: '¥390/month with a 7-day free trial. No charge if you cancel during the trial. Cancel anytime.' },
         { step: 'How to cancel', desc: 'You can cancel anytime yourself via the "Manage subscription" link in the receipt email you received at checkout. PRO features remain available until the end of your current trial or billing period.' },
+        { step: 'License key usage', desc: 'Each license key is intended for use by one individual or business. Sharing, transferring, or reselling a key to multiple people or businesses may result in the license being disabled without prior notice.' },
       ]
     },
     {
