@@ -2,9 +2,18 @@ import Link from 'next/link'
 
 const versions = [
   {
+    version: 'v1.6.1',
+    date: '2026-08-15',
+    label: 'Latest',
+    changes: [
+      { type: 'new', text: 'QRコード生成：バーコード生成ページでバーコード/QRコードを切り替えて生成可能に。URLやテキストからQRコード画像を作成（無料版2件まで、PROは無制限+ZIP出力）' },
+      { type: 'improve', text: 'QRコード画像はスマートフォンで長押し保存に対応' },
+    ]
+  },
+  {
     version: 'v1.6.0',
     date: '2026-08-13',
-    label: 'Latest',
+    label: '',
     changes: [
       { type: 'new', text: 'NUKITORU Pro 公開（月額¥390・7日間無料トライアル）' },
       { type: 'new', text: '出品下書き生成（PRO）：JANコードから楽天・Amazon・Yahoo!向けタイトル案と説明文雛形を自動生成' },
