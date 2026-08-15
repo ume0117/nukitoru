@@ -87,6 +87,25 @@ export default function BarcodeGeneratorPage() {
     setErrorMsg('')
   }
 
+  const clearManual = () => {
+    setInput('')
+    setCodes([])
+    setErrorMsg('')
+  }
+
+  const clearCsv = () => {
+    setCsvRows(null)
+    setCsvFileName('')
+    setCsvHasHeader(true)
+    setCodeColIndex(0)
+    setNameColIndex(-1)
+    setNumberMode('auto')
+    setNumberColIndex(-1)
+    setCodes([])
+    setErrorMsg('')
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
   const handleCsvFile = (file: File) => {
     if (!file.name.toLowerCase().endsWith('.csv')) {
       setErrorMsg('CSVファイル（.csv）を選択してください。')
@@ -300,9 +319,16 @@ export default function BarcodeGeneratorPage() {
               className="w-full p-3 text-sm font-mono border border-gray-200 dark:border-gray-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-700 focus:outline-none focus:border-blue-600 transition-colors mb-3"
             />
 
-            <button onClick={handleGenerate} className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white text-[11px] tracking-[0.2em] uppercase transition-colors mb-2">
-              生成する
-            </button>
+            <div className="flex gap-2 mb-2">
+              <button onClick={handleGenerate} className="flex-1 h-11 bg-blue-600 hover:bg-blue-700 text-white text-[11px] tracking-[0.2em] uppercase transition-colors">
+                生成する
+              </button>
+              {(input || codes.length > 0) && (
+                <button onClick={clearManual} className="h-11 px-4 border border-gray-200 dark:border-gray-800 text-gray-500 hover:border-red-500 hover:text-red-500 text-[10px] tracking-[0.15em] uppercase transition-colors">
+                  クリア
+                </button>
+              )}
+            </div>
           </>
         )}
 
@@ -342,10 +368,15 @@ export default function BarcodeGeneratorPage() {
 
             {csvRows && (
               <div className="space-y-4 mb-4 border border-gray-100 dark:border-gray-800 p-3">
-                <label className="flex items-center gap-2 text-[10px] text-gray-500">
-                  <input type="checkbox" checked={csvHasHeader} onChange={(e) => setCsvHasHeader(e.target.checked)} />
-                  1行目をヘッダー（列名）として扱う
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 text-[10px] text-gray-500">
+                    <input type="checkbox" checked={csvHasHeader} onChange={(e) => setCsvHasHeader(e.target.checked)} />
+                    1行目をヘッダー（列名）として扱う
+                  </label>
+                  <button onClick={clearCsv} className="text-[9px] tracking-[0.1em] text-gray-400 hover:text-red-500 uppercase whitespace-nowrap">
+                    クリア
+                  </button>
+                </div>
 
                 <div className="grid grid-cols-1 gap-3">
                   <label className="text-[10px] text-gray-500 flex flex-col gap-1">
