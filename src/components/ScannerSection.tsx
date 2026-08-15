@@ -14,14 +14,55 @@ import { cn } from '@/lib/utils/cn'
 import { deduplicateResults } from '@/lib/utils/dedup'
 import type { ScanResult } from '@/types'
 
-function CompactUploadButton({ onFile }: { onFile: (f: File) => void }) {
+const LANG_STORAGE_KEY = 'nukitoru_lang'
+
+const TEXT = {
+  ja: {
+    badges: ['URL開ける', 'PDF全ページ', 'プライバシー保護', 'ブラウザ内処理'],
+    catalog: 'カタログ',
+    inventory: '棚卸し',
+    history: '履歴',
+    noCodeFound: 'コードが見つかりませんでした',
+    back: '← 戻る',
+    complete: '完了',
+    downloadCsv: 'CSVをダウンロード',
+    viewHistory: '履歴を見る',
+    newInventory: '新しい棚卸し',
+    backToTop: 'トップへ戻る',
+    resume: '再開',
+    clear: 'クリア',
+    itemsUnit: '点',
+    productsUnit: '商品',
+    selectAnotherFile: '別のファイルを選択',
+  },
+  en: {
+    badges: ['URL open', 'PDF all pages', 'Privacy safe', 'Browser only'],
+    catalog: 'Catalog',
+    inventory: 'Inventory',
+    history: 'History',
+    noCodeFound: 'No code found',
+    back: '← Back',
+    complete: 'Complete',
+    downloadCsv: 'Download CSV',
+    viewHistory: 'View History',
+    newInventory: 'New Inventory',
+    backToTop: 'Back to top',
+    resume: 'Resume',
+    clear: 'Clear',
+    itemsUnit: 'items',
+    productsUnit: 'products',
+    selectAnotherFile: 'Select another file',
+  },
+}
+
+function CompactUploadButton({ onFile, label }: { onFile: (f: File) => void; label: string }) {
   const ref = useRef<HTMLInputElement>(null)
   return (
     <>
       <input ref={ref} type="file" accept=".pdf,image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); e.target.value = '' }} />
       <button onClick={() => ref.current?.click()} className={cn('w-full h-12 border', 'flex items-center justify-center gap-2', 'text-[11px] tracking-[0.2em] uppercase text-gray-400 dark:text-gray-600', 'border-gray-100 dark:border-gray-800', 'hover:border-blue-600 hover:text-blue-600', 'transition-all duration-200')}>
         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-        Select another file
+        {label}
       </button>
     </>
   )
@@ -45,6 +86,19 @@ export function ScannerSection() {
   const [showInventoryHistory, setShowInventoryHistory] = useState(false)
   const [showInventoryComplete, setShowInventoryComplete] = useState(false)
   const [catalogOpen, setCatalogOpen] = useState(false)
+  const [lang, setLang] = useState<'ja' | 'en'>('ja')
+
+  useEffect(() => {
+    const saved = localStorage.getItem(LANG_STORAGE_KEY)
+    if (saved === 'en' || saved === 'ja') setLang(saved)
+  }, [])
+
+  const switchLang = (next: 'ja' | 'en') => {
+    setLang(next)
+    localStorage.setItem(LANG_STORAGE_KEY, next)
+  }
+
+  const t = TEXT[lang]
 
   const handleInventoryFinish = (session: InventorySession) => {
     setInventoryOpen(false)
@@ -90,9 +144,15 @@ export function ScannerSection() {
   return (
     <div>
       <div className={cn('overflow-hidden transition-all duration-500 ease-in-out', isIdle ? 'max-h-[500px] opacity-100 pt-6 pb-4' : 'max-h-0 opacity-0 pointer-events-none')} aria-hidden={!isIdle}>
-        <h1 className="text-[11px] tracking-[0.3em] text-gray-400 dark:text-gray-600 uppercase">PDF · Image · Barcode Extractor</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-[11px] tracking-[0.3em] text-gray-400 dark:text-gray-600 uppercase">PDF · Image · Barcode Extractor</h1>
+          <div className="flex gap-1.5 shrink-0 ml-3">
+            <button onClick={() => switchLang('ja')} className={`text-[9px] tracking-[0.1em] px-2 h-6 border transition-colors ${lang === 'ja' ? 'border-blue-600 text-blue-600' : 'border-gray-200 dark:border-gray-800 text-gray-400 dark:text-gray-600'}`}>JA</button>
+            <button onClick={() => switchLang('en')} className={`text-[9px] tracking-[0.1em] px-2 h-6 border transition-colors ${lang === 'en' ? 'border-blue-600 text-blue-600' : 'border-gray-200 dark:border-gray-800 text-gray-400 dark:text-gray-600'}`}>EN</button>
+          </div>
+        </div>
         <div className="flex flex-wrap gap-2 mt-4">
-          {['URL open', 'PDF all pages', 'Privacy safe', 'Browser only'].map((label) => (
+          {t.badges.map((label) => (
             <span key={label} className="text-[9px] tracking-[0.15em] px-2.5 py-1 border border-gray-100 dark:border-gray-800 text-gray-400 dark:text-gray-600 uppercase">{label}</span>
           ))}
         </div>
@@ -103,9 +163,9 @@ export function ScannerSection() {
           <UploadArea onFileSelect={processFile} isScanning={isScanning} onCameraClick={() => setCameraOpen(true)} />
           <ManualSearch />
           <div className="flex gap-2 pt-1">
-            <button onClick={() => setCatalogOpen(true)} className="flex-1 h-11 border border-gray-400 dark:border-gray-600 bg-gray-900/30 hover:border-gray-300 dark:hover:border-gray-400 flex items-center justify-center gap-2 text-[11px] tracking-[0.2em] font-medium text-gray-300 dark:text-gray-400 uppercase transition-colors">Catalog</button>
-            <button onClick={() => setInventoryOpen(true)} className="flex-1 h-11 border border-gray-400 dark:border-gray-600 bg-gray-900/30 hover:border-gray-300 dark:hover:border-gray-400 flex items-center justify-center gap-2 text-[11px] tracking-[0.2em] font-medium text-gray-300 dark:text-gray-400 uppercase transition-colors">Inventory</button>
-            <button onClick={() => setShowInventoryHistory(true)} className="h-11 px-4 border border-gray-400 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-400 text-gray-300 dark:text-gray-400 text-[11px] tracking-[0.15em] uppercase transition-colors">History</button>
+            <button onClick={() => setCatalogOpen(true)} className="flex-1 h-11 border border-gray-400 dark:border-gray-600 bg-gray-900/30 hover:border-gray-300 dark:hover:border-gray-400 flex items-center justify-center gap-2 text-[11px] tracking-[0.2em] font-medium text-gray-300 dark:text-gray-400 uppercase transition-colors">{t.catalog}</button>
+            <button onClick={() => setInventoryOpen(true)} className="flex-1 h-11 border border-gray-400 dark:border-gray-600 bg-gray-900/30 hover:border-gray-300 dark:hover:border-gray-400 flex items-center justify-center gap-2 text-[11px] tracking-[0.2em] font-medium text-gray-300 dark:text-gray-400 uppercase transition-colors">{t.inventory}</button>
+            <button onClick={() => setShowInventoryHistory(true)} className="h-11 px-4 border border-gray-400 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-400 text-gray-300 dark:text-gray-400 text-[11px] tracking-[0.15em] uppercase transition-colors">{t.history}</button>
           </div>
           <div className="grid grid-cols-2 gap-2 pt-1">
             <a href="/draft" className="h-10 border border-gray-100 dark:border-gray-800 hover:border-blue-600 flex items-center justify-center gap-1.5 text-[9px] tracking-[0.15em] text-gray-400 dark:text-gray-600 hover:text-blue-600 uppercase transition-colors">出品下書き生成<span className="text-blue-500">PRO</span></a>
@@ -123,9 +183,9 @@ export function ScannerSection() {
           {!hasResults && (
             <div className="space-y-3">
               <div className="text-center space-y-2 py-4">
-                <p className="text-[11px] tracking-[0.2em] text-gray-400 dark:text-gray-600 uppercase">No code found</p>
+                <p className="text-[11px] tracking-[0.2em] text-gray-400 dark:text-gray-600 uppercase">{t.noCodeFound}</p>
                 <p className="text-[10px] text-gray-300 dark:text-gray-700">高解像度の画像をお試しください</p>
-                <button onClick={clearAll} className="text-[10px] tracking-[0.15em] text-blue-600 uppercase underline underline-offset-2">← Back</button>
+                <button onClick={clearAll} className="text-[10px] tracking-[0.15em] text-blue-600 uppercase underline underline-offset-2">{t.back}</button>
               </div>
               <UploadArea onFileSelect={processFile} isScanning={isScanning} />
             </div>
@@ -134,7 +194,7 @@ export function ScannerSection() {
             <div className="space-y-2">
               <ResultList results={results} onDelete={handleDelete} onClear={clearAll} />
               <div className="text-center pt-1">
-                <button onClick={clearAll} className="text-[10px] tracking-[0.15em] text-blue-600 uppercase underline underline-offset-2">← Back</button>
+                <button onClick={clearAll} className="text-[10px] tracking-[0.15em] text-blue-600 uppercase underline underline-offset-2">{t.back}</button>
               </div>
             </div>
           )}
@@ -150,16 +210,16 @@ export function ScannerSection() {
 
       {showInventoryComplete && inventoryResult && (
         <div className="fixed inset-0 z-50 bg-white dark:bg-black flex flex-col items-center justify-center p-6 gap-5">
-          <div className="text-[11px] tracking-[0.3em] text-gray-400 uppercase">Complete</div>
+          <div className="text-[11px] tracking-[0.3em] text-gray-400 uppercase">{t.complete}</div>
           <div className="text-center space-y-1">
             <p className="text-sm font-medium text-gray-900 dark:text-white tracking-wide">棚卸しが完了しました</p>
-            <p className="text-[10px] text-gray-400 tracking-wider">{new Date(inventoryResult.startedAt).toLocaleString('ja-JP')}<br/>{inventoryResult.items.reduce((s,i)=>s+i.count,0)} items · {inventoryResult.items.length} products</p>
+            <p className="text-[10px] text-gray-400 tracking-wider">{new Date(inventoryResult.startedAt).toLocaleString('ja-JP')}<br/>{inventoryResult.items.reduce((s,i)=>s+i.count,0)} {t.itemsUnit} · {inventoryResult.items.length} {t.productsUnit}</p>
           </div>
           <div className="flex flex-col gap-2 w-full max-w-xs">
-            <button onClick={() => downloadCSV(inventoryResult.items, inventoryResult.startedAt)} className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white text-[11px] tracking-[0.2em] uppercase transition-colors">Download CSV</button>
-            <button onClick={() => { setShowInventoryComplete(false); setShowInventoryHistory(true) }} className="w-full h-12 border border-gray-100 dark:border-gray-800 text-gray-600 dark:text-gray-400 text-[11px] tracking-[0.2em] uppercase">View History</button>
-            <button onClick={() => { setShowInventoryComplete(false); setInventoryOpen(true) }} className="w-full h-12 border border-gray-100 dark:border-gray-800 text-gray-600 dark:text-gray-400 text-[11px] tracking-[0.2em] uppercase">New Inventory</button>
-            <button onClick={() => { setShowInventoryComplete(false); setInventoryResult(null) }} className="w-full h-10 text-gray-300 dark:text-gray-700 text-[10px] tracking-[0.15em] uppercase">Back to top</button>
+            <button onClick={() => downloadCSV(inventoryResult.items, inventoryResult.startedAt)} className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white text-[11px] tracking-[0.2em] uppercase transition-colors">{t.downloadCsv}</button>
+            <button onClick={() => { setShowInventoryComplete(false); setShowInventoryHistory(true) }} className="w-full h-12 border border-gray-100 dark:border-gray-800 text-gray-600 dark:text-gray-400 text-[11px] tracking-[0.2em] uppercase">{t.viewHistory}</button>
+            <button onClick={() => { setShowInventoryComplete(false); setInventoryOpen(true) }} className="w-full h-12 border border-gray-100 dark:border-gray-800 text-gray-600 dark:text-gray-400 text-[11px] tracking-[0.2em] uppercase">{t.newInventory}</button>
+            <button onClick={() => { setShowInventoryComplete(false); setInventoryResult(null) }} className="w-full h-10 text-gray-300 dark:text-gray-700 text-[10px] tracking-[0.15em] uppercase">{t.backToTop}</button>
           </div>
         </div>
       )}
@@ -170,13 +230,13 @@ export function ScannerSection() {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-[11px] tracking-[0.2em] text-gray-600 dark:text-gray-400 uppercase">Inventory · <span className="text-blue-600">{inventoryResult.items.reduce((s,i)=>s+i.count,0)} items</span></h2>
+              <h2 className="text-[11px] tracking-[0.2em] text-gray-600 dark:text-gray-400 uppercase">{t.inventory} · <span className="text-blue-600">{inventoryResult.items.reduce((s,i)=>s+i.count,0)} {t.itemsUnit}</span></h2>
               <p className="text-[10px] text-gray-300 dark:text-gray-700 mt-0.5">{new Date(inventoryResult.startedAt).toLocaleString('ja-JP')}</p>
             </div>
             <div className="flex gap-2">
               <button onClick={() => downloadCSV(inventoryResult.items, inventoryResult.startedAt)} className="h-8 px-3 text-[10px] tracking-[0.15em] uppercase bg-blue-600 hover:bg-blue-700 text-white transition-colors">CSV</button>
-              <button onClick={() => { setInventoryResult(null); setInventoryOpen(true) }} className="h-8 px-3 text-[10px] tracking-[0.15em] uppercase border border-gray-100 dark:border-gray-800 text-gray-400">Resume</button>
-              <button onClick={() => setInventoryResult(null)} className="h-8 px-3 text-[10px] tracking-[0.15em] uppercase text-gray-300 dark:text-gray-700 hover:text-red-500 transition-colors">Clear</button>
+              <button onClick={() => { setInventoryResult(null); setInventoryOpen(true) }} className="h-8 px-3 text-[10px] tracking-[0.15em] uppercase border border-gray-100 dark:border-gray-800 text-gray-400">{t.resume}</button>
+              <button onClick={() => setInventoryResult(null)} className="h-8 px-3 text-[10px] tracking-[0.15em] uppercase text-gray-300 dark:text-gray-700 hover:text-red-500 transition-colors">{t.clear}</button>
             </div>
           </div>
           <div className="space-y-1.5">
