@@ -81,9 +81,10 @@ const JA = {
     },
     {
       id: 'barcode',
-      title: 'バーコード生成',
+      title: 'バーコード / QRコード生成',
       content: [
-        { step: '使い方', desc: 'トップページの「バーコード生成」から、数字やコードを1行ずつ入力するとバーコード画像（CODE128形式）を生成できます。無料版は1回に2件まで、PRO版は無制限に生成し、まとめてZIPでダウンロードできます。' },
+        { step: '使い方', desc: 'トップページの「バーコード / QRコード生成」から、バーコードとQRコードを切り替えて生成できます。数字やコードを1行ずつ入力するとバーコード画像（CODE128形式）を、URLやテキストを1行ずつ入力するとQRコード画像を生成できます。無料版は1回に2件まで、PRO版は無制限に生成し、まとめてZIPでダウンロードできます。' },
+        { step: 'QRコードの保存・印刷', desc: '生成したQRコードはスマートフォンで画像を長押しすると「写真に保存」できます。印刷する場合は各コードの「↓ PNG」ボタンからダウンロードしてください。' },
       ]
     },
     {
@@ -192,9 +193,10 @@ const EN = {
     },
     {
       id: 'barcode',
-      title: 'Barcode Generator',
+      title: 'Barcode / QR Code Generator',
       content: [
-        { step: 'How to use', desc: 'From "Barcode Generator" on the home page, enter one code per line to generate CODE128 barcode images. Free: up to 2 at a time. PRO: unlimited, with bulk ZIP download.' },
+        { step: 'How to use', desc: 'From "Barcode / QR Code Generator" on the home page, switch between barcode and QR code modes. Enter one code per line to generate CODE128 barcode images, or one URL/text per line to generate QR code images. Free: up to 2 at a time. PRO: unlimited, with bulk ZIP download.' },
+        { step: 'Saving & printing QR codes', desc: 'On smartphones, long-press a generated QR code image to save it to your photos. To print, use the "↓ PNG" button next to each code to download it.' },
       ]
     },
     {
