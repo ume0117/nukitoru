@@ -62,11 +62,13 @@ export default function BarcodeGeneratorPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   const [csvRows, setCsvRows] = useState<string[][] | null>(null)
+  const [csvFileName, setCsvFileName] = useState('')
   const [csvHasHeader, setCsvHasHeader] = useState(true)
   const [codeColIndex, setCodeColIndex] = useState(0)
   const [nameColIndex, setNameColIndex] = useState<number>(-1)
   const [numberMode, setNumberMode] = useState<NumberMode>('auto')
   const [numberColIndex, setNumberColIndex] = useState<number>(-1)
+  const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -86,6 +88,10 @@ export default function BarcodeGeneratorPage() {
   }
 
   const handleCsvFile = (file: File) => {
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      setErrorMsg('CSVファイル（.csv）を選択してください。')
+      return
+    }
     const reader = new FileReader()
     reader.onload = (e) => {
       const text = e.target?.result as string
@@ -103,6 +109,7 @@ export default function BarcodeGeneratorPage() {
       const guessedHasHeader = format === 'BARCODE' ? !looksLikeData : rows.length > 1 && !/^https?:\/\//.test(firstRow[0]?.trim() || '')
 
       setCsvRows(rows)
+      setCsvFileName(file.name)
       setCsvHasHeader(guessedHasHeader)
       setCodeColIndex(0)
       setNameColIndex(rows[0].length > 1 ? 1 : -1)
@@ -112,6 +119,26 @@ export default function BarcodeGeneratorPage() {
       setCodes([])
     }
     reader.readAsText(file, 'UTF-8')
+  }
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+  }
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+    const file = e.dataTransfer.files?.[0]
+    if (file) handleCsvFile(file)
   }
 
   const dataRows = () => {
@@ -286,16 +313,32 @@ export default function BarcodeGeneratorPage() {
               {!isPro && `無料版は一度に${FREE_LIMIT}件まで。`}
             </p>
 
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".csv"
-              onChange={(e) => {
-                const file = e.target.files?.[0]
-                if (file) handleCsvFile(file)
-              }}
-              className="w-full text-[11px] text-gray-500 mb-4 file:mr-3 file:h-9 file:px-4 file:border file:border-gray-200 dark:file:border-gray-800 file:bg-white dark:file:bg-black file:text-gray-700 dark:file:text-gray-300 file:text-[10px] file:tracking-[0.1em] file:uppercase"
-            />
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className={`w-full border-2 border-dashed rounded p-6 mb-4 text-center cursor-pointer transition-colors ${isDragging ? 'border-blue-600 bg-blue-600/5' : 'border-gray-200 dark:border-gray-800 hover:border-blue-600'}`}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) handleCsvFile(file)
+                }}
+                className="hidden"
+              />
+              {csvFileName ? (
+                <p className="text-[11px] text-blue-600 break-all">{csvFileName}</p>
+              ) : (
+                <>
+                  <p className="text-[11px] text-gray-500 mb-1">CSVファイルをドラッグ&ドロップ</p>
+                  <p className="text-[9px] text-gray-400 tracking-[0.1em] uppercase">またはクリックして選択</p>
+                </>
+              )}
+            </div>
 
             {csvRows && (
               <div className="space-y-4 mb-4 border border-gray-100 dark:border-gray-800 p-3">
