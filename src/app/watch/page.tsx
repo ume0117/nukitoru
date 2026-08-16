@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { checkIsPro, getSavedLicenseKey } from '@/lib/license'
+import { getSavedLicenseKey, saveLicenseKey } from '@/lib/license'
 
 const WORKER_URL = 'https://nukitoru-api.ume0117.workers.dev'
 const WATCH_LIMIT = 20
@@ -16,30 +16,64 @@ interface WatchItem {
 }
 
 export default function WatchPage() {
-  const [isPro, setIsPro] = useState<boolean | null>(null)
+  const [licenseKey, setLicenseKey] = useState<string | null>(null)
+  const [checkingKey, setCheckingKey] = useState(true)
+  const [signupEmail, setSignupEmail] = useState('')
+  const [signupLoading, setSignupLoading] = useState(false)
+  const [signupError, setSignupError] = useState('')
+
   const [list, setList] = useState<WatchItem[]>([])
   const [jan, setJan] = useState('')
   const [threshold, setThreshold] = useState('')
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
 
-  const licenseKey = getSavedLicenseKey()
+  useEffect(() => {
+    setLicenseKey(getSavedLicenseKey())
+    setCheckingKey(false)
+  }, [])
 
-  const loadList = async () => {
-    if (!licenseKey) return
+  const loadList = async (key: string) => {
     try {
-      const res = await fetch(WORKER_URL + '/watch?key=' + encodeURIComponent(licenseKey))
+      const res = await fetch(WORKER_URL + '/watch?key=' + encodeURIComponent(key))
       const data = await res.json()
       if (Array.isArray(data.watchList)) setList(data.watchList)
     } catch {}
   }
 
   useEffect(() => {
-    checkIsPro().then(setIsPro)
-    loadList()
-  }, [])
+    if (licenseKey) loadList(licenseKey)
+  }, [licenseKey])
+
+  const handleSignup = async () => {
+    setSignupError('')
+    const trimmed = signupEmail.trim()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      setSignupError('正しいメールアドレスを入力してください。')
+      return
+    }
+    setSignupLoading(true)
+    try {
+      const res = await fetch(WORKER_URL + '/free-signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: trimmed }),
+      })
+      const data = await res.json()
+      if (data.licenseKey) {
+        saveLicenseKey(data.licenseKey)
+        setLicenseKey(data.licenseKey)
+      } else {
+        setSignupError('登録に失敗しました。')
+      }
+    } catch {
+      setSignupError('登録に失敗しました。')
+    }
+    setSignupLoading(false)
+  }
 
   const handleAdd = async () => {
+    if (!licenseKey) return
     setErrorMsg('')
     const trimmed = jan.trim()
     if (!/^\d{8}$|^\d{13}$/.test(trimmed)) {
@@ -52,7 +86,7 @@ export default function WatchPage() {
     }
     setLoading(true)
     try {
-      const res = await fetch(WORKER_URL + '/watch?key=' + encodeURIComponent(licenseKey || ''), {
+      const res = await fetch(WORKER_URL + '/watch?key=' + encodeURIComponent(licenseKey), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ jan: trimmed, threshold: threshold ? Number(threshold) : 1 }),
@@ -72,8 +106,9 @@ export default function WatchPage() {
   }
 
   const handleDelete = async (targetJan: string) => {
+    if (!licenseKey) return
     try {
-      const res = await fetch(WORKER_URL + '/watch?key=' + encodeURIComponent(licenseKey || ''), {
+      const res = await fetch(WORKER_URL + '/watch?key=' + encodeURIComponent(licenseKey), {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ jan: targetJan }),
@@ -83,18 +118,37 @@ export default function WatchPage() {
     } catch {}
   }
 
-  if (isPro === null) {
+  if (checkingKey) {
     return <div className="min-h-screen bg-white dark:bg-black" />
   }
 
-  if (!isPro) {
+  if (!licenseKey) {
     return (
       <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center px-6">
-        <div className="max-w-sm text-center space-y-4">
-          <p className="text-[11px] tracking-[0.3em] text-blue-500 uppercase">PRO限定機能</p>
-          <h1 className="text-[13px] text-gray-900 dark:text-white tracking-wide">価格改定アラートはPRO会員限定です</h1>
-          <p className="text-[11px] text-gray-500 leading-relaxed">監視したい商品を登録すると、値下がりした時にメールでお知らせします。</p>
-          <Link href="/upgrade" className="inline-block h-10 px-6 leading-[40px] bg-blue-600 hover:bg-blue-700 text-white text-[10px] tracking-[0.2em] uppercase transition-colors">Proを見る</Link>
+        <div className="max-w-sm w-full space-y-4">
+          <div className="text-center space-y-2">
+            <p className="text-[11px] tracking-[0.3em] text-blue-500 uppercase">価格改定アラート</p>
+            <h1 className="text-[13px] text-gray-900 dark:text-white tracking-wide">メールアドレスで無料登録</h1>
+            <p className="text-[11px] text-gray-500 leading-relaxed">監視したい商品を登録すると、値下がりした時にメールでお知らせします。登録は無料です。</p>
+          </div>
+          <input
+            type="email"
+            value={signupEmail}
+            onChange={(e) => setSignupEmail(e.target.value)}
+            placeholder="メールアドレス"
+            className="w-full h-11 px-3 text-sm border border-gray-200 dark:border-gray-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-700 focus:outline-none focus:border-blue-600 transition-colors"
+          />
+          <button
+            onClick={handleSignup}
+            disabled={signupLoading || !signupEmail.trim()}
+            className="w-full h-11 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white text-[11px] tracking-[0.2em] uppercase transition-colors"
+          >
+            {signupLoading ? '登録中...' : '無料で登録する'}
+          </button>
+          {signupError && <p className="text-[10px] text-red-500 text-center">{signupError}</p>}
+          <p className="text-[9px] text-gray-400 dark:text-gray-600 text-center leading-relaxed">
+            既にライセンスキーをお持ちの方は<Link href="/license" className="text-blue-500 hover:text-blue-600 underline">こちら</Link>から入力してください。
+          </p>
         </div>
       </div>
     )
