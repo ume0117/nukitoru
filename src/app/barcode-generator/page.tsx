@@ -19,6 +19,23 @@ interface GeneratedCode {
   label: string
 }
 
+interface LabelPreset {
+  id: string
+  name: string
+  cols: number
+  rows: number
+  cellWidthMm: number
+  cellHeightMm: number
+  marginLeftMm: number
+  marginTopMm: number
+}
+
+const LABEL_PRESETS: LabelPreset[] = [
+  { id: '72265', name: 'エーワン 72265（65面 / 38.1×21.2mm）', cols: 5, rows: 13, cellWidthMm: 38.1, cellHeightMm: 21.2, marginLeftMm: 9.75, marginTopMm: 10.7 },
+  { id: '72244', name: 'エーワン 72244・31516（44面 / 48.3×25.4mm）', cols: 4, rows: 11, cellWidthMm: 48.3, cellHeightMm: 25.4, marginLeftMm: 8.4, marginTopMm: 8.8 },
+  { id: '72212', name: 'エーワン 72212（12面 / 86.4×42.3mm）', cols: 2, rows: 6, cellWidthMm: 86.4, cellHeightMm: 42.3, marginLeftMm: 18.6, marginTopMm: 21.2 },
+]
+
 function parseCSV(text: string): string[][] {
   const rows: string[][] = []
   let row: string[] = []
@@ -52,6 +69,15 @@ function parseCSV(text: string): string[][] {
   return rows
 }
 
+function getImageSize(dataUrl: string): Promise<{ width: number; height: number }> {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight })
+    img.onerror = () => resolve({ width: 1, height: 1 })
+    img.src = dataUrl
+  })
+}
+
 export default function BarcodeGeneratorPage() {
   const [format, setFormat] = useState<CodeFormat>('BARCODE')
   const [inputMode, setInputMode] = useState<InputMode>('MANUAL')
@@ -70,6 +96,9 @@ export default function BarcodeGeneratorPage() {
   const [numberColIndex, setNumberColIndex] = useState<number>(-1)
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const [selectedPreset, setSelectedPreset] = useState(LABEL_PRESETS[0].id)
+  const [generatingPdf, setGeneratingPdf] = useState(false)
 
   useEffect(() => {
     checkIsPro().then(setIsPro)
@@ -263,6 +292,54 @@ export default function BarcodeGeneratorPage() {
     URL.revokeObjectURL(url)
   }
 
+  const generateLabelSheetPdf = async () => {
+    if (!isPro || codes.length === 0) return
+    const preset = LABEL_PRESETS.find(p => p.id === selectedPreset)
+    if (!preset) return
+
+    setGeneratingPdf(true)
+    try {
+      const { jsPDF } = await import('jspdf')
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' })
+      const perPage = preset.cols * preset.rows
+      const cellPadding = 1.5
+      const showNumber = format === 'QR' && inputMode === 'CSV'
+      const numberAreaHeight = showNumber ? 3.2 : 0
+      const maxImgW = preset.cellWidthMm - cellPadding * 2
+      const maxImgH = preset.cellHeightMm - cellPadding * 2 - numberAreaHeight
+
+      for (let i = 0; i < codes.length; i++) {
+        const code = codes[i]
+        const posInPage = i % perPage
+        if (posInPage === 0 && i !== 0) doc.addPage()
+
+        const row = Math.floor(posInPage / preset.cols)
+        const col = posInPage % preset.cols
+        const cellX = preset.marginLeftMm + col * preset.cellWidthMm
+        const cellY = preset.marginTopMm + row * preset.cellHeightMm
+
+        const { width: imgW, height: imgH } = await getImageSize(code.dataUrl)
+        const scale = Math.min(maxImgW / imgW, maxImgH / imgH)
+        const drawW = imgW * scale
+        const drawH = imgH * scale
+        const drawX = cellX + (preset.cellWidthMm - drawW) / 2
+        const drawY = cellY + cellPadding + (maxImgH - drawH) / 2
+
+        doc.addImage(code.dataUrl, 'PNG', drawX, drawY, drawW, drawH)
+
+        if (showNumber) {
+          doc.setFontSize(7)
+          doc.text(code.label, cellX + preset.cellWidthMm / 2, cellY + preset.cellHeightMm - 1, { align: 'center' })
+        }
+      }
+
+      const prefix = format === 'QR' ? 'qrcodes' : 'barcodes'
+      doc.save(`${prefix}_${preset.id}.pdf`)
+    } finally {
+      setGeneratingPdf(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-white dark:bg-black">
       <div className="max-w-2xl mx-auto px-4 py-8">
@@ -453,9 +530,34 @@ export default function BarcodeGeneratorPage() {
         {codes.length > 0 && (
           <div className="space-y-4 mt-6">
             {isPro && codes.length > 1 && (
-              <button onClick={downloadZip} className="w-full h-10 border border-blue-600 text-blue-600 text-[10px] tracking-[0.15em] uppercase hover:bg-blue-600 hover:text-white transition-colors">
-                ↓ まとめてZIPダウンロード（{codes.length}件）
-              </button>
+              <div className="space-y-2">
+                <button onClick={downloadZip} className="w-full h-10 border border-blue-600 text-blue-600 text-[10px] tracking-[0.15em] uppercase hover:bg-blue-600 hover:text-white transition-colors">
+                  ↓ まとめてZIPダウンロード（{codes.length}件）
+                </button>
+
+                <div className="border border-gray-100 dark:border-gray-800 p-3 space-y-2">
+                  <p className="text-[10px] tracking-[0.1em] text-gray-500 uppercase">ラベルシートに印刷する</p>
+                  <select
+                    value={selectedPreset}
+                    onChange={(e) => setSelectedPreset(e.target.value)}
+                    className="w-full h-9 border border-gray-200 dark:border-gray-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 text-[11px] px-2"
+                  >
+                    {LABEL_PRESETS.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={generateLabelSheetPdf}
+                    disabled={generatingPdf}
+                    className="w-full h-10 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white text-[10px] tracking-[0.15em] uppercase transition-colors"
+                  >
+                    {generatingPdf ? '作成中...' : '↓ 印刷用PDFを作成'}
+                  </button>
+                  <p className="text-[9px] text-gray-400 leading-relaxed">
+                    対応ラベルシート：エーワン 72265・72244（31516と同サイズ）・72212。他の型番のご要望があればお問い合わせください。対応可能であれば追加します。
+                  </p>
+                </div>
+              </div>
             )}
             <div className="space-y-3">
               {codes.map((code, i) => (
