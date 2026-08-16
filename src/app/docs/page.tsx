@@ -85,7 +85,7 @@ const JA = {
       content: [
         { step: '使い方', desc: 'トップページの「バーコード / QRコード生成」から、バーコードとQRコードを切り替えて生成できます。数字やコードを1行ずつ入力するとバーコード画像（CODE128形式）を、URLやテキストを1行ずつ入力するとQRコード画像を生成できます。無料版は1回に2件まで、PRO版は無制限に生成し、まとめてZIPでダウンロードできます。' },
         { step: 'CSV一括アップロード', desc: '「CSVアップロード」タブから、CSVファイルをドラッグ&ドロップ、またはクリックして選択すると、まとめて生成できます。コードの列・商品名の列（任意）を選んで指定でき、画像下に表示する番号は自動連番かCSV内の任意の列から選べます。印刷物には商品名の代わりに番号のみ表示され、番号と商品名の対応はアップロードしたCSVで確認できます。' },
-        { step: 'QRコードの保存・印刷', desc: '生成したQRコードはスマートフォンで画像を長押しすると「写真に保存」できます。印刷する場合は各コードの「↓ PNG」ボタンからダウンロードしてください。' },
+        { step: '画像の保存・印刷', desc: '生成したバーコード（JANコードなど）・QRコードは、どちらもスマートフォンで画像を長押しすると「写真に保存」できます。印刷する場合は各コードの「↓ PNG」ボタンからダウンロードしてください。' },
         { step: 'ラベルシートに印刷（PRO）', desc: '複数件を生成すると「ラベルシートに印刷する」から対応ラベル型番（エーワン 72265・72244/31516・72212）を選び、A4のラベルシートにそのまま印刷できるPDFを作成できます。他の型番のご要望があればお問い合わせください。' },
         { step: 'クリア', desc: '「クリア」ボタンで入力内容・アップロードしたCSV・生成結果をまとめてリセットできます。' },
       ]
@@ -200,7 +200,7 @@ const EN = {
       content: [
         { step: 'How to use', desc: 'From "Barcode / QR Code Generator" on the home page, switch between barcode and QR code modes. Enter one code per line to generate CODE128 barcode images, or one URL/text per line to generate QR code images. Free: up to 2 at a time. PRO: unlimited, with bulk ZIP download.' },
         { step: 'Bulk CSV upload', desc: 'From the "CSV Upload" tab, drag and drop a CSV file or click to select one to generate codes in bulk. Choose which column holds the code and, optionally, which column holds the product name. The number shown under each printed image can be an auto-sequence or pulled from any column in your CSV. Printed images show only the number, not the product name — check your uploaded CSV to match numbers to products.' },
-        { step: 'Saving & printing QR codes', desc: 'On smartphones, long-press a generated QR code image to save it to your photos. To print, use the "↓ PNG" button next to each code to download it.' },
+        { step: 'Saving & printing images', desc: 'Both barcode (e.g. JAN code) and QR code images can be saved by long-pressing them on a smartphone. To print, use the "↓ PNG" button next to each code to download it.' },
         { step: 'Print on label sheets (PRO)', desc: 'Once you generate multiple codes, use "Print on label sheets" to choose a supported A-one label part number (72265, 72244/31516, or 72212) and create a ready-to-print PDF laid out for that sheet. Let us know if you need another size supported.' },
         { step: 'Clear', desc: 'Use the "Clear" button to reset your input, uploaded CSV, and generated results at once.' },
       ]
