@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
-import { checkIsPro } from '@/lib/license'
 
 const WORKER_URL = 'https://nukitoru-api.ume0117.workers.dev'
 
@@ -89,16 +88,11 @@ function downloadDraftCSV(results: DraftResult[]) {
 }
 
 export default function DraftPage() {
-  const [isPro, setIsPro] = useState<boolean | null>(null)
   const [phase, setPhase] = useState<'idle' | 'processing' | 'done' | 'error'>('idle')
   const [progress, setProgress] = useState({ current: 0, total: 0 })
   const [results, setResults] = useState<DraftResult[]>([])
   const [errorMsg, setErrorMsg] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    checkIsPro().then(setIsPro)
-  }, [])
 
   const handleFile = async (file: File) => {
     setPhase('processing')
@@ -125,23 +119,6 @@ export default function DraftPage() {
       setErrorMsg('ファイルの読み込みに失敗しました。')
       setPhase('error')
     }
-  }
-
-  if (isPro === null) {
-    return <div className="min-h-screen bg-white dark:bg-black" />
-  }
-
-  if (!isPro) {
-    return (
-      <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center px-6">
-        <div className="max-w-sm text-center space-y-4">
-          <p className="text-[11px] tracking-[0.3em] text-blue-500 uppercase">PRO限定機能</p>
-          <h1 className="text-[13px] text-gray-900 dark:text-white tracking-wide">出品下書き生成はPRO会員限定です</h1>
-          <p className="text-[11px] text-gray-500 leading-relaxed">JANコードから、楽天・Amazon・Yahoo!向けのタイトル案と商品説明文の雛形をまとめて自動生成します。</p>
-          <Link href="/upgrade" className="inline-block h-10 px-6 leading-[40px] bg-blue-600 hover:bg-blue-700 text-white text-[10px] tracking-[0.2em] uppercase transition-colors">Proを見る</Link>
-        </div>
-      </div>
-    )
   }
 
   const percent = progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0
