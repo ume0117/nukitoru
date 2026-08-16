@@ -38,7 +38,7 @@ export function Header() {
           </span>
         ) : (
           <a href="/upgrade" className="text-[9px] tracking-[0.2em] text-gray-400 dark:text-gray-600 hover:text-blue-600 dark:hover:text-blue-500 uppercase transition-colors">
-            Proになる
+            Proを見る
           </a>
         )}
       </div>
