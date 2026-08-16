@@ -19,7 +19,7 @@ const ROWS = [
   { label: 'CSV+価格出力', free: '3回/日', pro: '無制限' },
   { label: 'CATALOGモード', free: '3ページまで', pro: '無制限' },
   { label: '複数ファイル一括処理', free: '5ファイルまで', pro: '無制限' },
-  { label: 'バーコード画像生成', free: '2件まで', pro: '無制限+ZIP出力' },
+  { label: 'バーコード / QRコード画像生成', free: '2件まで', pro: '無制限+ZIP出力' },
   { label: '全店舗の価格分布表示', free: '最安値のみ', pro: '○' },
   { label: '一括再チェック', free: '－', pro: '○' },
   { label: '出品下書き自動生成', free: '－', pro: '○' },
