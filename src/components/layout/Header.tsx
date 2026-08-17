@@ -50,7 +50,9 @@ export function Header() {
           </span>
         </div>
 
-        {isPro ? (
+        {isPro === null ? (
+          <span className="w-16 h-4" aria-hidden="true" />
+        ) : isPro ? (
           <span className="text-[9px] tracking-[0.2em] text-blue-500 uppercase border border-blue-600 px-2 py-0.5">
             {t.pro}
           </span>
