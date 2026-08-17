@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { getSavedLicenseKey, saveLicenseKey } from '@/lib/license'
+import { trackEvent } from '@/lib/utils/analytics'
 
 const WORKER_URL = 'https://nukitoru-api.ume0117.workers.dev'
 const WATCH_LIMIT = 20
@@ -135,6 +136,7 @@ export default function WatchPage() {
       if (data.error) {
         setErrorMsg(data.error === 'already watching' ? 'すでに監視中のコードです。' : data.error === 'limit reached' ? `監視リストは${WATCH_LIMIT}件までです。` : '登録に失敗しました。')
       } else {
+        trackEvent('watch_add', { mode: 'manual', arrival_alert: arrivalAlert })
         setJan('')
         setThreshold('')
         setArrivalAlert(false)
@@ -191,6 +193,7 @@ export default function WatchPage() {
         } else {
           const addedCount = data.results?.added?.length || 0
           const skippedCount = data.results?.skipped?.length || 0
+          trackEvent('watch_add', { mode: 'csv', count: addedCount })
           setCsvResultMsg(`${addedCount}件を登録しました。${skippedCount > 0 ? `（${skippedCount}件はスキップ：上限超過または登録済み）` : ''}`)
           if (Array.isArray(data.watchList)) setList(data.watchList)
         }
