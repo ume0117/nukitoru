@@ -3,12 +3,30 @@
 import { useEffect, useState } from 'react'
 import { checkIsPro } from '@/lib/license'
 
+const LANG_STORAGE_KEY = 'nukitoru_lang'
+
+const TEXT = {
+  ja: {
+    pro: 'Pro',
+    seePlans: 'プランを見る',
+  },
+  en: {
+    pro: 'Pro',
+    seePlans: 'View Plans',
+  },
+}
+
 export function Header() {
   const [isPro, setIsPro] = useState<boolean | null>(null)
+  const [lang, setLang] = useState<'ja' | 'en'>('ja')
 
   useEffect(() => {
     checkIsPro().then(setIsPro)
+    const saved = localStorage.getItem(LANG_STORAGE_KEY)
+    if (saved === 'en' || saved === 'ja') setLang(saved)
   }, [])
+
+  const t = TEXT[lang]
 
   return (
     <header className="sticky top-0 z-10 border-b border-gray-100 dark:border-gray-900 bg-white dark:bg-black">
@@ -34,11 +52,11 @@ export function Header() {
 
         {isPro ? (
           <span className="text-[9px] tracking-[0.2em] text-blue-500 uppercase border border-blue-600 px-2 py-0.5">
-            Pro
+            {t.pro}
           </span>
         ) : (
           <a href="/upgrade" className="text-[9px] tracking-[0.2em] text-gray-400 dark:text-gray-600 hover:text-blue-600 dark:hover:text-blue-500 uppercase transition-colors">
-            Proを見る
+            {t.seePlans}
           </a>
         )}
       </div>
