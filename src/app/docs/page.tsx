@@ -82,10 +82,12 @@ const JA = {
     },
     {
       id: 'watch',
-      title: '価格改定アラート（PRO）',
+      title: '価格改定アラート（無料）',
       content: [
-        { step: '使い方', desc: 'トップページの「価格改定アラート」からJANコードを登録すると、毎日自動で価格をチェックし、値下がりした際にメールでお知らせします。1ライセンスにつき最大20件まで登録できます。' },
+        { step: '使い方', desc: 'トップページの「価格改定アラート」からメールアドレスを登録すると、無料でご利用いただけます。JANコードや型番を登録すると、毎日自動で価格をチェックし、値下がりした際にメールでお知らせします。最大20件まで登録できます。' },
         { step: '通知条件', desc: '登録時に「◯円以上下がったら通知」の金額を指定できます。空欄の場合は1円でも下がれば通知します。' },
+        { step: '入荷通知', desc: '「入荷したら通知する」をオンにすると、在庫切れ（価格が取得できない状態）から入荷（価格が取得できるようになった状態）に変わったタイミングでもメールでお知らせします。' },
+        { step: 'CSV一括登録', desc: '「CSVアップロード」タブから、コード・しきい値（任意）・入荷通知（任意）の3列のCSVをまとめてアップロードできます。テンプレート以外の形式のCSVでも取り込み可能です。' },
       ]
     },
     {
@@ -201,10 +203,12 @@ const EN = {
     },
     {
       id: 'watch',
-      title: 'Price Drop Alert (PRO)',
+      title: 'Price Drop Alert (Free)',
       content: [
-        { step: 'How to use', desc: 'From "Price Alert" on the home page, register a JAN code to automatically check its price daily and get an email when it drops. Up to 20 items per license.' },
+        { step: 'How to use', desc: 'From "Price Alert" on the home page, sign up with your email address to use this feature for free. Register a JAN code or model number to automatically check its price daily and get an email when it drops. Up to 20 items.' },
         { step: 'Notification threshold', desc: 'You can set a minimum price drop (in yen) to trigger a notification. Leave it blank to be notified on any drop.' },
+        { step: 'Arrival alert', desc: 'Turn on "Notify when back in stock" to get an email when an item goes from out-of-stock (price unavailable) to back in stock (price available again).' },
+        { step: 'Bulk CSV upload', desc: 'From the "CSV Upload" tab, upload a CSV with code, threshold (optional), and arrival alert (optional) columns to register items in bulk. CSVs in other formats can be imported too.' },
       ]
     },
     {
