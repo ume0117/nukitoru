@@ -17,6 +17,7 @@ interface GeneratedCode {
   dataUrl: string
   productName?: string
   label: string
+  selected: boolean
 }
 
 interface LabelPreset {
@@ -235,7 +236,7 @@ export default function BarcodeGeneratorPage() {
 
     for (const value of target) {
       const dataUrl = await renderCode(value, format)
-      if (dataUrl) generated.push({ value, dataUrl, label: value })
+      if (dataUrl) generated.push({ value, dataUrl, label: value, selected: true })
     }
     setCodes(generated)
   }
@@ -271,7 +272,7 @@ export default function BarcodeGeneratorPage() {
       seq++
 
       const dataUrl = await renderCode(value, format)
-      if (dataUrl) generated.push({ value, dataUrl, productName, label })
+      if (dataUrl) generated.push({ value, dataUrl, productName, label, selected: true })
     }
     setCodes(generated)
   }
@@ -290,6 +291,16 @@ export default function BarcodeGeneratorPage() {
     }
   }
 
+  const toggleSelect = (index: number) => {
+    setCodes(prev => prev.map((c, i) => i === index ? { ...c, selected: !c.selected } : c))
+  }
+
+  const selectAll = () => setCodes(prev => prev.map(c => ({ ...c, selected: true })))
+  const selectNone = () => setCodes(prev => prev.map(c => ({ ...c, selected: false })))
+
+  const selectedCodes = codes.filter(c => c.selected)
+  const selectedCount = selectedCodes.length
+
   const downloadSingle = (code: GeneratedCode) => {
     const prefix = format === 'QR' ? 'qrcode' : 'barcode'
     const a = document.createElement('a')
@@ -300,10 +311,11 @@ export default function BarcodeGeneratorPage() {
 
   const downloadZip = async () => {
     if (!isPro) return
+    const targets = selectedCount > 0 ? selectedCodes : codes
     const prefix = format === 'QR' ? 'qrcode' : 'barcode'
     const JSZip = (await import('jszip')).default
     const zip = new JSZip()
-    for (const code of codes) {
+    for (const code of targets) {
       const base64 = code.dataUrl.split(',')[1]
       zip.file(`${prefix}_${code.label}.png`, base64, { base64: true })
     }
@@ -321,6 +333,8 @@ export default function BarcodeGeneratorPage() {
     const preset = LABEL_PRESETS.find(p => p.id === selectedPreset)
     if (!preset) return
 
+    const targets = selectedCount > 0 ? selectedCodes : codes
+
     setGeneratingPdf(true)
     try {
       const { jsPDF } = await import('jspdf')
@@ -332,8 +346,8 @@ export default function BarcodeGeneratorPage() {
       const maxImgW = preset.cellWidthMm - cellPadding * 2
       const maxImgH = preset.cellHeightMm - cellPadding * 2 - numberAreaHeight
 
-      for (let i = 0; i < codes.length; i++) {
-        const code = codes[i]
+      for (let i = 0; i < targets.length; i++) {
+        const code = targets[i]
         const posInPage = i % perPage
         if (posInPage === 0 && i !== 0) doc.addPage()
 
@@ -561,10 +575,20 @@ export default function BarcodeGeneratorPage() {
 
         {codes.length > 0 && (
           <div className="space-y-4 mt-6">
+            {codes.length > 1 && (
+              <div className="flex items-center justify-between border border-gray-100 dark:border-gray-800 px-3 py-2">
+                <span className="text-[10px] text-gray-500">{selectedCount}/{codes.length}件を選択中</span>
+                <div className="flex gap-3">
+                  <button onClick={selectAll} className="text-[9px] tracking-[0.1em] text-blue-500 hover:text-blue-600 uppercase">全選択</button>
+                  <button onClick={selectNone} className="text-[9px] tracking-[0.1em] text-gray-400 hover:text-red-500 uppercase">全解除</button>
+                </div>
+              </div>
+            )}
+
             {isPro && codes.length > 1 && (
               <div className="space-y-2">
                 <button onClick={downloadZip} className="w-full h-10 border border-blue-600 text-blue-600 text-[10px] tracking-[0.15em] uppercase hover:bg-blue-600 hover:text-white transition-colors">
-                  ↓ まとめてZIPダウンロード（{codes.length}件）
+                  ↓ {selectedCount > 0 ? `選択した${selectedCount}件` : `全${codes.length}件`}をZIPダウンロード
                 </button>
 
                 <div className="border border-gray-100 dark:border-gray-800 p-3 space-y-2">
@@ -583,7 +607,7 @@ export default function BarcodeGeneratorPage() {
                     disabled={generatingPdf}
                     className="w-full h-10 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white text-[10px] tracking-[0.15em] uppercase transition-colors"
                   >
-                    {generatingPdf ? '作成中...' : '↓ 印刷用PDFを作成'}
+                    {generatingPdf ? '作成中...' : `↓ ${selectedCount > 0 ? `選択した${selectedCount}件` : `全${codes.length}件`}を印刷用PDFに`}
                   </button>
                   <p className="text-[9px] text-gray-400 leading-relaxed">
                     対応ラベルシート：エーワン 72265・72244（31516と同サイズ）・72212。他の型番のご要望があればお問い合わせください。対応可能であれば追加します。
@@ -593,7 +617,13 @@ export default function BarcodeGeneratorPage() {
             )}
             <div className="space-y-3">
               {codes.map((code, i) => (
-                <div key={i} className="border border-gray-100 dark:border-gray-800 p-3 flex items-center justify-between gap-3">
+                <div key={i} className={`border p-3 flex items-center justify-between gap-3 transition-colors ${code.selected ? 'border-gray-100 dark:border-gray-800' : 'border-gray-50 dark:border-gray-900 opacity-40'}`}>
+                  <input
+                    type="checkbox"
+                    checked={code.selected}
+                    onChange={() => toggleSelect(i)}
+                    className="shrink-0"
+                  />
                   <div className="flex flex-col items-center gap-1">
                     <img
                       src={code.dataUrl}
