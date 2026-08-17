@@ -5,6 +5,7 @@ import Link from 'next/link'
 import JsBarcode from 'jsbarcode'
 import QRCode from 'qrcode'
 import { checkIsPro } from '@/lib/license'
+import { trackEvent } from '@/lib/utils/analytics'
 
 const FREE_LIMIT = 2
 
@@ -266,6 +267,7 @@ export default function BarcodeGeneratorPage() {
       if (dataUrl) generated.push({ value, dataUrl, label: value, selected: true })
     }
     setCodes(generated)
+    trackEvent('generate_code', { format: format, mode: 'manual', count: generated.length })
   }
 
   const handleGenerateFromCsv = async () => {
@@ -309,6 +311,7 @@ export default function BarcodeGeneratorPage() {
       }
     }
     setCodes(generated)
+    trackEvent('generate_code', { format: format, mode: 'csv', count: generated.length })
   }
 
   const renderCode = async (value: string, fmt: 'BARCODE' | 'QR'): Promise<string | null> => {
@@ -346,6 +349,7 @@ export default function BarcodeGeneratorPage() {
   const downloadZip = async () => {
     if (!isPro) return
     const targets = selectedCount > 0 ? selectedCodes : codes
+    trackEvent('download_zip', { format: format || 'unknown', count: targets.length })
     const prefix = format === 'QR' ? 'qrcode' : 'barcode'
     const JSZip = (await import('jszip')).default
     const zip = new JSZip()
@@ -371,6 +375,7 @@ export default function BarcodeGeneratorPage() {
     const perPage = preset.cols * preset.rows
     const offset = Math.max(0, Math.min(perPage - 1, (startPosition || 1) - 1))
 
+    trackEvent('download_label_pdf', { preset: preset.id, count: targets.length })
     setGeneratingPdf(true)
     try {
       const { jsPDF } = await import('jspdf')
