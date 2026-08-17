@@ -186,6 +186,7 @@ export function ScannerSection() {
             <a href="/recheck" className="h-10 border border-gray-100 dark:border-gray-800 hover:border-blue-600 flex items-center justify-center gap-1.5 text-[9px] tracking-[0.15em] text-gray-400 dark:text-gray-600 hover:text-blue-600 uppercase transition-colors">一括再チェック</a>
             <a href="/watch" className="h-10 border border-gray-100 dark:border-gray-800 hover:border-blue-600 flex items-center justify-center gap-1.5 text-[9px] tracking-[0.15em] text-gray-400 dark:text-gray-600 hover:text-blue-600 uppercase transition-colors">価格改定アラート</a>
             <a href="/barcode-generator" className="h-10 border border-gray-100 dark:border-gray-800 hover:border-blue-600 flex items-center justify-center gap-1.5 text-[9px] tracking-[0.15em] text-gray-400 dark:text-gray-600 hover:text-blue-600 uppercase transition-colors">バーコード / QRコード生成<span className="text-blue-500 ml-1">PRO</span></a>
+            <a href="/image-resize" className="h-10 border border-gray-100 dark:border-gray-800 hover:border-blue-600 flex items-center justify-center gap-1.5 text-[9px] tracking-[0.15em] text-gray-400 dark:text-gray-600 hover:text-blue-600 uppercase transition-colors">商品画像リサイズ<span className="text-blue-500 ml-1">PRO</span></a>
           </div>
           {error && <ErrorAlert message={error} />}
           {progress.status !== 'idle' && <ScanProgress current={progress.current} total={progress.total} message={progress.message} status={progress.status} />}
