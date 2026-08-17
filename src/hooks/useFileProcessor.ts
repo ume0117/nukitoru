@@ -6,6 +6,7 @@ import { validateFile } from '@/lib/utils/validation'
 import { scanCanvas, imageFileToCanvas } from '@/lib/scanner/scanner'
 import { processPdf } from '@/lib/pdf/processor'
 import { deduplicateResults } from '@/lib/utils/dedup'
+import { trackEvent } from '@/lib/utils/analytics'
 
 // ============================================================
 // localStorage キー・ヘルパー
@@ -165,6 +166,11 @@ export function useFileProcessor() {
 
       const elapsedSec = ((Date.now() - startMs) / 1000).toFixed(1)
       const dedupedResults = deduplicateResults(results)
+
+      trackEvent('extract', {
+        file_type: validation.fileType || 'unknown',
+        result_count: dedupedResults.length,
+      })
 
       // 即座にlocalStorageに同期保存（ページ離脱前に確実に保存）
       setState((prev) => {
