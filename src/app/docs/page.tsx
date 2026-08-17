@@ -8,6 +8,15 @@ const JA = {
   subtitle: 'NUKITORU の全機能を解説します',
   sections: [
     {
+      id: 'intro',
+      title: 'NUKITORUの使い方（はじめての方へ）',
+      content: [
+        { step: '無料でできること', desc: 'PDF・画像からのコード一括抽出、楽天・Yahoo!の価格比較、CSV出力、CATALOGモード、一括再チェック、出品下書き生成、価格改定アラート（無料メール登録）など、日々の出品作業に使うコア機能はすべて無料・無制限でお使いいただけます。会員登録も不要です。' },
+        { step: 'PROでできること', desc: 'バーコード/QRコードの生成・ラベルシート印刷用PDF出力、複数ファイルの無制限一括処理、検索履歴のクラウド同期など、作業をさらに効率化する追加機能です。月額¥390、7日間無料トライアル付きでお試しいただけます。' },
+        { step: 'まず何をすればいい？', desc: 'トップページの「SELECT FILE」からPDFや画像をアップロードするか、検索窓にJANコード・型番・ASINを直接入力してください。詳しい使い方は以下の各セクションをご覧ください。' },
+      ]
+    },
+    {
       id: 'basic',
       title: '基本的な使い方',
       content: [
@@ -117,6 +126,15 @@ const EN = {
   title: 'User Guide',
   subtitle: 'Complete guide to all NUKITORU features',
   sections: [
+    {
+      id: 'intro',
+      title: 'How to use NUKITORU (new here?)',
+      content: [
+        { step: 'What\'s free', desc: 'Bulk code extraction from PDFs and images, price comparison on Rakuten and Yahoo!, CSV export, CATALOG mode, bulk recheck, listing draft generation, and price drop alerts (free email signup) — all core features you use for daily listing work are free and unlimited. No account required.' },
+        { step: 'What PRO adds', desc: 'Barcode/QR code generation, label-sheet-ready PDF export, unlimited batch multi-file processing, and cloud sync for search history — extras that speed up your workflow further. ¥390/month with a 7-day free trial.' },
+        { step: 'Where to start', desc: 'Upload a PDF or image from "SELECT FILE" on the home page, or type a JAN code, model number, or ASIN directly into the search box. See the sections below for details on each feature.' },
+      ]
+    },
     {
       id: 'basic',
       title: 'Basic Usage',
