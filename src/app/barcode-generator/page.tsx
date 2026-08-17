@@ -92,6 +92,29 @@ function analyzeCsvRows(rows: string[][]): { hasHeader: boolean; detectedFormat:
   return { hasHeader, detectedFormat }
 }
 
+function downloadTemplate(fmt: 'BARCODE' | 'QR') {
+  const rows = fmt === 'QR'
+    ? [
+        ['コード', '商品名', '枚数'],
+        ['https://nukitoru.pages.dev', 'NUKITORU公式サイト', '1'],
+        ['https://example.com/product/001', 'サンプル商品ページ（5枚欲しい場合の例）', '5'],
+      ]
+    : [
+        ['コード', '商品名', '枚数'],
+        ['4901234567894', 'サンプル商品A', '1'],
+        ['4901234567895', 'サンプル商品B（20枚欲しい場合の例）', '20'],
+      ]
+  const bom = '\uFEFF'
+  const csv = bom + rows.map(r => r.join(',')).join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = fmt === 'QR' ? 'nukitoru_csv_template_qrcode.csv' : 'nukitoru_csv_template_barcode.csv'
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 export default function BarcodeGeneratorPage() {
   const [format, setFormat] = useState<CodeFormat>(null)
   const [inputMode, setInputMode] = useState<InputMode>('MANUAL')
@@ -106,6 +129,7 @@ export default function BarcodeGeneratorPage() {
   const [csvHasHeader, setCsvHasHeader] = useState(true)
   const [codeColIndex, setCodeColIndex] = useState(0)
   const [nameColIndex, setNameColIndex] = useState<number>(-1)
+  const [qtyColIndex, setQtyColIndex] = useState<number>(-1)
   const [numberMode, setNumberMode] = useState<NumberMode>('auto')
   const [numberColIndex, setNumberColIndex] = useState<number>(-1)
   const [isDragging, setIsDragging] = useState(false)
@@ -113,6 +137,7 @@ export default function BarcodeGeneratorPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [selectedPreset, setSelectedPreset] = useState(LABEL_PRESETS[0].id)
+  const [startPosition, setStartPosition] = useState(1)
   const [generatingPdf, setGeneratingPdf] = useState(false)
 
   useEffect(() => {
@@ -147,6 +172,7 @@ export default function BarcodeGeneratorPage() {
     setCsvHasHeader(true)
     setCodeColIndex(0)
     setNameColIndex(-1)
+    setQtyColIndex(-1)
     setNumberMode('auto')
     setNumberColIndex(-1)
     setFormat(null)
@@ -176,6 +202,7 @@ export default function BarcodeGeneratorPage() {
       setCsvHasHeader(hasHeader)
       setCodeColIndex(0)
       setNameColIndex(rows[0].length > 1 ? 1 : -1)
+      setQtyColIndex(-1)
       setNumberMode('auto')
       setNumberColIndex(-1)
       setErrorMsg('')
@@ -263,16 +290,23 @@ export default function BarcodeGeneratorPage() {
       const value = (row[codeColIndex] || '').trim()
       if (!value) continue
       const productName = nameColIndex >= 0 ? (row[nameColIndex] || '').trim() : undefined
-      let label: string
-      if (numberMode === 'column' && numberColIndex >= 0) {
-        label = (row[numberColIndex] || '').trim() || String(seq).padStart(3, '0')
-      } else {
-        label = String(seq).padStart(3, '0')
-      }
-      seq++
+      const qtyRaw = qtyColIndex >= 0 ? parseInt((row[qtyColIndex] || '').trim(), 10) : 1
+      const qty = qtyRaw > 0 ? qtyRaw : 1
 
       const dataUrl = await renderCode(value, format)
-      if (dataUrl) generated.push({ value, dataUrl, productName, label, selected: true })
+      if (!dataUrl) continue
+
+      for (let k = 0; k < qty; k++) {
+        let label: string
+        if (numberMode === 'column' && numberColIndex >= 0) {
+          const base = (row[numberColIndex] || '').trim() || String(seq).padStart(3, '0')
+          label = qty > 1 ? `${base}-${k + 1}` : base
+        } else {
+          label = String(seq).padStart(3, '0')
+        }
+        seq++
+        generated.push({ value, dataUrl, productName, label, selected: true })
+      }
     }
     setCodes(generated)
   }
@@ -334,22 +368,31 @@ export default function BarcodeGeneratorPage() {
     if (!preset) return
 
     const targets = selectedCount > 0 ? selectedCodes : codes
+    const perPage = preset.cols * preset.rows
+    const offset = Math.max(0, Math.min(perPage - 1, (startPosition || 1) - 1))
 
     setGeneratingPdf(true)
     try {
       const { jsPDF } = await import('jspdf')
       const doc = new jsPDF({ unit: 'mm', format: 'a4' })
-      const perPage = preset.cols * preset.rows
       const cellPadding = 1.5
       const showNumber = format === 'QR' && inputMode === 'CSV'
       const numberAreaHeight = showNumber ? 3.2 : 0
       const maxImgW = preset.cellWidthMm - cellPadding * 2
       const maxImgH = preset.cellHeightMm - cellPadding * 2 - numberAreaHeight
 
+      let currentPage = 0
+
       for (let i = 0; i < targets.length; i++) {
         const code = targets[i]
-        const posInPage = i % perPage
-        if (posInPage === 0 && i !== 0) doc.addPage()
+        const globalPos = i + offset
+        const pageIndex = Math.floor(globalPos / perPage)
+        const posInPage = globalPos % perPage
+
+        if (pageIndex > currentPage) {
+          doc.addPage()
+          currentPage = pageIndex
+        }
 
         const row = Math.floor(posInPage / preset.cols)
         const col = posInPage % preset.cols
@@ -377,6 +420,9 @@ export default function BarcodeGeneratorPage() {
       setGeneratingPdf(false)
     }
   }
+
+  const selectedPresetInfo = LABEL_PRESETS.find(p => p.id === selectedPreset)
+  const maxStartPosition = selectedPresetInfo ? selectedPresetInfo.cols * selectedPresetInfo.rows : 1
 
   return (
     <div className="min-h-screen bg-white dark:bg-black">
@@ -451,9 +497,13 @@ export default function BarcodeGeneratorPage() {
 
         {inputMode === 'CSV' && (
           <>
-            <p className="text-[11px] text-gray-500 leading-relaxed mb-4">
+            <p className="text-[11px] text-gray-500 leading-relaxed mb-2">
               CSVファイルをアップロードすると、まとめてバーコード/QRコードを生成できます（内容から自動判定します）。
               {!isPro && `無料版は一度に${FREE_LIMIT}件まで。`}
+            </p>
+            <p className="text-[10px] text-gray-400 dark:text-gray-600 leading-relaxed mb-4">
+              テンプレート以外の形式のCSVでも取り込みできます。列の意味はアップロード後に指定できます。
+              <button onClick={() => downloadTemplate(format || 'BARCODE')} className="text-blue-500 hover:text-blue-600 underline ml-1">テンプレートをダウンロード</button>
             </p>
 
             <div
@@ -523,6 +573,20 @@ export default function BarcodeGeneratorPage() {
                       className="h-8 border border-gray-200 dark:border-gray-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 text-[11px] px-2"
                     >
                       <option value={-1}>なし</option>
+                      {headerLabels().map((h, i) => (
+                        <option key={i} value={i}>{h || `列${i + 1}`}</option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="text-[10px] text-gray-500 flex flex-col gap-1">
+                    枚数列（同じコードを複数枚生成したい場合・任意）
+                    <select
+                      value={qtyColIndex}
+                      onChange={(e) => setQtyColIndex(Number(e.target.value))}
+                      className="h-8 border border-gray-200 dark:border-gray-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 text-[11px] px-2"
+                    >
+                      <option value={-1}>なし（1コード=1枚）</option>
                       {headerLabels().map((h, i) => (
                         <option key={i} value={i}>{h || `列${i + 1}`}</option>
                       ))}
@@ -602,6 +666,17 @@ export default function BarcodeGeneratorPage() {
                       <option key={p.id} value={p.id}>{p.name}</option>
                     ))}
                   </select>
+                  <label className="text-[10px] text-gray-500 flex items-center gap-2">
+                    開始位置（何番目のマスから印刷するか。使いかけのシートに続きから印刷したい場合）
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={maxStartPosition}
+                    value={startPosition}
+                    onChange={(e) => setStartPosition(Math.max(1, Math.min(maxStartPosition, Number(e.target.value) || 1)))}
+                    className="h-8 w-24 px-2 border border-gray-200 dark:border-gray-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 text-[11px]"
+                  />
                   <button
                     onClick={generateLabelSheetPdf}
                     disabled={generatingPdf}
