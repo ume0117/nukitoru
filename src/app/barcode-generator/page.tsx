@@ -8,7 +8,7 @@ import { checkIsPro } from '@/lib/license'
 
 const FREE_LIMIT = 2
 
-type CodeFormat = 'BARCODE' | 'QR'
+type CodeFormat = 'BARCODE' | 'QR' | null
 type InputMode = 'MANUAL' | 'CSV'
 type NumberMode = 'auto' | 'column'
 
@@ -78,8 +78,21 @@ function getImageSize(dataUrl: string): Promise<{ width: number; height: number 
   })
 }
 
+function analyzeCsvRows(rows: string[][]): { hasHeader: boolean; detectedFormat: 'BARCODE' | 'QR' } {
+  const firstCellRaw = (rows[0]?.[0] || '').trim()
+  const firstCellLooksLikeCode = /^[0-9]{6,}$/.test(firstCellRaw) || /^https?:\/\//i.test(firstCellRaw)
+  const hasHeader = !firstCellLooksLikeCode
+
+  const sampleRows = hasHeader ? rows.slice(1) : rows
+  const sampleValues = sampleRows.map(r => (r[0] || '').trim()).filter(Boolean)
+  const numericCount = sampleValues.filter(v => /^[0-9]{6,}$/.test(v)).length
+  const detectedFormat: 'BARCODE' | 'QR' = sampleValues.length > 0 && numericCount / sampleValues.length >= 0.5 ? 'BARCODE' : 'QR'
+
+  return { hasHeader, detectedFormat }
+}
+
 export default function BarcodeGeneratorPage() {
-  const [format, setFormat] = useState<CodeFormat>('BARCODE')
+  const [format, setFormat] = useState<CodeFormat>(null)
   const [inputMode, setInputMode] = useState<InputMode>('MANUAL')
   const [input, setInput] = useState('')
   const [codes, setCodes] = useState<GeneratedCode[]>([])
@@ -95,6 +108,7 @@ export default function BarcodeGeneratorPage() {
   const [numberMode, setNumberMode] = useState<NumberMode>('auto')
   const [numberColIndex, setNumberColIndex] = useState<number>(-1)
   const [isDragging, setIsDragging] = useState(false)
+  const [csvAutoNote, setCsvAutoNote] = useState<'BARCODE' | 'QR' | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [selectedPreset, setSelectedPreset] = useState(LABEL_PRESETS[0].id)
@@ -104,20 +118,24 @@ export default function BarcodeGeneratorPage() {
     checkIsPro().then(setIsPro)
   }, [])
 
-  const switchFormat = (next: CodeFormat) => {
+  const switchFormat = (next: 'BARCODE' | 'QR') => {
     setFormat(next)
     setCodes([])
     setErrorMsg('')
+    setCsvAutoNote(null)
   }
 
   const switchInputMode = (next: InputMode) => {
     setInputMode(next)
+    setFormat(null)
     setCodes([])
     setErrorMsg('')
+    setCsvAutoNote(null)
   }
 
   const clearManual = () => {
     setInput('')
+    setFormat(null)
     setCodes([])
     setErrorMsg('')
   }
@@ -130,6 +148,8 @@ export default function BarcodeGeneratorPage() {
     setNameColIndex(-1)
     setNumberMode('auto')
     setNumberColIndex(-1)
+    setFormat(null)
+    setCsvAutoNote(null)
     setCodes([])
     setErrorMsg('')
     if (fileInputRef.current) fileInputRef.current.value = ''
@@ -148,23 +168,19 @@ export default function BarcodeGeneratorPage() {
         setErrorMsg('CSVを読み取れませんでした。')
         return
       }
-      const firstRow = rows[0]
-      const looksLikeData = firstRow.every(cell => {
-        const v = cell.trim()
-        if (!v) return false
-        return format === 'BARCODE' ? /^[0-9]{6,}$/.test(v) : /^https?:\/\//.test(v) || v.length > 0
-      })
-      const guessedHasHeader = format === 'BARCODE' ? !looksLikeData : rows.length > 1 && !/^https?:\/\//.test(firstRow[0]?.trim() || '')
+      const { hasHeader, detectedFormat } = analyzeCsvRows(rows)
 
       setCsvRows(rows)
       setCsvFileName(file.name)
-      setCsvHasHeader(guessedHasHeader)
+      setCsvHasHeader(hasHeader)
       setCodeColIndex(0)
       setNameColIndex(rows[0].length > 1 ? 1 : -1)
       setNumberMode('auto')
       setNumberColIndex(-1)
       setErrorMsg('')
       setCodes([])
+      setFormat(detectedFormat)
+      setCsvAutoNote(detectedFormat)
     }
     reader.readAsText(file, 'UTF-8')
   }
@@ -202,6 +218,10 @@ export default function BarcodeGeneratorPage() {
 
   const handleGenerate = async () => {
     setErrorMsg('')
+    if (!format) {
+      setErrorMsg('先にバーコードかQRコードを選んでください。')
+      return
+    }
     const lines = input.split(/\r?\n/).map(l => l.trim()).filter(Boolean)
     if (lines.length === 0) {
       setErrorMsg('コードまたはテキストを1行以上入力してください。')
@@ -214,7 +234,7 @@ export default function BarcodeGeneratorPage() {
     const generated: GeneratedCode[] = []
 
     for (const value of target) {
-      const dataUrl = await renderCode(value)
+      const dataUrl = await renderCode(value, format)
       if (dataUrl) generated.push({ value, dataUrl, label: value })
     }
     setCodes(generated)
@@ -222,6 +242,10 @@ export default function BarcodeGeneratorPage() {
 
   const handleGenerateFromCsv = async () => {
     setErrorMsg('')
+    if (!format) {
+      setErrorMsg('先にバーコードかQRコードを選んでください。')
+      return
+    }
     const rows = dataRows()
     if (rows.length === 0) {
       setErrorMsg('CSVにデータ行がありません。')
@@ -246,15 +270,15 @@ export default function BarcodeGeneratorPage() {
       }
       seq++
 
-      const dataUrl = await renderCode(value)
+      const dataUrl = await renderCode(value, format)
       if (dataUrl) generated.push({ value, dataUrl, productName, label })
     }
     setCodes(generated)
   }
 
-  const renderCode = async (value: string): Promise<string | null> => {
+  const renderCode = async (value: string, fmt: 'BARCODE' | 'QR'): Promise<string | null> => {
     try {
-      if (format === 'QR') {
+      if (fmt === 'QR') {
         return await QRCode.toDataURL(value, { width: 300, margin: 2, errorCorrectionLevel: 'M' })
       } else {
         const canvas = document.createElement('canvas')
@@ -382,7 +406,9 @@ export default function BarcodeGeneratorPage() {
         {inputMode === 'MANUAL' && (
           <>
             <p className="text-[11px] text-gray-500 leading-relaxed mb-6">
-              {format === 'QR'
+              {!format
+                ? '上のボタンでバーコードかQRコードを選んでから入力してください。'
+                : format === 'QR'
                 ? 'URLやテキストを1行ずつ入力すると、QRコード画像を生成します。'
                 : '数字やコードを1行ずつ入力すると、バーコード画像を生成します。'}
               {!isPro && `無料版は一度に${FREE_LIMIT}件まで。`}
@@ -391,7 +417,7 @@ export default function BarcodeGeneratorPage() {
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={format === 'QR' ? 'https://nukitoru.pages.dev\nhttps://example.com' : '4901234567894\n1234567890128'}
+              placeholder={format === 'QR' ? 'https://nukitoru.pages.dev\nhttps://example.com' : format === 'BARCODE' ? '4901234567894\n1234567890128' : 'バーコードかQRコードを選んでください'}
               rows={5}
               className="w-full p-3 text-sm font-mono border border-gray-200 dark:border-gray-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-700 focus:outline-none focus:border-blue-600 transition-colors mb-3"
             />
@@ -412,7 +438,7 @@ export default function BarcodeGeneratorPage() {
         {inputMode === 'CSV' && (
           <>
             <p className="text-[11px] text-gray-500 leading-relaxed mb-4">
-              CSVファイルをアップロードすると、まとめて{format === 'QR' ? 'QRコード' : 'バーコード'}を生成できます。
+              CSVファイルをアップロードすると、まとめてバーコード/QRコードを生成できます（内容から自動判定します）。
               {!isPro && `無料版は一度に${FREE_LIMIT}件まで。`}
             </p>
 
@@ -442,6 +468,12 @@ export default function BarcodeGeneratorPage() {
                 </>
               )}
             </div>
+
+            {csvAutoNote && (
+              <p className="text-[9px] text-blue-500 mb-4">
+                内容から「{csvAutoNote === 'QR' ? 'QRコード' : 'バーコード'}」と自動判定しました。違う場合は上のボタンで切り替えてください。
+              </p>
+            )}
 
             {csvRows && (
               <div className="space-y-4 mb-4 border border-gray-100 dark:border-gray-800 p-3">
