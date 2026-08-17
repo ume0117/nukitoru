@@ -7,6 +7,7 @@ import { useState } from 'react'
 import type { ScanResult } from '@/types'
 import { ResultItem } from './ResultItem'
 import { getResultPriority } from '@/lib/utils/qr-content'
+import { trackEvent } from '@/lib/utils/analytics'
 import { cn } from '@/lib/utils/cn'
 
 interface ResultListProps {
@@ -25,6 +26,7 @@ const TYPE_LABEL: Record<string, string> = {
 type FilterType = 'ALL' | 'JAN' | 'QR' | 'URL' | 'CODE128'
 
 function downloadCSV(results: ScanResult[]) {
+  trackEvent('download_csv', { result_count: results.length })
   const now = new Date()
   const pad = (n: number) => String(n).padStart(2, '0')
   const datetime = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`
@@ -58,6 +60,7 @@ function applyFilter(results: ScanResult[], filter: FilterType): ScanResult[] {
 
 
 function downloadExcel(results: ScanResult[]) {
+  trackEvent('download_excel', { result_count: results.length })
   const now = new Date()
   const pad = (n: number) => String(n).padStart(2, '0')
   const filename = `nukitoru_${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}.xlsx`
@@ -76,6 +79,7 @@ function downloadExcel(results: ScanResult[]) {
 
 
 async function downloadCSVWithPrice(results: ScanResult[]) {
+  trackEvent('download_csv_with_price', { result_count: results.length })
   const now = new Date()
   const pad = (n: number) => String(n).padStart(2, '0')
   const datetime = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`
