@@ -5,8 +5,11 @@ const LICENSE_KEY_STORAGE = "nukitoru_license_key"
 const LICENSE_VALID_CACHE = "nukitoru_license_valid_cache"
 const CACHE_TTL_MS = 1000 * 60 * 60 * 6 // 6時間キャッシュ
 
+export type PlanType = "free" | "pro" | "pro_max"
+
 type LicenseCache = {
   valid: boolean
+  plan: PlanType
   checkedAt: number
 }
 
@@ -25,36 +28,48 @@ export function clearLicenseKey() {
   localStorage.removeItem(LICENSE_VALID_CACHE)
 }
 
-async function fetchLicenseValidity(key: string): Promise<boolean> {
+async function fetchLicenseInfo(key: string): Promise<{ valid: boolean; plan: PlanType }> {
   try {
     const res = await fetch(WORKER_URL + "/verify-license?key=" + encodeURIComponent(key))
     const data = await res.json()
-    return !!data.valid
+    const plan: PlanType = data.plan === "pro_max" ? "pro_max" : data.plan === "pro" ? "pro" : "free"
+    return { valid: !!data.valid, plan }
   } catch {
-    return false
+    return { valid: false, plan: "free" }
   }
 }
 
-export async function checkIsPro(): Promise<boolean> {
+async function getLicenseInfo(): Promise<{ valid: boolean; plan: PlanType }> {
   const key = getSavedLicenseKey()
-  if (!key) return false
+  if (!key) return { valid: false, plan: "free" }
 
   const cachedRaw = localStorage.getItem(LICENSE_VALID_CACHE)
   if (cachedRaw) {
     try {
       const cached: LicenseCache = JSON.parse(cachedRaw)
       if (Date.now() - cached.checkedAt < CACHE_TTL_MS) {
-        return cached.valid
+        return { valid: cached.valid, plan: cached.plan }
       }
     } catch {}
   }
 
-  const valid = await fetchLicenseValidity(key)
+  const info = await fetchLicenseInfo(key)
   localStorage.setItem(
     LICENSE_VALID_CACHE,
-    JSON.stringify({ valid, checkedAt: Date.now() } as LicenseCache)
+    JSON.stringify({ valid: info.valid, plan: info.plan, checkedAt: Date.now() } as LicenseCache)
   )
-  return valid
+  return info
+}
+
+export async function checkIsPro(): Promise<boolean> {
+  const info = await getLicenseInfo()
+  return info.valid
+}
+
+export async function getPlan(): Promise<PlanType> {
+  const info = await getLicenseInfo()
+  if (!info.valid) return "free"
+  return info.plan
 }
 
 // ── 無料枠カウント（日付が変わったら自動リセット） ──────────

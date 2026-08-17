@@ -2,9 +2,10 @@
 
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
-import { checkIsPro } from '@/lib/license'
+import { getPlan, type PlanType } from '@/lib/license'
 
 const FREE_LIMIT = 2
+const PRO_MALL_LIMIT = 3
 
 type FitMode = 'pad' | 'cover' | 'stretch'
 type OutputFormat = 'jpeg' | 'png' | 'webp'
@@ -28,15 +29,18 @@ const PRESETS: Preset[] = [
   { id: 'generic', name: '汎用（1200×1200px）', width: 1200, height: 1200, maxBytes: 2 * 1024 * 1024 },
 ]
 
-interface ProcessedImage {
+interface SourceImage {
   id: string
-  originalFile: File
-  originalUrl: string
-  originalSize: number
-  resultUrl: string | null
-  resultBytes: number | null
+  file: File
+  url: string
+  size: number
+}
+
+interface ResultImage {
+  presetId: string
+  url: string
+  bytes: number
   label: string
-  processing: boolean
 }
 
 function formatBytes(bytes: number): string {
@@ -122,27 +126,50 @@ async function compressToTarget(canvas: HTMLCanvasElement, format: OutputFormat,
 }
 
 export default function ImageResizePage() {
-  const [isPro, setIsPro] = useState(false)
-  const [images, setImages] = useState<ProcessedImage[]>([])
-  const [presetId, setPresetId] = useState(PRESETS[0].id)
+  const [plan, setPlan] = useState<PlanType>('free')
+  const [images, setImages] = useState<SourceImage[]>([])
+  const [selectedPresets, setSelectedPresets] = useState<string[]>([PRESETS[0].id])
   const [fitMode, setFitMode] = useState<FitMode>('pad')
   const [bgColor, setBgColor] = useState('#ffffff')
   const [format, setFormat] = useState<OutputFormat>('jpeg')
   const [renamePrefix, setRenamePrefix] = useState('')
+  const [results, setResults] = useState<Record<string, ResultImage[]>>({})
   const [processing, setProcessing] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    checkIsPro().then(setIsPro)
+    getPlan().then(setPlan)
   }, [])
 
-  const preset = PRESETS.find(p => p.id === presetId)!
+  const isPro = plan === 'pro' || plan === 'pro_max'
+  const isProMax = plan === 'pro_max'
+  const mallLimit = isProMax ? PRESETS.length : isPro ? PRO_MALL_LIMIT : 1
+
+  const togglePreset = (id: string) => {
+    setResults({})
+    setSelectedPresets((prev) => {
+      if (prev.includes(id)) return prev.filter((p) => p !== id)
+      if (prev.length >= mallLimit) {
+        setErrorMsg(
+          isProMax
+            ? ''
+            : isPro
+            ? `Proプランは同時に${PRO_MALL_LIMIT}モールまで選択できます。全モール同時処理はPro Maxで利用できます。`
+            : '無料版は同時に1モールまでです。複数モールを同時に処理するにはProへアップグレードしてください。'
+        )
+        return prev
+      }
+      setErrorMsg('')
+      return [...prev, id]
+    })
+  }
 
   const handleFiles = (files: FileList | File[]) => {
     setErrorMsg('')
-    const arr = Array.from(files).filter(f => f.type.startsWith('image/'))
+    setResults({})
+    const arr = Array.from(files).filter((f) => f.type.startsWith('image/'))
     if (arr.length === 0) {
       setErrorMsg('画像ファイルを選択してください。')
       return
@@ -151,15 +178,11 @@ export default function ImageResizePage() {
     if (!isPro && arr.length > FREE_LIMIT) {
       setErrorMsg(`無料版は一度に${FREE_LIMIT}件までです。先頭${FREE_LIMIT}件のみ処理します。まとめて処理するにはProへアップグレードしてください。`)
     }
-    const newImages: ProcessedImage[] = target.map((f, i) => ({
+    const newImages: SourceImage[] = target.map((f, i) => ({
       id: `${Date.now()}_${i}`,
-      originalFile: f,
-      originalUrl: URL.createObjectURL(f),
-      originalSize: f.size,
-      resultUrl: null,
-      resultBytes: null,
-      label: String(i + 1).padStart(3, '0'),
-      processing: false,
+      file: f,
+      url: URL.createObjectURL(f),
+      size: f.size,
     }))
     setImages(newImages)
   }
@@ -183,64 +206,74 @@ export default function ImageResizePage() {
 
   const clearAll = () => {
     setImages([])
+    setResults({})
     setErrorMsg('')
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   const processAll = async () => {
-    if (images.length === 0) return
+    if (images.length === 0 || selectedPresets.length === 0) return
     setProcessing(true)
-    const updated = [...images]
-    for (let i = 0; i < updated.length; i++) {
-      const item = updated[i]
-      try {
-        const img = await loadImage(item.originalFile)
-        const canvas = drawToCanvas(img, preset.width, preset.height, fitMode, bgColor)
-        const blob = await compressToTarget(canvas, format, preset.maxBytes)
-        const url = URL.createObjectURL(blob)
-        const label = renamePrefix
-          ? `${renamePrefix}_${String(i + 1).padStart(2, '0')}`
-          : String(i + 1).padStart(3, '0')
-        updated[i] = { ...item, resultUrl: url, resultBytes: blob.size, label }
-        setImages([...updated])
-      } catch {
-        // スキップ
+    const newResults: Record<string, ResultImage[]> = {}
+
+    for (const presetId of selectedPresets) {
+      const preset = PRESETS.find((p) => p.id === presetId)!
+      const list: ResultImage[] = []
+      for (let i = 0; i < images.length; i++) {
+        try {
+          const img = await loadImage(images[i].file)
+          const canvas = drawToCanvas(img, preset.width, preset.height, fitMode, bgColor)
+          const blob = await compressToTarget(canvas, format, preset.maxBytes)
+          const url = URL.createObjectURL(blob)
+          const label = renamePrefix
+            ? `${renamePrefix}_${String(i + 1).padStart(2, '0')}`
+            : String(i + 1).padStart(3, '0')
+          list.push({ presetId, url, bytes: blob.size, label })
+        } catch {
+          // スキップ
+        }
       }
+      newResults[presetId] = list
+      setResults({ ...newResults })
     }
     setProcessing(false)
   }
 
-  const downloadSingle = (item: ProcessedImage) => {
-    if (!item.resultUrl) return
+  const downloadSingle = (item: ResultImage) => {
     const ext = format === 'jpeg' ? 'jpg' : format
+    const preset = PRESETS.find((p) => p.id === item.presetId)!
     const a = document.createElement('a')
-    a.href = item.resultUrl
-    a.download = `${item.label}.${ext}`
+    a.href = item.url
+    a.download = `${preset.id}_${item.label}.${ext}`
     a.click()
   }
 
-  const downloadZip = async () => {
+  const downloadZipAll = async () => {
     if (!isPro) return
-    const done = images.filter(i => i.resultUrl)
-    if (done.length === 0) return
+    const entries = Object.entries(results)
+    if (entries.length === 0) return
     const JSZip = (await import('jszip')).default
     const zip = new JSZip()
     const ext = format === 'jpeg' ? 'jpg' : format
-    for (const item of done) {
-      const res = await fetch(item.resultUrl!)
-      const blob = await res.blob()
-      zip.file(`${item.label}.${ext}`, blob)
+    for (const [presetId, list] of entries) {
+      const folder = zip.folder(presetId)!
+      for (const item of list) {
+        const res = await fetch(item.url)
+        const blob = await res.blob()
+        folder.file(`${item.label}.${ext}`, blob)
+      }
     }
     const zipBlob = await zip.generateAsync({ type: 'blob' })
     const url = URL.createObjectURL(zipBlob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `nukitoru_images_${preset.id}.zip`
+    a.download = `nukitoru_images_${selectedPresets.join('_')}.zip`
     a.click()
     URL.revokeObjectURL(url)
   }
 
-  const allDone = images.length > 0 && images.every(i => i.resultUrl)
+  const hasResults = Object.values(results).some((list) => list.length > 0)
+  const totalResultCount = Object.values(results).reduce((s, list) => s + list.length, 0)
 
   return (
     <div className="min-h-screen bg-white dark:bg-black">
@@ -250,9 +283,15 @@ export default function ImageResizePage() {
         </div>
 
         <h1 className="text-[13px] tracking-[0.3em] text-gray-900 dark:text-white uppercase font-medium mb-2">商品画像リサイズ</h1>
-        <p className="text-[11px] text-gray-500 leading-relaxed mb-8">
+        <p className="text-[11px] text-gray-500 leading-relaxed mb-2">
           複数の商品画像を、楽天・Yahoo!・Amazonなど各モールの推奨サイズにまとめて変換できます。すべてブラウザ内で処理され、サーバーには送信されません。
-          {!isPro && `無料版は一度に${FREE_LIMIT}件まで。`}
+        </p>
+        <p className="text-[10px] text-gray-400 dark:text-gray-600 leading-relaxed mb-8">
+          {isProMax
+            ? '全モール同時選択・一括処理が可能です。'
+            : isPro
+            ? `同時に最大${PRO_MALL_LIMIT}モールまで選択して一括処理できます。全モール同時処理はPro Maxで利用できます。`
+            : `無料版は一度に${FREE_LIMIT}件・1モールまで。複数モール同時処理はProで利用できます。`}
         </p>
 
         {images.length === 0 && (
@@ -279,7 +318,7 @@ export default function ImageResizePage() {
         {errorMsg && (
           <p className="text-[10px] text-yellow-500 leading-relaxed my-4">
             {errorMsg}
-            {!isPro && <Link href="/upgrade" className="text-blue-500 hover:text-blue-600 underline ml-1">Proにアップグレード →</Link>}
+            {!isProMax && <Link href="/upgrade" className="text-blue-500 hover:text-blue-600 underline ml-1">{isPro ? 'Pro Maxの詳細を見る' : 'Proにアップグレード'} →</Link>}
           </p>
         )}
 
@@ -291,12 +330,22 @@ export default function ImageResizePage() {
                 <button onClick={clearAll} className="text-[9px] tracking-[0.1em] text-gray-400 hover:text-red-500 uppercase">クリア</button>
               </div>
 
-              <label className="text-[10px] text-gray-500 flex flex-col gap-1">
-                出力先モール
-                <select value={presetId} onChange={(e) => setPresetId(e.target.value)} className="h-9 border border-gray-200 dark:border-gray-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 text-[11px] px-2">
-                  {PRESETS.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                </select>
-              </label>
+              <div className="text-[10px] text-gray-500 flex flex-col gap-1">
+                出力先モール（{selectedPresets.length}/{mallLimit}選択中）
+                <div className="grid grid-cols-2 gap-1.5 mt-1">
+                  {PRESETS.map((p) => (
+                    <label key={p.id} className={`flex items-center gap-1.5 border px-2 py-1.5 cursor-pointer transition-colors ${selectedPresets.includes(p.id) ? 'border-blue-600 text-blue-600 bg-blue-600/5' : 'border-gray-200 dark:border-gray-800 text-gray-500'}`}>
+                      <input
+                        type="checkbox"
+                        checked={selectedPresets.includes(p.id)}
+                        onChange={() => togglePreset(p.id)}
+                        className="shrink-0"
+                      />
+                      <span className="text-[9px]">{p.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
 
               <div className="text-[10px] text-gray-500 flex flex-col gap-1">
                 サイズの合わせ方
@@ -343,50 +392,51 @@ export default function ImageResizePage() {
                 />
               </label>
 
-              <button onClick={processAll} disabled={processing} className="w-full h-11 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white text-[11px] tracking-[0.2em] uppercase transition-colors">
-                {processing ? '処理中...' : `${preset.width}×${preset.height}pxに変換する`}
+              <button onClick={processAll} disabled={processing || selectedPresets.length === 0} className="w-full h-11 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white text-[11px] tracking-[0.2em] uppercase transition-colors">
+                {processing ? '処理中...' : `選択した${selectedPresets.length}モールに変換する`}
               </button>
             </div>
 
-            {allDone && isPro && images.length > 1 && (
-              <button onClick={downloadZip} className="w-full h-10 border border-blue-600 text-blue-600 text-[10px] tracking-[0.15em] uppercase hover:bg-blue-600 hover:text-white transition-colors mb-4">
-                ↓ まとめてZIPダウンロード（{images.length}件）
+            {hasResults && isPro && (
+              <button onClick={downloadZipAll} className="w-full h-10 border border-blue-600 text-blue-600 text-[10px] tracking-[0.15em] uppercase hover:bg-blue-600 hover:text-white transition-colors mb-4">
+                ↓ 全モールまとめてZIPダウンロード（{totalResultCount}件）
               </button>
             )}
 
-            <div className="space-y-3">
-              {images.map((item) => (
-                <div key={item.id} className="border border-gray-100 dark:border-gray-800 p-3 space-y-2">
-                  <div className="flex items-center gap-3">
-                    <div className="flex flex-col items-center gap-1">
-                      <img src={item.originalUrl} alt="original" className="w-20 h-20 object-cover bg-gray-100 dark:bg-gray-900" />
-                      <p className="text-[8px] text-gray-400">Before</p>
-                      <p className="text-[8px] text-gray-400">{formatBytes(item.originalSize)}</p>
-                    </div>
-                    <span className="text-gray-300 dark:text-gray-700">→</span>
-                    <div className="flex flex-col items-center gap-1">
-                      {item.resultUrl ? (
-                        <>
-                          <img src={item.resultUrl} alt="result" className="w-20 h-20 object-cover bg-gray-100 dark:bg-gray-900" />
-                          <p className="text-[8px] text-blue-500">After</p>
-                          <p className="text-[8px] text-blue-500">{formatBytes(item.resultBytes!)}</p>
-                        </>
-                      ) : (
-                        <div className="w-20 h-20 bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-                          <p className="text-[8px] text-gray-300 dark:text-gray-700">未処理</p>
+            {selectedPresets.map((presetId) => {
+              const preset = PRESETS.find((p) => p.id === presetId)!
+              const list = results[presetId]
+              if (!list) return null
+              return (
+                <div key={presetId} className="space-y-2 mb-4">
+                  <p className="text-[10px] tracking-[0.1em] text-gray-500 uppercase border-b border-gray-100 dark:border-gray-800 pb-1">{preset.name}</p>
+                  {list.map((item, idx) => {
+                    const src = images[idx]
+                    return (
+                      <div key={idx} className="border border-gray-100 dark:border-gray-800 p-3 space-y-2">
+                        <div className="flex items-center gap-3">
+                          <div className="flex flex-col items-center gap-1">
+                            <img src={src.url} alt="original" className="w-16 h-16 object-cover bg-gray-100 dark:bg-gray-900" />
+                            <p className="text-[8px] text-gray-400">Before</p>
+                            <p className="text-[8px] text-gray-400">{formatBytes(src.size)}</p>
+                          </div>
+                          <span className="text-gray-300 dark:text-gray-700">→</span>
+                          <div className="flex flex-col items-center gap-1">
+                            <img src={item.url} alt="result" className="w-16 h-16 object-cover bg-gray-100 dark:bg-gray-900" />
+                            <p className="text-[8px] text-blue-500">After</p>
+                            <p className="text-[8px] text-blue-500">{formatBytes(item.bytes)}</p>
+                          </div>
+                          <div className="flex-1 min-w-0 flex flex-col items-end gap-1">
+                            <p className="text-[9px] text-gray-500 truncate max-w-full">{src.file.name}</p>
+                            <button onClick={() => downloadSingle(item)} className="text-[9px] tracking-[0.1em] text-blue-500 hover:text-blue-600 uppercase whitespace-nowrap">↓ ダウンロード</button>
+                          </div>
                         </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0 flex flex-col items-end gap-1">
-                      <p className="text-[9px] text-gray-500 truncate max-w-full">{item.originalFile.name}</p>
-                      {item.resultUrl && (
-                        <button onClick={() => downloadSingle(item)} className="text-[9px] tracking-[0.1em] text-blue-500 hover:text-blue-600 uppercase whitespace-nowrap">↓ ダウンロード</button>
-                      )}
-                    </div>
-                  </div>
+                      </div>
+                    )
+                  })}
                 </div>
-              ))}
-            </div>
+              )
+            })}
           </>
         )}
       </div>
