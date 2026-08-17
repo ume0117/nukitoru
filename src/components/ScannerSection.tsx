@@ -21,8 +21,8 @@ const TEXT = {
   ja: {
     badges: ['URL開ける', 'PDF全ページ', 'プライバシー保護', 'ブラウザ内処理'],
     introTitle: 'コア機能はすべて無料・無制限',
-    introBody: '価格比較・CSV出力・出品下書き・価格改定アラートなど、日々の出品作業に使う機能はどなたでも無料でお使いいただけます。PROは、バーコード/QRコード生成やラベルシート印刷など、作業をさらに効率化する追加機能です。',
-    introLink: 'PROの詳細を見る →',
+    introBody: '価格比較・CSV出力・出品下書き・価格改定アラートなど、日々の出品作業に使う機能はどなたでも無料でお使いいただけます。PROはバーコード/QRコード生成やラベルシート印刷、PRO MAXは商品画像の全モール同時リサイズなど、作業をさらに効率化する追加機能です。',
+    introLink: 'PRO / PRO MAXの詳細を見る →',
     catalog: 'カタログ',
     inventory: '棚卸し',
     history: '履歴',
@@ -42,8 +42,8 @@ const TEXT = {
   en: {
     badges: ['URL open', 'PDF all pages', 'Privacy safe', 'Browser only'],
     introTitle: 'Core features are free and unlimited',
-    introBody: 'Price comparison, CSV export, listing drafts, price drop alerts, and more are free for everyone. PRO adds extras like barcode/QR code generation and label sheet printing to speed up your workflow further.',
-    introLink: 'See what PRO offers →',
+    introBody: 'Price comparison, CSV export, listing drafts, price drop alerts, and more are free for everyone. PRO adds extras like barcode/QR code generation and label sheet printing, and PRO MAX adds bulk image resizing across all marketplaces at once, to speed up your workflow further.',
+    introLink: 'See what PRO / PRO MAX offer →',
     catalog: 'Catalog',
     inventory: 'Inventory',
     history: 'History',
@@ -186,7 +186,7 @@ export function ScannerSection() {
             <a href="/recheck" className="h-10 border border-gray-100 dark:border-gray-800 hover:border-blue-600 flex items-center justify-center gap-1.5 text-[9px] tracking-[0.15em] text-gray-400 dark:text-gray-600 hover:text-blue-600 uppercase transition-colors">一括再チェック</a>
             <a href="/watch" className="h-10 border border-gray-100 dark:border-gray-800 hover:border-blue-600 flex items-center justify-center gap-1.5 text-[9px] tracking-[0.15em] text-gray-400 dark:text-gray-600 hover:text-blue-600 uppercase transition-colors">価格改定アラート</a>
             <a href="/barcode-generator" className="h-10 border border-gray-100 dark:border-gray-800 hover:border-blue-600 flex items-center justify-center gap-1.5 text-[9px] tracking-[0.15em] text-gray-400 dark:text-gray-600 hover:text-blue-600 uppercase transition-colors">バーコード / QRコード生成<span className="text-blue-500 ml-1">PRO</span></a>
-            <a href="/image-resize" className="h-10 border border-gray-100 dark:border-gray-800 hover:border-blue-600 flex items-center justify-center gap-1.5 text-[9px] tracking-[0.15em] text-gray-400 dark:text-gray-600 hover:text-blue-600 uppercase transition-colors">商品画像リサイズ<span className="text-blue-500 ml-1">PRO</span></a>
+            <a href="/image-resize" className="h-10 border border-gray-100 dark:border-gray-800 hover:border-blue-600 flex items-center justify-center gap-1.5 text-[9px] tracking-[0.15em] text-gray-400 dark:text-gray-600 hover:text-blue-600 uppercase transition-colors">商品画像リサイズ<span className="text-blue-500 ml-1">PRO</span><span className="text-purple-500">+</span></a>
           </div>
           {error && <ErrorAlert message={error} />}
           {progress.status !== 'idle' && <ScanProgress current={progress.current} total={progress.total} message={progress.message} status={progress.status} />}
