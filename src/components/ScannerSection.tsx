@@ -12,6 +12,7 @@ import { ScanProgress } from '@/components/scanner/ScanProgress'
 import { ResultList } from '@/components/results/ResultList'
 import { cn } from '@/lib/utils/cn'
 import { deduplicateResults } from '@/lib/utils/dedup'
+import { trackEvent } from '@/lib/utils/analytics'
 import type { ScanResult } from '@/types'
 
 const LANG_STORAGE_KEY = 'nukitoru_lang'
@@ -123,6 +124,7 @@ export function ScannerSection() {
 
   const handleCameraResult = (newResults: ScanResult[]) => {
     const merged = deduplicateResults([...newResults, ...results])
+    trackEvent('extract', { file_type: 'camera', result_count: newResults.length })
     addResults(merged)
   }
 
