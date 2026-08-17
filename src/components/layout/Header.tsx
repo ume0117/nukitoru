@@ -1,27 +1,29 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { checkIsPro } from '@/lib/license'
+import { getPlan, type PlanType } from '@/lib/license'
 
 const LANG_STORAGE_KEY = 'nukitoru_lang'
 
 const TEXT = {
   ja: {
     pro: 'Pro',
+    proMax: 'Pro Max',
     seePlans: 'プランを見る',
   },
   en: {
     pro: 'Pro',
+    proMax: 'Pro Max',
     seePlans: 'View Plans',
   },
 }
 
 export function Header() {
-  const [isPro, setIsPro] = useState<boolean | null>(null)
+  const [plan, setPlan] = useState<PlanType | null>(null)
   const [lang, setLang] = useState<'ja' | 'en'>('ja')
 
   useEffect(() => {
-    checkIsPro().then(setIsPro)
+    getPlan().then(setPlan)
     const saved = localStorage.getItem(LANG_STORAGE_KEY)
     if (saved === 'en' || saved === 'ja') setLang(saved)
   }, [])
@@ -50,9 +52,13 @@ export function Header() {
           </span>
         </div>
 
-        {isPro === null ? (
+        {plan === null ? (
           <span className="w-16 h-4" aria-hidden="true" />
-        ) : isPro ? (
+        ) : plan === 'pro_max' ? (
+          <span className="text-[9px] tracking-[0.2em] text-purple-500 uppercase border border-purple-500 px-2 py-0.5">
+            {t.proMax}
+          </span>
+        ) : plan === 'pro' ? (
           <span className="text-[9px] tracking-[0.2em] text-blue-500 uppercase border border-blue-600 px-2 py-0.5">
             {t.pro}
           </span>
