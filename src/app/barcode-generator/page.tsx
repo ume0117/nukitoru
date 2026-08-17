@@ -644,15 +644,23 @@ export default function BarcodeGeneratorPage() {
 
         {codes.length > 0 && (
           <div className="space-y-4 mt-6">
-            {codes.length > 1 && (
-              <div className="flex items-center justify-between border border-gray-100 dark:border-gray-800 px-3 py-2">
-                <span className="text-[10px] text-gray-500">{selectedCount}/{codes.length}件を選択中</span>
-                <div className="flex gap-3">
-                  <button onClick={selectAll} className="text-[9px] tracking-[0.1em] text-blue-500 hover:text-blue-600 uppercase">全選択</button>
-                  <button onClick={selectNone} className="text-[9px] tracking-[0.1em] text-gray-400 hover:text-red-500 uppercase">全解除</button>
-                </div>
-              </div>
-            )}
+            <div className="flex items-center justify-between border border-gray-100 dark:border-gray-800 px-3 py-2">
+              {codes.length > 1 ? (
+                <>
+                  <span className="text-[10px] text-gray-500">{selectedCount}/{codes.length}件を選択中</span>
+                  <div className="flex gap-3">
+                    <button onClick={selectAll} className="text-[9px] tracking-[0.1em] text-blue-500 hover:text-blue-600 uppercase">全選択</button>
+                    <button onClick={selectNone} className="text-[9px] tracking-[0.1em] text-gray-400 hover:text-red-500 uppercase">全解除</button>
+                    <button onClick={() => setCodes([])} className="text-[9px] tracking-[0.1em] text-gray-400 hover:text-red-500 uppercase">結果をクリア</button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <span className="text-[10px] text-gray-500">生成結果</span>
+                  <button onClick={() => setCodes([])} className="text-[9px] tracking-[0.1em] text-gray-400 hover:text-red-500 uppercase">結果をクリア</button>
+                </>
+              )}
+            </div>
 
             {isPro && codes.length > 1 && (
               <div className="space-y-2">
