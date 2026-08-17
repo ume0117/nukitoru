@@ -19,6 +19,9 @@ const LANG_STORAGE_KEY = 'nukitoru_lang'
 const TEXT = {
   ja: {
     badges: ['URL開ける', 'PDF全ページ', 'プライバシー保護', 'ブラウザ内処理'],
+    introTitle: 'コア機能はすべて無料・無制限',
+    introBody: '価格比較・CSV出力・出品下書き・価格改定アラートなど、日々の出品作業に使う機能はどなたでも無料でお使いいただけます。PROは、バーコード/QRコード生成やラベルシート印刷など、作業をさらに効率化する追加機能です。',
+    introLink: 'PROの詳細を見る →',
     catalog: 'カタログ',
     inventory: '棚卸し',
     history: '履歴',
@@ -37,6 +40,9 @@ const TEXT = {
   },
   en: {
     badges: ['URL open', 'PDF all pages', 'Privacy safe', 'Browser only'],
+    introTitle: 'Core features are free and unlimited',
+    introBody: 'Price comparison, CSV export, listing drafts, price drop alerts, and more are free for everyone. PRO adds extras like barcode/QR code generation and label sheet printing to speed up your workflow further.',
+    introLink: 'See what PRO offers →',
     catalog: 'Catalog',
     inventory: 'Inventory',
     history: 'History',
@@ -143,7 +149,7 @@ export function ScannerSection() {
 
   return (
     <div>
-      <div className={cn('overflow-hidden transition-all duration-500 ease-in-out', isIdle ? 'max-h-[500px] opacity-100 pt-6 pb-4' : 'max-h-0 opacity-0 pointer-events-none')} aria-hidden={!isIdle}>
+      <div className={cn('overflow-hidden transition-all duration-500 ease-in-out', isIdle ? 'max-h-[900px] opacity-100 pt-6 pb-4' : 'max-h-0 opacity-0 pointer-events-none')} aria-hidden={!isIdle}>
         <div className="flex items-center justify-between">
           <h1 className="text-[11px] tracking-[0.3em] text-gray-400 dark:text-gray-600 uppercase">PDF · Image · Barcode Extractor</h1>
           <div className="flex gap-1.5 shrink-0 ml-3">
@@ -155,6 +161,12 @@ export function ScannerSection() {
           {t.badges.map((label) => (
             <span key={label} className="text-[9px] tracking-[0.15em] px-2.5 py-1 border border-gray-100 dark:border-gray-800 text-gray-400 dark:text-gray-600 uppercase">{label}</span>
           ))}
+        </div>
+
+        <div className="mt-4 border border-blue-100 dark:border-blue-900/50 bg-blue-50/50 dark:bg-blue-950/20 p-3">
+          <p className="text-[10px] tracking-[0.1em] text-blue-600 dark:text-blue-400 uppercase font-medium mb-1">{t.introTitle}</p>
+          <p className="text-[10px] text-gray-600 dark:text-gray-400 leading-relaxed">{t.introBody}</p>
+          <a href="/upgrade" className="inline-block text-[9px] tracking-[0.1em] text-blue-600 dark:text-blue-400 hover:underline mt-1.5">{t.introLink}</a>
         </div>
       </div>
 
@@ -168,10 +180,10 @@ export function ScannerSection() {
             <button onClick={() => setShowInventoryHistory(true)} className="h-11 px-4 border border-gray-400 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-400 text-gray-300 dark:text-gray-400 text-[11px] tracking-[0.15em] uppercase transition-colors">{t.history}</button>
           </div>
           <div className="grid grid-cols-2 gap-2 pt-1">
-            <a href="/draft" className="h-10 border border-gray-100 dark:border-gray-800 hover:border-blue-600 flex items-center justify-center gap-1.5 text-[9px] tracking-[0.15em] text-gray-400 dark:text-gray-600 hover:text-blue-600 uppercase transition-colors">出品下書き生成<span className="text-blue-500">PRO</span></a>
-            <a href="/recheck" className="h-10 border border-gray-100 dark:border-gray-800 hover:border-blue-600 flex items-center justify-center gap-1.5 text-[9px] tracking-[0.15em] text-gray-400 dark:text-gray-600 hover:text-blue-600 uppercase transition-colors">一括再チェック<span className="text-blue-500">PRO</span></a>
-            <a href="/watch" className="h-10 border border-gray-100 dark:border-gray-800 hover:border-blue-600 flex items-center justify-center gap-1.5 text-[9px] tracking-[0.15em] text-gray-400 dark:text-gray-600 hover:text-blue-600 uppercase transition-colors">価格改定アラート<span className="text-blue-500">PRO</span></a>
-            <a href="/barcode-generator" className="h-10 border border-gray-100 dark:border-gray-800 hover:border-blue-600 flex items-center justify-center gap-1.5 text-[9px] tracking-[0.15em] text-gray-400 dark:text-gray-600 hover:text-blue-600 uppercase transition-colors">バーコード / QRコード生成</a>
+            <a href="/draft" className="h-10 border border-gray-100 dark:border-gray-800 hover:border-blue-600 flex items-center justify-center gap-1.5 text-[9px] tracking-[0.15em] text-gray-400 dark:text-gray-600 hover:text-blue-600 uppercase transition-colors">出品下書き生成</a>
+            <a href="/recheck" className="h-10 border border-gray-100 dark:border-gray-800 hover:border-blue-600 flex items-center justify-center gap-1.5 text-[9px] tracking-[0.15em] text-gray-400 dark:text-gray-600 hover:text-blue-600 uppercase transition-colors">一括再チェック</a>
+            <a href="/watch" className="h-10 border border-gray-100 dark:border-gray-800 hover:border-blue-600 flex items-center justify-center gap-1.5 text-[9px] tracking-[0.15em] text-gray-400 dark:text-gray-600 hover:text-blue-600 uppercase transition-colors">価格改定アラート</a>
+            <a href="/barcode-generator" className="h-10 border border-gray-100 dark:border-gray-800 hover:border-blue-600 flex items-center justify-center gap-1.5 text-[9px] tracking-[0.15em] text-gray-400 dark:text-gray-600 hover:text-blue-600 uppercase transition-colors">バーコード / QRコード生成<span className="text-blue-500 ml-1">PRO</span></a>
           </div>
           {error && <ErrorAlert message={error} />}
           {progress.status !== 'idle' && <ScanProgress current={progress.current} total={progress.total} message={progress.message} status={progress.status} />}
