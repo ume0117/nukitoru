@@ -138,8 +138,10 @@ function drawWatermark(
     ctx.font = `bold ${fontSize}px sans-serif`
     ctx.textBaseline = 'top'
     const metrics = ctx.measureText(config.text)
-    textBoxW = metrics.width + fontSize * 0.8
-    textBoxH = fontSize * 1.6
+    const padX = fontSize * 0.4
+    const padY = fontSize * 0.28
+    textBoxW = metrics.width + padX * 2
+    textBoxH = fontSize + padY * 2
     const offX = (canvasW * config.textOffsetX) / 100
     const offY = (canvasH * config.textOffsetY) / 100
     const { x, y } = gridToXY(config.textPos, canvasW, canvasH, textBoxW, textBoxH, margin)
@@ -165,7 +167,7 @@ function drawWatermark(
       ctx.shadowColor = 'rgba(0,0,0,0.6)'
       ctx.shadowBlur = fontSize * 0.15
     }
-    ctx.fillText(config.text, fx + textBoxW * 0.1, fy + textBoxH * 0.2)
+    ctx.fillText(config.text, fx + padX, fy + padY)
     ctx.restore()
   }
 
