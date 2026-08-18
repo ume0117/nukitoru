@@ -67,6 +67,7 @@ export default function WatchPage() {
 
   const [csvFileName, setCsvFileName] = useState('')
   const [csvResultMsg, setCsvResultMsg] = useState('')
+  const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -332,17 +333,38 @@ export default function WatchPage() {
               「コード」「しきい値（任意）」「入荷通知（任意・する/しない）」の3列のCSVをアップロードできます。テンプレート以外の形式でも取り込み可能です。
               <button onClick={downloadTemplate} className="text-blue-500 hover:text-blue-600 underline ml-1">テンプレートをダウンロード</button>
             </p>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".csv"
-              onChange={(e) => {
-                const file = e.target.files?.[0]
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true) }}
+              onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false) }}
+              onDrop={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                setIsDragging(false)
+                const file = e.dataTransfer.files?.[0]
                 if (file) handleCsvFile(file)
               }}
-              className="w-full text-[11px] text-gray-500 file:mr-3 file:h-9 file:px-4 file:border file:border-gray-200 dark:file:border-gray-800 file:bg-white dark:file:bg-black file:text-gray-700 dark:file:text-gray-300 file:text-[10px] file:tracking-[0.1em] file:uppercase"
-            />
-            {csvFileName && <p className="text-[10px] text-blue-600">{csvFileName}</p>}
+              className={`w-full border-2 border-dashed rounded p-6 text-center cursor-pointer transition-colors ${isDragging ? 'border-blue-600 bg-blue-600/5' : 'border-gray-200 dark:border-gray-800 hover:border-blue-600'}`}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) handleCsvFile(file)
+                }}
+                className="hidden"
+              />
+              {csvFileName ? (
+                <p className="text-[11px] text-blue-600 break-all">{csvFileName}</p>
+              ) : (
+                <>
+                  <p className="text-[11px] text-gray-500 mb-1">CSVファイルをドラッグ&ドロップ</p>
+                  <p className="text-[9px] text-gray-400 tracking-[0.1em] uppercase">またはクリックして選択</p>
+                </>
+              )}
+            </div>
             {loading && mode === 'CSV' && <p className="text-[10px] text-gray-400">登録中...</p>}
             {csvResultMsg && <p className="text-[10px] text-blue-600">{csvResultMsg}</p>}
             {errorMsg && <p className="text-[10px] text-red-500">{errorMsg}</p>}
