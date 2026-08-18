@@ -4,10 +4,10 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { getPlan, type PlanType } from '@/lib/license'
 
-const FREE_LIMIT = 1
+const FREE_UPLOAD_LIMIT = 3
+const PRO_UPLOAD_LIMIT = 20
 
 type RestrictionLevel = 'block' | 'warn20' | 'free'
-type ImagePosition = 'first' | 'sub'
 
 interface MallOption {
   id: string
@@ -33,32 +33,29 @@ const MALLS: MallOption[] = [
 
 type GridPos = 'tl' | 'tc' | 'tr' | 'ml' | 'mc' | 'mr' | 'bl' | 'bc' | 'br'
 
-const GRID_LABELS: { pos: GridPos; row: number; col: number }[] = [
-  { pos: 'tl', row: 0, col: 0 }, { pos: 'tc', row: 0, col: 1 }, { pos: 'tr', row: 0, col: 2 },
-  { pos: 'ml', row: 1, col: 0 }, { pos: 'mc', row: 1, col: 1 }, { pos: 'mr', row: 1, col: 2 },
-  { pos: 'bl', row: 2, col: 0 }, { pos: 'bc', row: 2, col: 1 }, { pos: 'br', row: 2, col: 2 },
-]
+const GRID_LABELS: GridPos[] = ['tl', 'tc', 'tr', 'ml', 'mc', 'mr', 'bl', 'bc', 'br']
 
 interface SourceImage {
   id: string
   file: File
   url: string
+  watermarkOn: boolean // この画像に透かしを適用するか（1枚目をブロック時にOFFにする用途など）
 }
 
 interface WatermarkConfig {
   textEnabled: boolean
   text: string
   textColor: string
-  textOpacity: number // 0-100
+  textOpacity: number
   textPos: GridPos
-  textOffsetX: number // -30〜30 (%)
+  textOffsetX: number
   textOffsetY: number
-  textBadge: boolean // 背景ボックス（バッジ風）を付けるか
+  textBadge: boolean
   badgeColor: string
   logoEnabled: boolean
   logoUrl: string | null
   logoOpacity: number
-  logoSizePct: number // 画像幅に対する割合
+  logoSizePct: number
   logoPos: GridPos
   logoOffsetX: number
   logoOffsetY: number
@@ -83,7 +80,7 @@ const DEFAULT_CONFIG: WatermarkConfig = {
   logoOffsetY: 0,
 }
 
-const TEXT_MAX_LEN = 30 // 全角換算の目安上限
+const TEXT_MAX_LEN = 30
 
 function gridToXY(pos: GridPos, canvasW: number, canvasH: number, elW: number, elH: number, margin: number) {
   const col = pos === 'tl' || pos === 'ml' || pos === 'bl' ? 0 : pos === 'tc' || pos === 'mc' || pos === 'bc' ? 1 : 2
@@ -102,7 +99,6 @@ async function loadImage(src: string): Promise<HTMLImageElement> {
   })
 }
 
-// テキスト＋ロゴの占有面積を概算（画像全体に対する割合、%）
 function estimateOccupancy(
   canvasW: number,
   canvasH: number,
@@ -111,12 +107,10 @@ function estimateOccupancy(
   textBoxHpx: number
 ): number {
   let area = 0
-  if (config.textEnabled && config.text.trim()) {
-    area += textBoxWpx * textBoxHpx
-  }
+  if (config.textEnabled && config.text.trim()) area += textBoxWpx * textBoxHpx
   if (config.logoEnabled && config.logoUrl) {
     const logoW = (canvasW * config.logoSizePct) / 100
-    area += logoW * logoW // ロゴは概ね正方形として概算
+    area += logoW * logoW
   }
   return (area / (canvasW * canvasH)) * 100
 }
@@ -132,7 +126,6 @@ function drawWatermark(
   let textBoxW = 0
   let textBoxH = 0
 
-  // テキスト描画
   if (config.textEnabled && config.text.trim()) {
     const fontSize = Math.max(14, Math.min(canvasW, canvasH) * 0.055)
     ctx.font = `bold ${fontSize}px sans-serif`
@@ -171,7 +164,6 @@ function drawWatermark(
     ctx.restore()
   }
 
-  // ロゴ描画
   if (config.logoEnabled && logoImg) {
     const logoW = canvasW * (config.logoSizePct / 100)
     const logoH = (logoImg.height / logoImg.width) * logoW
@@ -196,13 +188,14 @@ export default function WatermarkPage() {
   const [images, setImages] = useState<SourceImage[]>([])
   const [activeIdx, setActiveIdx] = useState(0)
   const [mallId, setMallId] = useState<string>('generic')
-  const [imagePos, setImagePos] = useState<ImagePosition>('sub')
   const [config, setConfig] = useState<WatermarkConfig>(DEFAULT_CONFIG)
   const [logoImg, setLogoImg] = useState<HTMLImageElement | null>(null)
   const [occupancy, setOccupancy] = useState(0)
   const [processing, setProcessing] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [resultUrls, setResultUrls] = useState<Record<string, string>>({})
+  const [isDragOver, setIsDragOver] = useState(false)
+  const [dragThumbIdx, setDragThumbIdx] = useState<number | null>(null)
   const previewCanvasRef = useRef<HTMLCanvasElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const logoInputRef = useRef<HTMLInputElement>(null)
@@ -212,10 +205,13 @@ export default function WatermarkPage() {
   }, [])
 
   const isPro = plan === 'pro' || plan === 'pro_max'
+  const uploadLimit = isPro ? PRO_UPLOAD_LIMIT : FREE_UPLOAD_LIMIT
   const mall = MALLS.find((m) => m.id === mallId)!
-  const restrictionActive = imagePos === 'first' ? mall.level : 'free'
+  // 選択中の画像が1枚目（インデックス0）かどうかで規約チェックを自動判定
+  const isMainImage = activeIdx === 0
+  const restrictionActive = isMainImage ? mall.level : 'free'
 
-  const handleFiles = (files: FileList | File[]) => {
+  const addFiles = (files: FileList | File[]) => {
     setErrorMsg('')
     setResultUrls({})
     const arr = Array.from(files).filter((f) => f.type.startsWith('image/'))
@@ -223,17 +219,87 @@ export default function WatermarkPage() {
       setErrorMsg('画像ファイルを選択してください。')
       return
     }
-    const target = isPro ? arr : arr.slice(0, FREE_LIMIT)
-    if (!isPro && arr.length > FREE_LIMIT) {
-      setErrorMsg('無料版は1枚のプレビューのみです。複数画像への一括適用・保存にはProへアップグレードしてください。')
-    }
-    const newImages: SourceImage[] = target.map((f, i) => ({
-      id: `${Date.now()}_${i}`,
-      file: f,
-      url: URL.createObjectURL(f),
-    }))
-    setImages(newImages)
+    setImages((prev) => {
+      const spaceLeft = uploadLimit - prev.length
+      if (spaceLeft <= 0) {
+        setErrorMsg(
+          isPro
+            ? `一度に扱えるのは${PRO_UPLOAD_LIMIT}枚までです。`
+            : `無料版は${FREE_UPLOAD_LIMIT}枚までです。まとめて扱うにはProへアップグレードしてください。`
+        )
+        return prev
+      }
+      const target = arr.slice(0, spaceLeft)
+      if (arr.length > spaceLeft) {
+        setErrorMsg(
+          isPro
+            ? `一度に扱えるのは${PRO_UPLOAD_LIMIT}枚までです。先頭${spaceLeft}件のみ追加しました。`
+            : `無料版は${FREE_UPLOAD_LIMIT}枚までです。先頭${spaceLeft}件のみ追加しました。まとめて扱うにはProへアップグレードしてください。`
+        )
+      }
+      const added: SourceImage[] = target.map((f, i) => ({
+        id: `${Date.now()}_${i}_${f.name}`,
+        file: f,
+        url: URL.createObjectURL(f),
+        watermarkOn: true,
+      }))
+      return [...prev, ...added]
+    })
+  }
+
+  const removeImage = (id: string) => {
+    setImages((prev) => {
+      const next = prev.filter((im) => im.id !== id)
+      return next
+    })
+    setResultUrls({})
+  }
+
+  const clearAll = () => {
+    setImages([])
+    setResultUrls({})
+    setErrorMsg('')
     setActiveIdx(0)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  // --- アップロードエリアのドラッグ&ドロップ ---
+  const handleUploadDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(true)
+  }
+  const handleUploadDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+  }
+  const handleUploadDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+    if (e.dataTransfer.files) addFiles(e.dataTransfer.files)
+  }
+
+  // --- サムネイル並び替え（ドラッグ&ドロップで順番入れ替え） ---
+  const handleThumbDragStart = (idx: number) => (e: React.DragEvent) => {
+    setDragThumbIdx(idx)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+  const handleThumbDragOver = (idx: number) => (e: React.DragEvent) => {
+    e.preventDefault()
+    if (dragThumbIdx === null || dragThumbIdx === idx) return
+    setImages((prev) => {
+      const next = [...prev]
+      const [moved] = next.splice(dragThumbIdx, 1)
+      next.splice(idx, 0, moved)
+      return next
+    })
+    setDragThumbIdx(idx)
+    if (activeIdx === dragThumbIdx) setActiveIdx(idx)
+  }
+  const handleThumbDragEnd = () => {
+    setDragThumbIdx(null)
   }
 
   const handleLogoFile = async (file: File) => {
@@ -245,42 +311,29 @@ export default function WatermarkPage() {
 
   const applyTemplate = (kind: 'copyright' | 'sale') => {
     if (kind === 'copyright') {
-      setConfig((c) => ({
-        ...c,
-        textEnabled: true,
-        text: c.text || '無断転載禁止',
-        textColor: '#ffffff',
-        textOpacity: 55,
-        textPos: 'br',
-        textBadge: false,
-      }))
+      setConfig((c) => ({ ...c, textEnabled: true, text: c.text || '無断転載禁止', textColor: '#ffffff', textOpacity: 55, textPos: 'br', textBadge: false }))
     } else {
-      setConfig((c) => ({
-        ...c,
-        textEnabled: true,
-        text: c.text || 'SALE',
-        textColor: '#ffffff',
-        textOpacity: 100,
-        textPos: 'tl',
-        textBadge: true,
-        badgeColor: '#e24b4a',
-      }))
+      setConfig((c) => ({ ...c, textEnabled: true, text: c.text || 'SALE', textColor: '#ffffff', textOpacity: 100, textPos: 'tl', textBadge: true, badgeColor: '#e24b4a' }))
     }
   }
 
-  // プレビュー描画
   const redrawPreview = useCallback(async () => {
     const canvas = previewCanvasRef.current
     if (!canvas || images.length === 0) return
     const src = images[activeIdx]
+    if (!src) return
     const img = await loadImage(src.url)
     canvas.width = img.width
     canvas.height = img.height
     const ctx = canvas.getContext('2d')!
     ctx.clearRect(0, 0, canvas.width, canvas.height)
     ctx.drawImage(img, 0, 0)
-    const { textBoxW, textBoxH } = drawWatermark(ctx, canvas.width, canvas.height, config, logoImg)
-    setOccupancy(estimateOccupancy(canvas.width, canvas.height, config, textBoxW, textBoxH))
+    if (src.watermarkOn) {
+      const { textBoxW, textBoxH } = drawWatermark(ctx, canvas.width, canvas.height, config, logoImg)
+      setOccupancy(estimateOccupancy(canvas.width, canvas.height, config, textBoxW, textBoxH))
+    } else {
+      setOccupancy(0)
+    }
   }, [images, activeIdx, config, logoImg])
 
   useEffect(() => {
@@ -289,8 +342,8 @@ export default function WatermarkPage() {
 
   const processAll = async () => {
     if (images.length === 0) return
-    if (restrictionActive === 'block') {
-      setErrorMsg('選択中のモール（1枚目/メイン画像）はテキスト・ロゴ・透かしの掲載が規約で禁止されています。2枚目以降のサブ画像に切り替えるか、別モールを選択してください。')
+    if (restrictionActive === 'block' && images[0]?.watermarkOn) {
+      setErrorMsg('1枚目（メイン画像）に選択中のモールで透かしが規約違反になります。1枚目の「透かしを適用」をOFFにするか、別のモールを選択してください。')
       return
     }
     setProcessing(true)
@@ -304,7 +357,7 @@ export default function WatermarkPage() {
         canvas.height = img.height
         const ctx = canvas.getContext('2d')!
         ctx.drawImage(img, 0, 0)
-        drawWatermark(ctx, canvas.width, canvas.height, config, logoImg)
+        if (src.watermarkOn) drawWatermark(ctx, canvas.width, canvas.height, config, logoImg)
         const blob = await canvasToBlob(canvas)
         if (blob) newResults[src.id] = URL.createObjectURL(blob)
       } catch {
@@ -315,26 +368,16 @@ export default function WatermarkPage() {
     setProcessing(false)
   }
 
-  const downloadSingle = (id: string, idx: number) => {
-    const url = resultUrls[id]
-    if (!url) return
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `watermark_${String(idx + 1).padStart(3, '0')}.jpg`
-    a.click()
-  }
-
   const downloadZipAll = async () => {
-    if (!isPro) return
-    const entries = Object.entries(resultUrls)
+    const entries = images.filter((im) => resultUrls[im.id])
     if (entries.length === 0) return
     const JSZip = (await import('jszip')).default
     const zip = new JSZip()
     for (let i = 0; i < entries.length; i++) {
-      const [, url] = entries[i]
+      const url = resultUrls[entries[i].id]
       const res = await fetch(url)
       const blob = await res.blob()
-      zip.file(`watermark_${String(i + 1).padStart(3, '0')}.jpg`, blob)
+      zip.file(`${String(i + 1).padStart(2, '0')}.jpg`, blob)
     }
     const zipBlob = await zip.generateAsync({ type: 'blob' })
     const url = URL.createObjectURL(zipBlob)
@@ -344,19 +387,23 @@ export default function WatermarkPage() {
     a.click()
   }
 
-  const gridButton = (
-    current: GridPos,
-    onChange: (p: GridPos) => void
-  ) => (
+  const downloadSingle = (id: string, idx: number) => {
+    const url = resultUrls[id]
+    if (!url) return
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${String(idx + 1).padStart(2, '0')}.jpg`
+    a.click()
+  }
+
+  const gridButton = (current: GridPos, onChange: (p: GridPos) => void) => (
     <div className="grid grid-cols-3 gap-1 w-24">
-      {GRID_LABELS.map(({ pos }) => (
+      {GRID_LABELS.map((pos) => (
         <button
           key={pos}
           onClick={() => onChange(pos)}
           className={`aspect-square border transition-colors ${
-            current === pos
-              ? 'border-blue-600 bg-blue-600/10'
-              : 'border-gray-200 dark:border-gray-800 hover:border-gray-400'
+            current === pos ? 'border-blue-600 bg-blue-600/10' : 'border-gray-200 dark:border-gray-800 hover:border-gray-400'
           }`}
         />
       ))}
@@ -365,248 +412,258 @@ export default function WatermarkPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-black">
-      <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <Link href="/" className="text-[10px] tracking-[0.2em] text-gray-400 dark:text-gray-600 uppercase hover:text-blue-600 transition-colors">← NUKITORU</Link>
           <span className="text-[9px] tracking-[0.15em] text-gray-400 dark:text-gray-600 uppercase">
-            {isPro ? plan === 'pro_max' ? 'PRO MAX' : 'PRO' : 'FREE'}
+            {isPro ? (plan === 'pro_max' ? 'PRO MAX' : 'PRO') : 'FREE'}
           </span>
         </div>
 
         <h1 className="text-[13px] tracking-[0.3em] text-gray-900 dark:text-white uppercase font-medium mb-1">ウォーターマーク追加</h1>
         <p className="text-[11px] text-gray-500 leading-relaxed mb-6">
-          商品画像にテキストやロゴの透かしを追加します。モールごとの画像規約に基づき、1枚目/メイン画像への適用可否を自動チェックします。
+          商品画像をまとめてアップロードし、順番（1枚目=メイン画像）を並び替えながら透かしを設定できます。1枚目に選ぶ画像はモール規約を自動チェックします。
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* 左: プレビュー & アップロード */}
-          <div>
-            {images.length === 0 ? (
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="border border-dashed border-gray-300 dark:border-gray-700 aspect-square flex items-center justify-center cursor-pointer hover:border-blue-500 transition-colors"
-              >
-                <p className="text-[11px] text-gray-400">クリックして画像を選択{!isPro && '（無料版は1枚まで）'}</p>
-              </div>
-            ) : (
-              <div>
-                <canvas ref={previewCanvasRef} className="w-full border border-gray-100 dark:border-gray-800" />
-                {images.length > 1 && (
-                  <div className="flex gap-1 mt-2 flex-wrap">
-                    {images.map((im, i) => (
-                      <button
-                        key={im.id}
-                        onClick={() => setActiveIdx(i)}
-                        className={`w-10 h-10 border overflow-hidden ${i === activeIdx ? 'border-blue-600' : 'border-gray-200 dark:border-gray-800'}`}
-                      >
-                        <img src={im.url} className="w-full h-full object-cover" alt="" />
-                      </button>
-                    ))}
-                  </div>
-                )}
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="text-[10px] text-blue-500 hover:underline mt-2"
-                >
-                  画像を変更
-                </button>
-              </div>
-            )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple={isPro}
-              className="hidden"
-              onChange={(e) => e.target.files && handleFiles(e.target.files)}
-            />
-
-            {/* 占有率インジケーター */}
-            {config.text.trim() && (
-              <div className="mt-3 text-[10px]">
-                <div className="flex justify-between mb-1">
-                  <span className="text-gray-400">テキスト占有率（目安）</span>
-                  <span className={occupancy > 20 && restrictionActive === 'warn20' ? 'text-red-500 font-medium' : 'text-gray-500'}>
-                    {occupancy.toFixed(1)}%
-                  </span>
-                </div>
-                <div className="h-1.5 bg-gray-100 dark:bg-gray-900 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full ${occupancy > 20 && restrictionActive === 'warn20' ? 'bg-red-500' : 'bg-blue-500'}`}
-                    style={{ width: `${Math.min(100, occupancy)}%` }}
-                  />
-                </div>
-              </div>
-            )}
-
-            {restrictionActive === 'block' && (
-              <div className="mt-3 p-3 border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/30 text-[10px] text-red-600 dark:text-red-400 leading-relaxed">
-                {mall.name}のメイン画像は、テキスト・ロゴ・透かしなどの掲載が規約で完全に禁止されています。この設定のまま出力すると検索対象外になるリスクがあります。「2枚目以降のサブ画像」に切り替えるか、別のモールを選択してください。
-              </div>
-            )}
-            {restrictionActive === 'warn20' && occupancy > 20 && (
-              <div className="mt-3 p-3 border border-orange-200 dark:border-orange-900 bg-orange-50 dark:bg-orange-950/30 text-[10px] text-orange-600 dark:text-orange-400 leading-relaxed">
-                {mall.name}の1枚目/メイン画像はテキスト要素が画像全体の20%以内に収めるルールが目安とされています。現在の占有率は目安を超えています。テキストを短くするか、フォントサイズ・不透明度を調整してください。
-              </div>
-            )}
+        {images.length === 0 ? (
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            onDragOver={handleUploadDragOver}
+            onDragLeave={handleUploadDragLeave}
+            onDrop={handleUploadDrop}
+            className={`border border-dashed aspect-[3/1] flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors ${
+              isDragOver ? 'border-blue-500 bg-blue-500/5' : 'border-gray-300 dark:border-gray-700 hover:border-blue-500'
+            }`}
+          >
+            <p className="text-[12px] text-gray-400">クリック、またはここに画像をドラッグ&ドロップ</p>
+            <p className="text-[10px] text-gray-400">
+              一度に最大{uploadLimit}枚まで{!isPro && '（Proで最大20枚）'}
+            </p>
           </div>
-
-          {/* 右: 設定パネル */}
-          <div className="space-y-5">
-            {/* モール & 画像位置 */}
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr_320px] gap-6">
+            {/* サムネイル一覧（並び替え） */}
             <div>
-              <label className="text-[10px] text-gray-500 uppercase tracking-[0.1em] block mb-1.5">対象モール</label>
-              <select
-                value={mallId}
-                onChange={(e) => setMallId(e.target.value)}
-                className="w-full h-9 border border-gray-200 dark:border-gray-800 bg-transparent text-[11px] px-2"
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[9px] tracking-[0.1em] text-gray-400 uppercase">画像の順番（ドラッグで並び替え）</p>
+                <button onClick={clearAll} className="text-[9px] text-gray-400 hover:text-red-500">全消去</button>
+              </div>
+              <div
+                onDragOver={handleUploadDragOver}
+                onDragLeave={handleUploadDragLeave}
+                onDrop={handleUploadDrop}
+                className={`space-y-1.5 max-h-[520px] overflow-y-auto pr-1 border ${isDragOver ? 'border-blue-500 bg-blue-500/5' : 'border-transparent'}`}
               >
-                {MALLS.map((m) => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
+                {images.map((im, i) => (
+                  <div
+                    key={im.id}
+                    draggable
+                    onDragStart={handleThumbDragStart(i)}
+                    onDragOver={handleThumbDragOver(i)}
+                    onDragEnd={handleThumbDragEnd}
+                    onClick={() => setActiveIdx(i)}
+                    className={`flex items-center gap-2 p-1.5 border cursor-move transition-colors ${
+                      i === activeIdx ? 'border-blue-600 bg-blue-600/5' : 'border-gray-100 dark:border-gray-800 hover:border-gray-300'
+                    }`}
+                  >
+                    <span className={`text-[9px] w-8 text-center flex-shrink-0 ${i === 0 ? 'text-purple-500 font-bold' : 'text-gray-400'}`}>
+                      {i === 0 ? 'メイン' : i + 1}
+                    </span>
+                    <img src={im.url} className="w-10 h-10 object-cover flex-shrink-0" alt="" />
+                    <span className={`text-[9px] flex-1 truncate ${im.watermarkOn ? 'text-gray-400' : 'text-gray-300 dark:text-gray-600'}`}>
+                      {im.watermarkOn ? '透かしあり' : '透かしなし'}
+                    </span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); removeImage(im.id) }}
+                      className="text-[10px] text-gray-300 hover:text-red-500 flex-shrink-0 px-1"
+                    >
+                      ×
+                    </button>
+                  </div>
                 ))}
-              </select>
-              <div className="flex gap-2 mt-2">
-                <button
-                  onClick={() => setImagePos('first')}
-                  className={`flex-1 h-8 text-[10px] border transition-colors ${imagePos === 'first' ? 'border-blue-600 text-blue-600' : 'border-gray-200 dark:border-gray-800 text-gray-400'}`}
-                >
-                  1枚目/メイン画像
-                </button>
-                <button
-                  onClick={() => setImagePos('sub')}
-                  className={`flex-1 h-8 text-[10px] border transition-colors ${imagePos === 'sub' ? 'border-blue-600 text-blue-600' : 'border-gray-200 dark:border-gray-800 text-gray-400'}`}
-                >
-                  2枚目以降
-                </button>
               </div>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full h-8 mt-2 border border-gray-200 dark:border-gray-800 text-[10px] text-gray-500 hover:border-blue-600 hover:text-blue-600 transition-colors"
+              >
+                + 画像を追加
+              </button>
             </div>
 
-            {/* テンプレート */}
+            {/* プレビュー */}
             <div>
-              <label className="text-[10px] text-gray-500 uppercase tracking-[0.1em] block mb-1.5">テンプレート</label>
-              <div className="flex gap-2">
-                <button onClick={() => applyTemplate('copyright')} className="flex-1 h-8 text-[10px] border border-gray-200 dark:border-gray-800 hover:border-blue-600 transition-colors">著作権表記</button>
-                <button onClick={() => applyTemplate('sale')} className="flex-1 h-8 text-[10px] border border-gray-200 dark:border-gray-800 hover:border-blue-600 transition-colors">セールバッジ</button>
-              </div>
-            </div>
-
-            {/* テキスト */}
-            <div className="border-t border-gray-100 dark:border-gray-800 pt-4">
-              <label className="flex items-center gap-2 text-[10px] text-gray-500 uppercase tracking-[0.1em] mb-2">
-                <input type="checkbox" checked={config.textEnabled} onChange={(e) => setConfig((c) => ({ ...c, textEnabled: e.target.checked }))} />
-                テキスト
-              </label>
-              {config.textEnabled && (
-                <div className="space-y-2 pl-1">
+              <canvas ref={previewCanvasRef} className="w-full border border-gray-100 dark:border-gray-800" />
+              <div className="flex items-center justify-between mt-2">
+                <p className="text-[10px] text-gray-400">
+                  {activeIdx === 0 ? 'メイン画像（1枚目）を編集中' : `${activeIdx + 1}枚目を編集中`}
+                </p>
+                <label className="flex items-center gap-1.5 text-[10px] text-gray-500">
                   <input
-                    type="text"
-                    value={config.text}
-                    maxLength={TEXT_MAX_LEN}
-                    onChange={(e) => setConfig((c) => ({ ...c, text: e.target.value }))}
-                    placeholder="例: 4REAL SHOP"
-                    className="w-full h-9 border border-gray-200 dark:border-gray-800 bg-transparent text-[11px] px-2"
+                    type="checkbox"
+                    checked={images[activeIdx]?.watermarkOn ?? true}
+                    onChange={(e) => setImages((prev) => prev.map((im, i) => (i === activeIdx ? { ...im, watermarkOn: e.target.checked } : im)))}
                   />
-                  <p className="text-[9px] text-gray-400">{config.text.length}/{TEXT_MAX_LEN}文字</p>
-                  <div className="flex items-center gap-3">
-                    <span className="text-[10px] text-gray-400 w-14">色</span>
-                    <input type="color" value={config.textColor} onChange={(e) => setConfig((c) => ({ ...c, textColor: e.target.value }))} className="h-7 w-10" />
-                    <label className="flex items-center gap-1.5 text-[10px] text-gray-400">
-                      <input type="checkbox" checked={config.textBadge} onChange={(e) => setConfig((c) => ({ ...c, textBadge: e.target.checked }))} />
-                      背景バッジ
-                    </label>
-                    {config.textBadge && <input type="color" value={config.badgeColor} onChange={(e) => setConfig((c) => ({ ...c, badgeColor: e.target.value }))} className="h-7 w-10" />}
+                  この画像に透かしを適用
+                </label>
+              </div>
+
+              {config.text.trim() && images[activeIdx]?.watermarkOn && (
+                <div className="mt-3 text-[10px]">
+                  <div className="flex justify-between mb-1">
+                    <span className="text-gray-400">テキスト占有率（目安）</span>
+                    <span className={occupancy > 20 && restrictionActive === 'warn20' ? 'text-red-500 font-medium' : 'text-gray-500'}>{occupancy.toFixed(1)}%</span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-[10px] text-gray-400 w-14">不透明度</span>
-                    <input type="range" min={10} max={100} value={config.textOpacity} onChange={(e) => setConfig((c) => ({ ...c, textOpacity: Number(e.target.value) }))} className="flex-1" />
-                    <span className="text-[10px] text-gray-400 w-8">{config.textOpacity}%</span>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <span className="text-[10px] text-gray-400 w-14 pt-1">配置</span>
-                    {gridButton(config.textPos, (p) => setConfig((c) => ({ ...c, textPos: p })))}
+                  <div className="h-1.5 bg-gray-100 dark:bg-gray-900 rounded-full overflow-hidden">
+                    <div className={`h-full ${occupancy > 20 && restrictionActive === 'warn20' ? 'bg-red-500' : 'bg-blue-500'}`} style={{ width: `${Math.min(100, occupancy)}%` }} />
                   </div>
                 </div>
               )}
+
+              {isMainImage && restrictionActive === 'block' && images[activeIdx]?.watermarkOn && (
+                <div className="mt-3 p-3 border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/30 text-[10px] text-red-600 dark:text-red-400 leading-relaxed">
+                  {mall.name}のメイン画像は、テキスト・ロゴ・透かしなどの掲載が規約で完全に禁止されています。この設定のまま出力すると検索対象外になるリスクがあります。「この画像に透かしを適用」をOFFにするか、別のモールを選択してください。
+                </div>
+              )}
+              {isMainImage && restrictionActive === 'warn20' && occupancy > 20 && images[activeIdx]?.watermarkOn && (
+                <div className="mt-3 p-3 border border-orange-200 dark:border-orange-900 bg-orange-50 dark:bg-orange-950/30 text-[10px] text-orange-600 dark:text-orange-400 leading-relaxed">
+                  {mall.name}の1枚目/メイン画像はテキスト要素が画像全体の20%以内に収めるルールが目安です。占有率が目安を超えています。テキストを短くするか、フォントサイズ・不透明度を調整してください。
+                </div>
+              )}
+
+              {errorMsg && <p className="text-[10px] text-red-500 mt-3">{errorMsg}</p>}
+
+              <button
+                onClick={processAll}
+                disabled={processing}
+                className="w-full h-11 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white text-[11px] tracking-[0.2em] uppercase transition-colors mt-4"
+              >
+                {processing ? '処理中...' : `${images.length}枚に適用`}
+              </button>
+
+              {Object.keys(resultUrls).length > 0 && (
+                <div className="mt-2 space-y-2">
+                  {isPro && Object.keys(resultUrls).length > 1 ? (
+                    <button onClick={downloadZipAll} className="w-full h-9 border border-blue-600 text-blue-600 text-[10px] tracking-[0.1em] uppercase hover:bg-blue-600 hover:text-white transition-colors">
+                      ZIPで一括ダウンロード（順番通り01, 02...）
+                    </button>
+                  ) : (
+                    images.map((im, i) => resultUrls[im.id] && (
+                      <button key={im.id} onClick={() => downloadSingle(im.id, i)} className="w-full h-9 border border-gray-200 dark:border-gray-800 text-[10px] hover:border-blue-600 transition-colors">
+                        {i + 1}枚目をダウンロード
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {!isPro && (
+                <p className="text-[10px] text-gray-400 leading-relaxed mt-3">
+                  無料版は最大{FREE_UPLOAD_LIMIT}枚・個別ダウンロードのみです。最大20枚のまとめ処理・ZIP一括ダウンロードは
+                  <Link href="/upgrade" className="text-blue-500 hover:underline mx-1">Pro</Link>
+                  で利用できます。
+                </p>
+              )}
             </div>
 
-            {/* ロゴ */}
-            <div className="border-t border-gray-100 dark:border-gray-800 pt-4">
-              <label className="flex items-center gap-2 text-[10px] text-gray-500 uppercase tracking-[0.1em] mb-2">
-                <input type="checkbox" checked={config.logoEnabled} onChange={(e) => setConfig((c) => ({ ...c, logoEnabled: e.target.checked }))} disabled={!config.logoUrl} />
-                ロゴ画像
-              </label>
-              <div className="pl-1 space-y-2">
-                <button
-                  onClick={() => logoInputRef.current?.click()}
-                  className="w-full h-9 border border-gray-200 dark:border-gray-800 text-[10px] hover:border-blue-600 transition-colors"
-                >
-                  {config.logoUrl ? 'ロゴを変更' : '画像を選択'}
-                </button>
-                <input
-                  ref={logoInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => e.target.files?.[0] && handleLogoFile(e.target.files[0])}
-                />
-                {config.logoEnabled && config.logoUrl && (
-                  <>
+            {/* 設定パネル */}
+            <div className="space-y-5">
+              <div>
+                <label className="text-[10px] text-gray-500 uppercase tracking-[0.1em] block mb-1.5">対象モール（1枚目に適用時のみ規約チェック）</label>
+                <select value={mallId} onChange={(e) => setMallId(e.target.value)} className="w-full h-9 border border-gray-200 dark:border-gray-800 bg-transparent text-[11px] px-2">
+                  {MALLS.map((m) => (
+                    <option key={m.id} value={m.id}>{m.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] text-gray-500 uppercase tracking-[0.1em] block mb-1.5">テンプレート</label>
+                <div className="flex gap-2">
+                  <button onClick={() => applyTemplate('copyright')} className="flex-1 h-8 text-[10px] border border-gray-200 dark:border-gray-800 hover:border-blue-600 transition-colors">著作権表記</button>
+                  <button onClick={() => applyTemplate('sale')} className="flex-1 h-8 text-[10px] border border-gray-200 dark:border-gray-800 hover:border-blue-600 transition-colors">セールバッジ</button>
+                </div>
+              </div>
+
+              <div className="border-t border-gray-100 dark:border-gray-800 pt-4">
+                <label className="flex items-center gap-2 text-[10px] text-gray-500 uppercase tracking-[0.1em] mb-2">
+                  <input type="checkbox" checked={config.textEnabled} onChange={(e) => setConfig((c) => ({ ...c, textEnabled: e.target.checked }))} />
+                  テキスト
+                </label>
+                {config.textEnabled && (
+                  <div className="space-y-2 pl-1">
+                    <input
+                      type="text"
+                      value={config.text}
+                      maxLength={TEXT_MAX_LEN}
+                      onChange={(e) => setConfig((c) => ({ ...c, text: e.target.value }))}
+                      placeholder="例: 4REAL SHOP"
+                      className="w-full h-9 border border-gray-200 dark:border-gray-800 bg-transparent text-[11px] px-2"
+                    />
+                    <p className="text-[9px] text-gray-400">{config.text.length}/{TEXT_MAX_LEN}文字</p>
                     <div className="flex items-center gap-3">
-                      <span className="text-[10px] text-gray-400 w-14">サイズ</span>
-                      <input type="range" min={5} max={40} value={config.logoSizePct} onChange={(e) => setConfig((c) => ({ ...c, logoSizePct: Number(e.target.value) }))} className="flex-1" />
-                      <span className="text-[10px] text-gray-400 w-8">{config.logoSizePct}%</span>
+                      <span className="text-[10px] text-gray-400 w-14">色</span>
+                      <input type="color" value={config.textColor} onChange={(e) => setConfig((c) => ({ ...c, textColor: e.target.value }))} className="h-7 w-10" />
+                      <label className="flex items-center gap-1.5 text-[10px] text-gray-400">
+                        <input type="checkbox" checked={config.textBadge} onChange={(e) => setConfig((c) => ({ ...c, textBadge: e.target.checked }))} />
+                        背景バッジ
+                      </label>
+                      {config.textBadge && <input type="color" value={config.badgeColor} onChange={(e) => setConfig((c) => ({ ...c, badgeColor: e.target.value }))} className="h-7 w-10" />}
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-[10px] text-gray-400 w-14">不透明度</span>
-                      <input type="range" min={10} max={100} value={config.logoOpacity} onChange={(e) => setConfig((c) => ({ ...c, logoOpacity: Number(e.target.value) }))} className="flex-1" />
-                      <span className="text-[10px] text-gray-400 w-8">{config.logoOpacity}%</span>
+                      <input type="range" min={10} max={100} value={config.textOpacity} onChange={(e) => setConfig((c) => ({ ...c, textOpacity: Number(e.target.value) }))} className="flex-1" />
+                      <span className="text-[10px] text-gray-400 w-8">{config.textOpacity}%</span>
                     </div>
                     <div className="flex items-start gap-3">
                       <span className="text-[10px] text-gray-400 w-14 pt-1">配置</span>
-                      {gridButton(config.logoPos, (p) => setConfig((c) => ({ ...c, logoPos: p })))}
+                      {gridButton(config.textPos, (p) => setConfig((c) => ({ ...c, textPos: p })))}
                     </div>
-                  </>
+                  </div>
                 )}
+              </div>
+
+              <div className="border-t border-gray-100 dark:border-gray-800 pt-4">
+                <label className="flex items-center gap-2 text-[10px] text-gray-500 uppercase tracking-[0.1em] mb-2">
+                  <input type="checkbox" checked={config.logoEnabled} onChange={(e) => setConfig((c) => ({ ...c, logoEnabled: e.target.checked }))} disabled={!config.logoUrl} />
+                  ロゴ画像
+                </label>
+                <div className="pl-1 space-y-2">
+                  <button onClick={() => logoInputRef.current?.click()} className="w-full h-9 border border-gray-200 dark:border-gray-800 text-[10px] hover:border-blue-600 transition-colors">
+                    {config.logoUrl ? 'ロゴを変更' : '画像を選択'}
+                  </button>
+                  <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleLogoFile(e.target.files[0])} />
+                  {config.logoEnabled && config.logoUrl && (
+                    <>
+                      <div className="flex items-center gap-3">
+                        <span className="text-[10px] text-gray-400 w-14">サイズ</span>
+                        <input type="range" min={5} max={40} value={config.logoSizePct} onChange={(e) => setConfig((c) => ({ ...c, logoSizePct: Number(e.target.value) }))} className="flex-1" />
+                        <span className="text-[10px] text-gray-400 w-8">{config.logoSizePct}%</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-[10px] text-gray-400 w-14">不透明度</span>
+                        <input type="range" min={10} max={100} value={config.logoOpacity} onChange={(e) => setConfig((c) => ({ ...c, logoOpacity: Number(e.target.value) }))} className="flex-1" />
+                        <span className="text-[10px] text-gray-400 w-8">{config.logoOpacity}%</span>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <span className="text-[10px] text-gray-400 w-14 pt-1">配置</span>
+                        {gridButton(config.logoPos, (p) => setConfig((c) => ({ ...c, logoPos: p })))}
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
-
-            {errorMsg && <p className="text-[10px] text-red-500">{errorMsg}</p>}
-
-            <button
-              onClick={processAll}
-              disabled={images.length === 0 || processing}
-              className="w-full h-11 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white text-[11px] tracking-[0.2em] uppercase transition-colors"
-            >
-              {processing ? '処理中...' : isPro ? `${images.length}枚に一括適用` : 'このまま出力'}
-            </button>
-
-            {Object.keys(resultUrls).length > 0 && (
-              <div className="space-y-2">
-                {isPro && Object.keys(resultUrls).length > 1 ? (
-                  <button onClick={downloadZipAll} className="w-full h-9 border border-blue-600 text-blue-600 text-[10px] tracking-[0.1em] uppercase hover:bg-blue-600 hover:text-white transition-colors">
-                    ZIPで一括ダウンロード
-                  </button>
-                ) : (
-                  images.map((im, i) => (
-                    resultUrls[im.id] && (
-                      <button key={im.id} onClick={() => downloadSingle(im.id, i)} className="w-full h-9 border border-gray-200 dark:border-gray-800 text-[10px] hover:border-blue-600 transition-colors">
-                        ダウンロード
-                      </button>
-                    )
-                  ))
-                )}
-              </div>
-            )}
-
-            {!isPro && (
-              <p className="text-[10px] text-gray-400 leading-relaxed">
-                無料版は1枚のプレビュー出力のみです。複数画像への一括適用・ZIP出力・設定の保存は
-                <Link href="/upgrade" className="text-blue-500 hover:underline mx-1">Pro</Link>
-                で利用できます。
-              </p>
-            )}
           </div>
-        </div>
+        )}
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={(e) => e.target.files && addFiles(e.target.files)}
+        />
       </div>
     </div>
   )
