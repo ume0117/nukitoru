@@ -112,11 +112,25 @@ function URLResultCard({ result, onDelete }: { result: ScanResult; onDelete: (id
   )
 }
 
-function BarcodeResultCard({ result, onDelete }: { result: ScanResult; onDelete: (id: string) => void }) {
+const TEXT = {
+  ja: {
+    checkPrice: '¥ 価格を比較する',
+    comparing: '比較中...',
+    directSearch: '各モールで直接検索',
+  },
+  en: {
+    checkPrice: '¥ Check Price',
+    comparing: 'Comparing...',
+    directSearch: 'Search directly on each marketplace',
+  },
+}
+
+function BarcodeResultCard({ result, onDelete, lang }: { result: ScanResult; onDelete: (id: string) => void; lang: 'ja' | 'en' }) {
   const TYPE_LABEL: Record<string, string> = { EAN_13: 'JAN', EAN_8: 'EAN-8', CODE_128: 'CODE128' }
   const label = TYPE_LABEL[result.type] ?? result.type
   const isJAN = result.type === 'EAN_13' || result.type === 'EAN_8'
   const { data: priceData, loading: priceLoading, fetchPrice } = usePriceData(result.value as string)
+  const t = TEXT[lang]
 
   return (
     <div className="border border-gray-200 dark:border-gray-800 bg-white dark:bg-black p-3.5 space-y-2.5">
@@ -135,7 +149,7 @@ function BarcodeResultCard({ result, onDelete }: { result: ScanResult; onDelete:
         <div className="space-y-1.5 border-t border-gray-100 dark:border-gray-800 pt-2.5">
           {!priceData && (
             <button onClick={fetchPrice} disabled={priceLoading} className="w-full h-10 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-[11px] tracking-[0.1em] font-medium transition-colors">
-              {priceLoading ? '比較中...' : '¥ 価格を比較する'}
+              {priceLoading ? t.comparing : t.checkPrice}
             </button>
           )}
           {priceData && priceData.rakuten.length > 0 && priceData.rakuten[0].image && (
@@ -171,7 +185,7 @@ function BarcodeResultCard({ result, onDelete }: { result: ScanResult; onDelete:
               )}
             </div>
           )}
-          <p className="text-[8px] tracking-[0.15em] text-gray-300 dark:text-gray-700 uppercase pt-1">各モールで直接検索</p>
+          <p className="text-[8px] tracking-[0.15em] text-gray-300 dark:text-gray-700 uppercase pt-1">{t.directSearch}</p>
           <a href={getRakutenURL(result.value)} target="_blank" rel="nofollow noopener noreferrer sponsored" className="flex items-center justify-center w-full h-8 border border-gray-200 dark:border-gray-800 text-gray-400 dark:text-gray-600 hover:border-[#bf0000] hover:text-[#bf0000] text-[9px] tracking-[0.15em] uppercase font-medium transition-colors">RAKUTEN</a>
           <div className="grid grid-cols-2 gap-1.5">
             <a href={getAmazonURL(result.value)} target="_blank" rel="nofollow noopener noreferrer sponsored" className="flex items-center justify-center h-8 border border-gray-200 dark:border-gray-800 text-gray-400 dark:text-gray-600 hover:border-[#FF9900] hover:text-[#FF9900] text-[9px] tracking-[0.15em] uppercase font-medium transition-colors">AMAZON</a>
@@ -204,13 +218,14 @@ function QRResultCard({ result, onDelete }: { result: ScanResult; onDelete: (id:
 interface ResultItemProps {
   result: ScanResult
   onDelete: (id: string) => void
+  lang: 'ja' | 'en'
 }
 
-export function ResultItem({ result, onDelete }: ResultItemProps) {
+export function ResultItem({ result, onDelete, lang }: ResultItemProps) {
   if (result.type === 'QR_CODE') {
     const contentType = detectQRContentType(result.value)
     if (contentType === 'URL') return <URLResultCard result={result} onDelete={onDelete} />
     return <QRResultCard result={result} onDelete={onDelete} />
   }
-  return <BarcodeResultCard result={result} onDelete={onDelete} />
+  return <BarcodeResultCard result={result} onDelete={onDelete} lang={lang} />
 }

@@ -208,7 +208,7 @@ export function ScannerSection() {
           )}
           {hasResults && (
             <div className="space-y-2">
-              <ResultList results={results} onDelete={handleDelete} onClear={clearAll} />
+              <ResultList results={results} onDelete={handleDelete} onClear={clearAll} lang={lang} />
               <div className="text-center pt-1">
                 <button onClick={clearAll} className="text-[10px] tracking-[0.15em] text-blue-600 uppercase underline underline-offset-2">{t.back}</button>
               </div>

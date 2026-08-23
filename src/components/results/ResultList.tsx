@@ -14,6 +14,7 @@ interface ResultListProps {
   results: ScanResult[]
   onDelete: (id: string) => void
   onClear: () => void
+  lang: 'ja' | 'en'
 }
 
 const TYPE_LABEL: Record<string, string> = {
@@ -141,7 +142,7 @@ function getInitialFilter(results: ScanResult[]): FilterType {
   return 'ALL'
 }
 
-export function ResultList({ results, onDelete, onClear }: ResultListProps) {
+export function ResultList({ results, onDelete, onClear, lang }: ResultListProps) {
   const [allCopied, setAllCopied] = useState(false)
   const [filter, setFilter] = useState<FilterType>(() => getInitialFilter(results))
   const [priceLoading, setPriceLoading] = useState(false)
@@ -228,7 +229,7 @@ export function ResultList({ results, onDelete, onClear }: ResultListProps) {
         <ul className="space-y-2" role="list">
           {filtered.map((result) => (
             <li key={result.id}>
-              <ResultItem result={result} onDelete={onDelete} />
+              <ResultItem result={result} onDelete={onDelete} lang={lang} />
             </li>
           ))}
         </ul>
