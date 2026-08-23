@@ -67,7 +67,13 @@ function DeleteButton({ onDelete }: { onDelete: () => void }) {
   )
 }
 
-function URLResultCard({ result, onDelete }: { result: ScanResult; onDelete: (id: string) => void }) {
+const URL_TEXT = {
+  ja: { warning: 'Warning', warningBody: '注意が必要な特徴があります。遷移先を十分に確認した上で開いてください。', cancel: 'Cancel', open: 'Open' },
+  en: { warning: 'Warning', warningBody: 'This link has characteristics that require caution. Please check the destination carefully before opening it.', cancel: 'Cancel', open: 'Open' },
+}
+
+function URLResultCard({ result, onDelete, lang }: { result: ScanResult; onDelete: (id: string) => void; lang: 'ja' | 'en' }) {
+  const ut = URL_TEXT[lang]
   const [showConfirm, setShowConfirm] = useState(false)
   const analysis = analyzeURL(result.value)
   const openURL = () => window.open(result.value, '_blank', 'noopener,noreferrer')
@@ -78,11 +84,11 @@ function URLResultCard({ result, onDelete }: { result: ScanResult; onDelete: (id
       {showConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={() => setShowConfirm(false)}>
           <div className="bg-white dark:bg-black border border-gray-200 dark:border-gray-800 p-6 m-4 max-w-sm w-full" onClick={e => e.stopPropagation()}>
-            <p className="text-[11px] tracking-[0.15em] text-gray-400 uppercase mb-4">Warning</p>
-            <p className="text-sm text-gray-700 dark:text-gray-300 mb-6">注意が必要な特徴があります。遷移先を十分に確認した上で開いてください。</p>
+            <p className="text-[11px] tracking-[0.15em] text-gray-400 uppercase mb-4">{ut.warning}</p>
+            <p className="text-sm text-gray-700 dark:text-gray-300 mb-6">{ut.warningBody}</p>
             <div className="flex gap-2 justify-end">
-              <button onClick={() => setShowConfirm(false)} className="h-9 px-4 border border-gray-400 dark:border-gray-600 text-gray-600 dark:text-gray-400 text-[10px] tracking-[0.15em] uppercase transition-colors">Cancel</button>
-              <button onClick={() => { setShowConfirm(false); openURL() }} className="h-9 px-4 bg-blue-600 hover:bg-blue-700 text-white text-[10px] tracking-[0.15em] uppercase transition-colors">Open</button>
+              <button onClick={() => setShowConfirm(false)} className="h-9 px-4 border border-gray-400 dark:border-gray-600 text-gray-600 dark:text-gray-400 text-[10px] tracking-[0.15em] uppercase transition-colors">{ut.cancel}</button>
+              <button onClick={() => { setShowConfirm(false); openURL() }} className="h-9 px-4 bg-blue-600 hover:bg-blue-700 text-white text-[10px] tracking-[0.15em] uppercase transition-colors">{ut.open}</button>
             </div>
           </div>
         </div>
@@ -224,7 +230,7 @@ interface ResultItemProps {
 export function ResultItem({ result, onDelete, lang }: ResultItemProps) {
   if (result.type === 'QR_CODE') {
     const contentType = detectQRContentType(result.value)
-    if (contentType === 'URL') return <URLResultCard result={result} onDelete={onDelete} />
+    if (contentType === 'URL') return <URLResultCard result={result} onDelete={onDelete} lang={lang} />
     return <QRResultCard result={result} onDelete={onDelete} />
   }
   return <BarcodeResultCard result={result} onDelete={onDelete} lang={lang} />
