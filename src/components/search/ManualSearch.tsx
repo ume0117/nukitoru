@@ -81,7 +81,29 @@ function deleteHistoryItem(jan: string) {
   }
 }
 
-export function ManualSearch() {
+const TEXT = {
+  ja: {
+    searchLabel: 'JAN / SKU / ASINで検索',
+    placeholder: 'JAN / SKU / ASIN',
+    recent: '最近の検索',
+    checkPrice: '¥ 価格を比較する',
+    comparing: '比較中...',
+    directSearch: '各モールで直接検索',
+    productPage: '商品ページ',
+  },
+  en: {
+    searchLabel: 'Search by JAN / SKU / ASIN',
+    placeholder: 'JAN / SKU / ASIN',
+    recent: 'Recent',
+    checkPrice: '¥ Check Price',
+    comparing: 'Comparing...',
+    directSearch: 'Search directly on each marketplace',
+    productPage: 'Product Page',
+  },
+}
+
+export function ManualSearch({ lang = 'ja' }: { lang?: 'ja' | 'en' }) {
+  const t = TEXT[lang]
   const [value, setValue] = useState('')
   const trimmed = value.trim()
   const digits8 = /^\d{8}$/.test(trimmed)
@@ -146,14 +168,14 @@ export function ManualSearch() {
   return (
     <div className="border border-gray-100 dark:border-gray-800 bg-white dark:bg-black p-3 space-y-2">
       <div className="flex items-center gap-2">
-        <span className="text-[9px] tracking-[0.2em] text-gray-400 dark:text-gray-600 uppercase">Search by JAN / SKU / ASIN</span>
+        <span className="text-[9px] tracking-[0.2em] text-gray-400 dark:text-gray-600 uppercase">{t.searchLabel}</span>
         {inputType && (<span className="text-[9px] tracking-[0.15em] px-2 py-0.5 border border-blue-600 text-blue-600 uppercase ml-auto">{inputType}</span>)}
       </div>
       <div className="relative">
-        <input ref={inputRef} type="text" value={value} onChange={(e) => setValue(e.target.value)} onKeyDown={handleKeyDown} onFocus={() => setShowHistory(true)} onBlur={() => setTimeout(() => setShowHistory(false), 200)} placeholder="JAN / SKU / ASIN" className="w-full h-10 px-3 pr-8 text-sm border border-gray-100 dark:border-gray-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-700 focus:outline-none focus:border-blue-600 transition-colors" />
+        <input ref={inputRef} type="text" value={value} onChange={(e) => setValue(e.target.value)} onKeyDown={handleKeyDown} onFocus={() => setShowHistory(true)} onBlur={() => setTimeout(() => setShowHistory(false), 200)} placeholder={t.placeholder} className="w-full h-10 px-3 pr-8 text-sm border border-gray-100 dark:border-gray-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-700 focus:outline-none focus:border-blue-600 transition-colors" />
         {showHistory && history.length > 0 && !value && (
           <div className="absolute bottom-11 left-0 right-0 z-10 bg-white dark:bg-black border border-gray-100 dark:border-gray-800 shadow-lg">
-            <p className="text-[8px] tracking-[0.15em] text-gray-400 dark:text-gray-600 uppercase px-3 pt-2">Recent</p>
+            <p className="text-[8px] tracking-[0.15em] text-gray-400 dark:text-gray-600 uppercase px-3 pt-2">{t.recent}</p>
             {history.map((jan) => (
               <div key={jan} className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-900">
                 <button className="text-sm font-mono text-gray-700 dark:text-gray-300 flex-1 text-left" onPointerDown={(e) => { e.preventDefault(); setValue(jan); setShowHistory(false) }}>{jan}</button>
@@ -164,14 +186,9 @@ export function ManualSearch() {
         )}
         {value && (<button onClick={() => { setValue(''); resetData(); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 dark:text-gray-700 hover:text-gray-500 text-xs">x</button>)}
       </div>
-      <div className="grid grid-cols-3 gap-1.5">
-        <a href={canSearch && !isASIN ? getRakutenURL(value) : undefined} target="_blank" rel="nofollow noopener noreferrer sponsored" onClick={(e) => { if (!canSearch || isASIN) e.preventDefault() }} className={`h-9 text-[10px] tracking-[0.15em] uppercase font-medium transition-all flex items-center justify-center border border-gray-400 dark:border-gray-600 text-gray-400 dark:text-gray-600 hover:border-[#bf0000] hover:text-[#bf0000] cursor-pointer`}>RAKUTEN</a>
-        <a href={canSearch ? getAmazonURL(value) : undefined} target="_blank" rel="nofollow noopener noreferrer sponsored" onClick={(e) => { if (!canSearch) e.preventDefault() }} className={`h-9 text-[10px] tracking-[0.15em] uppercase font-medium transition-all flex items-center justify-center border border-gray-400 dark:border-gray-600 text-gray-400 dark:text-gray-600 hover:border-[#FF9900] hover:text-[#FF9900] cursor-pointer`}>{isASIN ? 'PRODUCT PAGE' : 'AMAZON'}</a>
-        <a href={canSearch && !isASIN ? getYahooURL(value) : undefined} target="_blank" rel="nofollow noopener noreferrer sponsored" onClick={(e) => { if (!canSearch || isASIN) e.preventDefault() }} className={`h-9 text-[10px] tracking-[0.15em] uppercase font-medium transition-all flex items-center justify-center border border-gray-400 dark:border-gray-600 text-gray-400 dark:text-gray-600 hover:border-[#FF0033] hover:text-[#FF0033] cursor-pointer`}>YAHOO!</a>
-      </div>
       {isJAN && canSearch && !priceData && (
-        <button onClick={fetchPrice} disabled={priceLoading} className="w-full h-8 border border-gray-400 dark:border-gray-600 text-gray-400 dark:text-gray-600 text-[9px] tracking-[0.15em] uppercase hover:border-blue-600 hover:text-blue-600 transition-colors disabled:opacity-40">
-          {priceLoading ? 'Loading...' : '¥ Check Price'}
+        <button onClick={fetchPrice} disabled={priceLoading} className="w-full h-10 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-[11px] tracking-[0.1em] font-medium transition-colors">
+          {priceLoading ? t.comparing : t.checkPrice}
         </button>
       )}
       {priceData && priceData.rakuten.length > 0 && priceData.rakuten[0].image && (
@@ -207,6 +224,12 @@ export function ManualSearch() {
           )}
         </div>
       )}
+      <p className="text-[8px] tracking-[0.15em] text-gray-300 dark:text-gray-700 uppercase pt-1">{t.directSearch}</p>
+      <div className="grid grid-cols-3 gap-1.5">
+        <a href={canSearch && !isASIN ? getRakutenURL(value) : undefined} target="_blank" rel="nofollow noopener noreferrer sponsored" onClick={(e) => { if (!canSearch || isASIN) e.preventDefault() }} className={`h-9 text-[10px] tracking-[0.15em] uppercase font-medium transition-all flex items-center justify-center border border-gray-200 dark:border-gray-800 text-gray-400 dark:text-gray-600 hover:border-[#bf0000] hover:text-[#bf0000] cursor-pointer`}>RAKUTEN</a>
+        <a href={canSearch ? getAmazonURL(value) : undefined} target="_blank" rel="nofollow noopener noreferrer sponsored" onClick={(e) => { if (!canSearch) e.preventDefault() }} className={`h-9 text-[10px] tracking-[0.15em] uppercase font-medium transition-all flex items-center justify-center border border-gray-200 dark:border-gray-800 text-gray-400 dark:text-gray-600 hover:border-[#FF9900] hover:text-[#FF9900] cursor-pointer`}>{isASIN ? t.productPage : 'AMAZON'}</a>
+        <a href={canSearch && !isASIN ? getYahooURL(value) : undefined} target="_blank" rel="nofollow noopener noreferrer sponsored" onClick={(e) => { if (!canSearch || isASIN) e.preventDefault() }} className={`h-9 text-[10px] tracking-[0.15em] uppercase font-medium transition-all flex items-center justify-center border border-gray-200 dark:border-gray-800 text-gray-400 dark:text-gray-600 hover:border-[#FF0033] hover:text-[#FF0033] cursor-pointer`}>YAHOO!</a>
+      </div>
     </div>
   )
 }

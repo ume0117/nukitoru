@@ -175,7 +175,7 @@ export function ScannerSection() {
       {!isDone && (
         <div className="space-y-3">
           <UploadArea onFileSelect={processFile} isScanning={isScanning} onCameraClick={() => setCameraOpen(true)} />
-          <ManualSearch />
+          <ManualSearch lang={lang} />
           <div className="flex gap-2 pt-1">
             <button onClick={() => setCatalogOpen(true)} className="flex-1 h-11 border border-gray-400 dark:border-gray-600 bg-gray-900/30 hover:border-gray-300 dark:hover:border-gray-400 flex items-center justify-center gap-2 text-[11px] tracking-[0.2em] font-medium text-gray-300 dark:text-gray-400 uppercase transition-colors">{t.catalog}</button>
             <button onClick={() => setInventoryOpen(true)} className="flex-1 h-11 border border-gray-400 dark:border-gray-600 bg-gray-900/30 hover:border-gray-300 dark:hover:border-gray-400 flex items-center justify-center gap-2 text-[11px] tracking-[0.2em] font-medium text-gray-300 dark:text-gray-400 uppercase transition-colors">{t.inventory}</button>
@@ -216,7 +216,7 @@ export function ScannerSection() {
           )}
           {hasResults && (
             <div className="border-t border-gray-100 dark:border-gray-800 pt-4">
-              <ManualSearch />
+              <ManualSearch lang={lang} />
             </div>
           )}
         </div>
