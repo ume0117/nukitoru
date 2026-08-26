@@ -23,7 +23,7 @@ async function loadPdfJs() {
 }
 
 /** EAN-13 チェックデジット検証 + 日本JANコード判定 */
-function isValidEAN13(digits: string): boolean {
+export function isValidEAN13(digits: string): boolean {
   if (!/^\d{13}$/.test(digits)) return false
   // 日本のJANコードは 45 または 49 始まり
   if (!digits.startsWith('45') && !digits.startsWith('49')) return false
@@ -35,7 +35,7 @@ function isValidEAN13(digits: string): boolean {
 }
 
 /** テキストから有効な JAN コードをすべて抽出する（最もシンプルな実装） */
-function extractJANsFromRawText(text: string): string[] {
+export function extractJANsFromRawText(text: string): string[] {
   const found = new Set<string>()
   // 13桁の数字をすべて抽出
   const matches = text.match(/\d{13}/g) ?? []
@@ -46,7 +46,7 @@ function extractJANsFromRawText(text: string): string[] {
 }
 
 /** テキストから URL を抽出する */
-function extractURLsFromRawText(text: string): string[] {
+export function extractURLsFromRawText(text: string): string[] {
   const found = new Set<string>()
   const pattern = /https?:\/\/[^\s\u3000\u3001\u3002\uff0c\uff0e）)】\]」』]+/g
   let m = pattern.exec(text)
