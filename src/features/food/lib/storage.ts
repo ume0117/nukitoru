@@ -7,12 +7,16 @@
 // 保存値が壊れている・古い形式の場合も例外を投げず、安全な初期値へ戻す。
 // ============================================================
 
-import type { Household, AllergyProfile, Pantry } from '@/features/food/types'
+import type { Household, AllergyProfile, Pantry, FoodPreferences } from '@/features/food/types'
 
 const KEY_HOUSEHOLD = 'nukitoru_food_household'
 const KEY_ALLERGY_PROFILE = 'nukitoru_food_allergy_profile'
 const KEY_PANTRY = 'nukitoru_food_pantry'
 const KEY_COOKING_PREFERENCE = 'nukitoru_food_cooking_preference'
+const KEY_PREFERENCES = 'nukitoru_food_preferences'
+const KEY_REGULAR_FOODS = 'nukitoru_food_regular_foods'
+const KEY_FROZEN_FOODS = 'nukitoru_food_frozen_foods'
+const KEY_PANTRY_FOODS = 'nukitoru_food_pantry_foods'
 
 function safeGet<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') return fallback
@@ -74,4 +78,50 @@ export function loadCookingPreference(): StoredCookingPreference {
 
 export function saveCookingPreference(value: StoredCookingPreference): void {
   safeSet(KEY_COOKING_PREFERENCE, value)
+}
+
+// ------------------------------------------------------------
+// MISSION 2.2 — Household Profile & Stock Master
+// ------------------------------------------------------------
+
+export const DEFAULT_FOOD_PREFERENCES: FoodPreferences = {
+  favoriteIngredients: [],
+  favoriteCuisines: [],
+  spiceLevel: null,
+}
+
+export const DEFAULT_REGULAR_FOODS: string[] = []
+export const DEFAULT_FROZEN_FOODS: string[] = []
+export const DEFAULT_PANTRY_FOODS: string[] = []
+
+export function loadFoodPreferences(): FoodPreferences {
+  return safeGet(KEY_PREFERENCES, DEFAULT_FOOD_PREFERENCES)
+}
+
+export function saveFoodPreferences(value: FoodPreferences): void {
+  safeSet(KEY_PREFERENCES, value)
+}
+
+export function loadRegularFoods(): string[] {
+  return safeGet(KEY_REGULAR_FOODS, DEFAULT_REGULAR_FOODS)
+}
+
+export function saveRegularFoods(value: string[]): void {
+  safeSet(KEY_REGULAR_FOODS, value)
+}
+
+export function loadFrozenFoods(): string[] {
+  return safeGet(KEY_FROZEN_FOODS, DEFAULT_FROZEN_FOODS)
+}
+
+export function saveFrozenFoods(value: string[]): void {
+  safeSet(KEY_FROZEN_FOODS, value)
+}
+
+export function loadPantryFoods(): string[] {
+  return safeGet(KEY_PANTRY_FOODS, DEFAULT_PANTRY_FOODS)
+}
+
+export function savePantryFoods(value: string[]): void {
+  safeSet(KEY_PANTRY_FOODS, value)
 }

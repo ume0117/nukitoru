@@ -167,3 +167,61 @@ export interface MealSuggestion {
 export interface MealSuggestionResponse {
   suggestions: MealSuggestion[]
 }
+
+// ============================================================
+// MISSION 2.2 — Household Profile & Stock Master (types only)
+//
+// 「一度決めれば毎回入力しなくてよい情報」を保存するための追加型。
+// 既存の Household / AllergyProfile / Pantry はそのまま再利用し、
+// ここでは新しい概念（食の好み・常備食材/冷凍庫/保存食品）のみを追加する。
+// mock-meal-provider.ts の献立選定ロジックへはまだ組み込まない。
+// ============================================================
+
+// ------------------------------------------------------------
+// FoodPreferences（食の好み）
+// ------------------------------------------------------------
+
+export type SpiceLevel = 'none' | 'mild' | 'medium' | 'hot'
+
+export type Cuisine = 'japanese' | 'western' | 'chinese' | 'korean' | 'italian' | 'other'
+
+export interface FoodPreferences {
+  favoriteIngredients: string[]
+  favoriteCuisines: Cuisine[]
+  spiceLevel: SpiceLevel | null
+}
+
+// ------------------------------------------------------------
+// Stock Master（常備食材 / 冷凍庫 / 保存食品）
+//
+// 既存 Pantry.staples（常備調味料）とは別概念。
+// 「staples」という語の意味が重複しないよう、
+// ここでは regularFoods / frozenFoods / pantryFoods という名前を使う。
+// ------------------------------------------------------------
+
+export type StorageLocation = 'room_temperature' | 'refrigerated' | 'frozen'
+
+/**
+ * 常備品マスターの1項目。
+ * defaultStorageLocation / tags は将来拡張用の構造で、
+ * MISSION 2.2では献立選定・保存場所の入力には使用しない。
+ */
+export interface StockMasterItem {
+  id: string
+  label: string
+  defaultStorageLocation?: StorageLocation
+  tags?: string[]
+  /** 「よく使うもの」として初期表示するか。配列の並び順には依存しない */
+  featured?: boolean
+}
+
+export interface MasterGroup {
+  label: string
+  items: StockMasterItem[]
+}
+
+export interface StockCategories {
+  regularFoods: string[]
+  frozenFoods: string[]
+  pantryFoods: string[]
+}
