@@ -29,6 +29,7 @@ function buildStockItems(
   regularFoods: string[],
   frozenFoods: string[],
   pantryFoods: string[],
+  stockStatusKeys: string[],
 ): StockItem[] {
   const map = new Map<string, string[]>()
   const addAll = (names: string[], label: string) => {
@@ -45,6 +46,16 @@ function buildStockItems(
   addAll(regularFoods, '常備食材')
   addAll(frozenFoods, '冷凍庫')
   addAll(pantryFoods, '保存食品')
+
+  // 常備品として登録されていなくても、在庫状態が保存されている食品
+  // （例: 料理後の使用食材確認で記録した非常備食品）は「その他」として表示する。
+  // ライフサイクル管理（一定期間後の非表示化・削除操作等）は今回実装しない。
+  for (const name of stockStatusKeys) {
+    if (!map.has(name)) {
+      map.set(name, ['その他'])
+    }
+  }
+
   return Array.from(map.entries()).map(([name, categoryLabels]) => ({ name, categoryLabels }))
 }
 
@@ -65,8 +76,11 @@ export function StockStatusApp() {
     const regularFoods = loadRegularFoods()
     const frozenFoods = loadFrozenFoods()
     const pantryFoods = loadPantryFoods()
-    setItems(buildStockItems(pantry.staples, regularFoods, frozenFoods, pantryFoods))
-    setStockStatusMap(loadStockStatus())
+    const stockStatusMap = loadStockStatus()
+    setItems(
+      buildStockItems(pantry.staples, regularFoods, frozenFoods, pantryFoods, Object.keys(stockStatusMap)),
+    )
+    setStockStatusMap(stockStatusMap)
     setLoaded(true)
   }, [])
 

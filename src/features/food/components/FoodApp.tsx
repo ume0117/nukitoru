@@ -9,31 +9,38 @@ import { PantrySelector } from './PantrySelector'
 import { ConditionSelector } from './ConditionSelector'
 import { CookingTimeSelector } from './CookingTimeSelector'
 import { MealResultView } from './MealResultView'
+import { CookingConfirmationPanel } from './CookingConfirmationPanel'
 import { mockMealProvider } from '@/features/food/lib/mock-meal-provider'
 import { getSeasonFromDate } from '@/features/food/lib/season'
+import { getConfirmableIngredientNames, applyStockUpdates, type StockUpdateEntry } from '@/features/food/lib/cooking-completion'
 import {
   DEFAULT_ALLERGY_PROFILE,
   DEFAULT_COOKING_PREFERENCE,
   DEFAULT_HOUSEHOLD,
   DEFAULT_PANTRY,
+  DEFAULT_STOCK_STATUS,
   loadAllergyProfile,
   loadCookingPreference,
   loadHousehold,
   loadPantry,
+  loadStockStatus,
   saveAllergyProfile,
   saveCookingPreference,
   saveHousehold,
   savePantry,
+  saveStockStatus,
 } from '@/features/food/lib/storage'
 import type {
   AllergyProfile,
   DailyCondition,
   Household,
   Ingredient,
+  MealSuggestion,
   MealSuggestionRequest,
   MealSuggestionResponse,
   Pantry,
   Season,
+  StockStatusEntry,
 } from '@/features/food/types'
 
 type Status = 'idle' | 'loading' | 'result' | 'error'
@@ -90,12 +97,17 @@ export function FoodApp() {
   const [status, setStatus] = useState<Status>('idle')
   const [result, setResult] = useState<MealSuggestionResponse | null>(null)
 
+  // 料理完了後の使用食材確認（MISSION 2.4）。nullの間はパネルを表示しない。
+  const [confirmingItems, setConfirmingItems] = useState<string[] | null>(null)
+  const [stockStatus, setStockStatusMap] = useState<Record<string, StockStatusEntry>>(DEFAULT_STOCK_STATUS)
+
   // 初回マウント時にのみlocalStorageから復元する（SSR中はstorage.ts側でwindowアクセスをスキップする）
   useEffect(() => {
     setHousehold(loadHousehold())
     setAllergyProfile(loadAllergyProfile())
     setPantry(loadPantry())
     setMaxCookingMinutes(loadCookingPreference().maxCookingMinutes)
+    setStockStatusMap(loadStockStatus())
     setLoaded(true)
   }, [])
 
@@ -138,6 +150,18 @@ export function FoodApp() {
     } catch {
       setStatus('error')
     }
+  }
+
+  // 「作った！」が押されただけでは在庫状態は一切変更しない。使用食材の候補を出すだけ。
+  const handleCookedClick = (suggestion: MealSuggestion) => {
+    setConfirmingItems(getConfirmableIngredientNames(suggestion, pantry.staples))
+  }
+
+  // [在庫を更新する] が押された時だけ、チェック済みの食品についてのみ保存する。
+  const handleSaveStockUpdates = (updates: StockUpdateEntry[]) => {
+    const next = applyStockUpdates(stockStatus, updates)
+    saveStockStatus(next)
+    setStockStatusMap(next)
   }
 
   return (
@@ -215,12 +239,25 @@ export function FoodApp() {
         {status === 'loading' ? '考え中...' : '今日の献立を考える'}
       </button>
 
-      <MealResultView result={status === 'result' ? result : null} hasIngredients={canSubmit} />
+      <MealResultView
+        result={status === 'result' ? result : null}
+        hasIngredients={canSubmit}
+        onCookedClick={status === 'result' && !confirmingItems ? handleCookedClick : undefined}
+      />
 
       {status === 'error' && (
         <p className="text-[12px] text-red-500 dark:text-red-400">
           献立の生成中にエラーが発生しました。入力内容はそのまま保持されています。もう一度お試しください。
         </p>
+      )}
+
+      {confirmingItems && (
+        <CookingConfirmationPanel
+          itemNames={confirmingItems}
+          stockStatus={stockStatus}
+          onSave={handleSaveStockUpdates}
+          onClose={() => setConfirmingItems(null)}
+        />
       )}
     </div>
   )

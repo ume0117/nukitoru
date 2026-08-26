@@ -1,12 +1,14 @@
 'use client'
 
-import type { DishType, MealSuggestionResponse } from '@/features/food/types'
+import type { MealSuggestion, DishType, MealSuggestionResponse } from '@/features/food/types'
 
 interface Props {
   /** 「今日の献立を考える」を押した結果。まだ押していない場合は null */
   result: MealSuggestionResponse | null
   /** 食材が1件以上登録されているか（0件の場合は専用の案内を出す） */
   hasIngredients: boolean
+  /** 指定した場合のみ、各提案カードに「作った！」ボタンを表示する */
+  onCookedClick?: (suggestion: MealSuggestion) => void
 }
 
 const DISH_TYPE_LABELS: Record<DishType, string> = {
@@ -16,7 +18,7 @@ const DISH_TYPE_LABELS: Record<DishType, string> = {
   other: 'その他',
 }
 
-export function MealResultView({ result, hasIngredients }: Props) {
+export function MealResultView({ result, hasIngredients, onCookedClick }: Props) {
   if (!hasIngredients) {
     return (
       <div className="border border-gray-100 dark:border-gray-800 p-4 text-center">
@@ -87,6 +89,15 @@ export function MealResultView({ result, hasIngredients }: Props) {
                 </p>
               ))}
             </div>
+          )}
+
+          {onCookedClick && (
+            <button
+              onClick={() => onCookedClick(suggestion)}
+              className="w-full h-11 border border-gray-400 dark:border-gray-600 hover:border-blue-600 hover:text-blue-600 text-[11px] tracking-[0.15em] uppercase font-medium text-gray-500 dark:text-gray-400 transition-colors"
+            >
+              作った！
+            </button>
           )}
         </div>
       ))}
