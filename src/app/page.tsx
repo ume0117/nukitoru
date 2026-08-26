@@ -1,15 +1,13 @@
-import { ScannerSection } from '@/components/ScannerSection'
-import { FoodEntryCard } from '@/features/food/components/FoodEntryCard'
+import { HomeLauncher } from '@/components/home/HomeLauncher'
 
 /**
  * ルートページ（サーバーコンポーネント）
- * ヒーロー・使い方・スキャン機能はすべて ScannerSection に統合済み。
+ * NUKITORU HOME。FOOD / SCAN / COMING SOONへの導線はHomeLauncherが担当する。
  */
 export default function HomePage() {
   return (
     <main className="max-w-3xl mx-auto px-4 pb-2">
-<ScannerSection />
-      <FoodEntryCard />
+      <HomeLauncher />
     </main>
   )
 }

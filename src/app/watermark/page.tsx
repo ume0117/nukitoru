@@ -414,7 +414,7 @@ export default function WatermarkPage() {
     <div className="min-h-screen bg-white dark:bg-black">
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
-          <Link href="/" className="text-[10px] tracking-[0.2em] text-gray-400 dark:text-gray-600 uppercase hover:text-blue-600 transition-colors">← NUKITORU</Link>
+          <Link href="/scan" className="text-[10px] tracking-[0.2em] text-gray-400 dark:text-gray-600 uppercase hover:text-blue-600 transition-colors">← NUKITORU SCAN</Link>
           <span className="text-[9px] tracking-[0.15em] text-gray-400 dark:text-gray-600 uppercase">
             {isPro ? (plan === 'pro_max' ? 'PRO MAX' : 'PRO') : 'FREE'}
           </span>

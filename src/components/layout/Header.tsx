@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { getPlan, type PlanType } from '@/lib/license'
 
 const LANG_STORAGE_KEY = 'nukitoru_lang'
@@ -21,19 +23,25 @@ const TEXT = {
 export function Header() {
   const [plan, setPlan] = useState<PlanType | null>(null)
   const [lang, setLang] = useState<'ja' | 'en'>('ja')
+  const pathname = usePathname()
 
   useEffect(() => {
     getPlan().then(setPlan)
+  }, [])
+
+  // ページ遷移後もHeaderはlayout配下でマウントされ続けるため、
+  // pathname変化のたびにnukitoru_langを再読み込みし、他画面での言語切替と同期する
+  useEffect(() => {
     const saved = localStorage.getItem(LANG_STORAGE_KEY)
     if (saved === 'en' || saved === 'ja') setLang(saved)
-  }, [])
+  }, [pathname])
 
   const t = TEXT[lang]
 
   return (
     <header className="sticky top-0 z-10 border-b border-gray-100 dark:border-gray-900 bg-white dark:bg-black">
       <div className="max-w-3xl mx-auto px-4 h-12 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
+        <Link href="/" className="flex items-center gap-2.5">
           <svg
             className="w-4 h-4 text-blue-600 shrink-0"
             viewBox="0 0 20 20"
@@ -50,7 +58,7 @@ export function Header() {
           <span className="text-[11px] font-medium tracking-[0.25em] text-gray-900 dark:text-white uppercase">
             Nukitoru
           </span>
-        </div>
+        </Link>
 
         {plan === null ? (
           <span className="w-16 h-4" aria-hidden="true" />
