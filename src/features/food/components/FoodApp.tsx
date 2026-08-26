@@ -157,12 +157,20 @@ export function FoodApp() {
             {now} ｜ 季節：{SEASON_LABELS[season]}
           </p>
         )}
-        <Link
-          href="/food/settings"
-          className="inline-block text-[10px] tracking-[0.1em] text-gray-400 dark:text-gray-600 hover:text-blue-600 uppercase transition-colors"
-        >
-          家族・常備品・好みを設定 →
-        </Link>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <Link
+            href="/food/settings"
+            className="inline-block text-[10px] tracking-[0.1em] text-gray-400 dark:text-gray-600 hover:text-blue-600 uppercase transition-colors"
+          >
+            家族・常備品・好みを設定 →
+          </Link>
+          <Link
+            href="/food/stock"
+            className="inline-block text-[10px] tracking-[0.1em] text-gray-400 dark:text-gray-600 hover:text-blue-600 uppercase transition-colors"
+          >
+            在庫を見る →
+          </Link>
+        </div>
       </div>
 
       {/* ① 今日の体調 */}

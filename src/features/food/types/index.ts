@@ -225,3 +225,18 @@ export interface StockCategories {
   frozenFoods: string[]
   pantryFoods: string[]
 }
+
+// ------------------------------------------------------------
+// MISSION 2.3 — Current Stock Status
+//
+// 「常備品として登録しているか（ON/OFF）」と「今、実際にあるか」は別概念。
+// このStockStatusは後者（現在庫）のみを表し、Pantry.staples / regularFoods /
+// frozenFoods / pantryFoods の配列（常備品ON/OFF）とは完全に独立して保存する。
+// ------------------------------------------------------------
+
+export type StockStatus = 'available' | 'low' | 'out'
+
+export interface StockStatusEntry {
+  status: StockStatus
+  updatedAt?: string
+}

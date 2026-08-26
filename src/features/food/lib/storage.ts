@@ -7,7 +7,7 @@
 // 保存値が壊れている・古い形式の場合も例外を投げず、安全な初期値へ戻す。
 // ============================================================
 
-import type { Household, AllergyProfile, Pantry, FoodPreferences } from '@/features/food/types'
+import type { Household, AllergyProfile, Pantry, FoodPreferences, StockStatusEntry } from '@/features/food/types'
 
 const KEY_HOUSEHOLD = 'nukitoru_food_household'
 const KEY_ALLERGY_PROFILE = 'nukitoru_food_allergy_profile'
@@ -17,6 +17,7 @@ const KEY_PREFERENCES = 'nukitoru_food_preferences'
 const KEY_REGULAR_FOODS = 'nukitoru_food_regular_foods'
 const KEY_FROZEN_FOODS = 'nukitoru_food_frozen_foods'
 const KEY_PANTRY_FOODS = 'nukitoru_food_pantry_foods'
+const KEY_STOCK_STATUS = 'nukitoru_food_stock_status'
 
 function safeGet<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') return fallback
@@ -124,4 +125,21 @@ export function loadPantryFoods(): string[] {
 
 export function savePantryFoods(value: string[]): void {
   safeSet(KEY_PANTRY_FOODS, value)
+}
+
+// ------------------------------------------------------------
+// MISSION 2.3 — Current Stock Status
+//
+// Pantry.staples / regularFoods / frozenFoods / pantryFoods（常備品ON/OFF）
+// とは完全に別のキーで保存する。
+// ------------------------------------------------------------
+
+export const DEFAULT_STOCK_STATUS: Record<string, StockStatusEntry> = {}
+
+export function loadStockStatus(): Record<string, StockStatusEntry> {
+  return safeGet(KEY_STOCK_STATUS, DEFAULT_STOCK_STATUS)
+}
+
+export function saveStockStatus(value: Record<string, StockStatusEntry>): void {
+  safeSet(KEY_STOCK_STATUS, value)
 }

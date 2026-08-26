@@ -6,6 +6,7 @@ import {
   DEFAULT_PANTRY_FOODS,
   DEFAULT_HOUSEHOLD,
   DEFAULT_ALLERGY_PROFILE,
+  DEFAULT_STOCK_STATUS,
   loadFoodPreferences,
   saveFoodPreferences,
   loadRegularFoods,
@@ -18,7 +19,12 @@ import {
   saveHousehold,
   loadAllergyProfile,
   saveAllergyProfile,
+  loadPantry,
+  savePantry,
+  loadStockStatus,
+  saveStockStatus,
 } from '../storage'
+import type { StockStatusEntry } from '@/features/food/types'
 
 /** vitestは environment: 'node' のため、既定では window が存在しない（＝SSR相当）。 */
 function installFakeLocalStorage() {
@@ -99,5 +105,28 @@ describe('storage.ts — round-trip（localStorageあり）', () => {
     saveRegularFoods(['卵'])
     expect(loadHousehold()).toEqual(DEFAULT_HOUSEHOLD)
     expect(loadAllergyProfile()).toEqual(DEFAULT_ALLERGY_PROFILE)
+  })
+
+  it('stock status を保存して読み込むと同じ値が返る', () => {
+    const value: Record<string, StockStatusEntry> = {
+      卵: { status: 'low', updatedAt: '2026-08-26T00:00:00.000Z' },
+    }
+    saveStockStatus(value)
+    expect(loadStockStatus()).toEqual(value)
+  })
+
+  it('壊れたstock status JSONが保存されていてもデフォルト値（空オブジェクト）へ安全に復帰する', () => {
+    const store = installFakeLocalStorage()
+    store.set('nukitoru_food_stock_status', '{not valid json')
+    expect(loadStockStatus()).toEqual(DEFAULT_STOCK_STATUS)
+  })
+
+  it('stock status の変更は Pantry / regularFoods / frozenFoods / pantryFoods に影響しない（常備品ON/OFFとは独立）', () => {
+    saveRegularFoods(['卵'])
+    savePantry({ staples: ['しょうゆ'] })
+    saveStockStatus({ 卵: { status: 'out' } })
+
+    expect(loadRegularFoods()).toEqual(['卵'])
+    expect(loadPantry()).toEqual({ staples: ['しょうゆ'] })
   })
 })
