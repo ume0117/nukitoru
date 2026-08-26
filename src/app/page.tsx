@@ -1,4 +1,5 @@
 import { ScannerSection } from '@/components/ScannerSection'
+import { FoodEntryCard } from '@/features/food/components/FoodEntryCard'
 
 /**
  * ルートページ（サーバーコンポーネント）
@@ -8,6 +9,7 @@ export default function HomePage() {
   return (
     <main className="max-w-3xl mx-auto px-4 pb-2">
 <ScannerSection />
+      <FoodEntryCard />
     </main>
   )
 }
