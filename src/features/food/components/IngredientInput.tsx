@@ -184,6 +184,7 @@ export function IngredientInput({ ingredients, onChange }: Props) {
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
+      if (e.nativeEvent.isComposing) return
       e.preventDefault()
       addIngredient()
     }
