@@ -182,7 +182,7 @@ export function FoodSettingsApp() {
       >
         <StockCategorySelector
           title="常備食材"
-          description="いつも家にある食材を選んでおくと、今後の献立提案の精度向上に役立ちます。"
+          description="いつも家にある食材を登録しておけます。現在のバージョンでは献立の内容には反映されません。"
           groups={REGULAR_FOODS_MASTER}
           selectedItems={regularFoods}
           onChange={setRegularFoods}
