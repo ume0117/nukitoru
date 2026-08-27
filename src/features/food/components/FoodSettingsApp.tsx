@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
-import { HouseholdSettings } from './HouseholdSettings'
 import { AllergyDislikeInput } from './AllergyDislikeInput'
+import { MemberSettings } from './MemberSettings'
 import { PantrySelector } from './PantrySelector'
 import { StockCategorySelector } from './StockCategorySelector'
 import { FoodPreferencesEditor, CUISINE_LABELS, SPICE_LEVELS } from './FoodPreferencesEditor'
@@ -13,26 +13,27 @@ import {
   DEFAULT_ALLERGY_PROFILE,
   DEFAULT_FOOD_PREFERENCES,
   DEFAULT_FROZEN_FOODS,
-  DEFAULT_HOUSEHOLD,
   DEFAULT_PANTRY,
   DEFAULT_PANTRY_FOODS,
   DEFAULT_REGULAR_FOODS,
   loadAllergyProfile,
   loadFoodPreferences,
   loadFrozenFoods,
-  loadHousehold,
+  loadMembers,
   loadPantry,
   loadPantryFoods,
   loadRegularFoods,
+  loadSelectedMemberIds,
   saveAllergyProfile,
   saveFoodPreferences,
   saveFrozenFoods,
-  saveHousehold,
+  saveMembers,
   savePantry,
   savePantryFoods,
   saveRegularFoods,
+  saveSelectedMemberIds,
 } from '@/features/food/lib/storage'
-import type { AllergyProfile, FoodPreferences, Household, Pantry } from '@/features/food/types'
+import type { AllergyProfile, FoodPreferences, Member, Pantry } from '@/features/food/types'
 
 interface AccordionSectionProps {
   number: number
@@ -72,7 +73,8 @@ function AccordionSection({ number, title, summary, open, onToggle, children }: 
 }
 
 export function FoodSettingsApp() {
-  const [household, setHousehold] = useState<Household>(DEFAULT_HOUSEHOLD)
+  const [members, setMembers] = useState<Member[]>([])
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([])
   const [allergyProfile, setAllergyProfile] = useState<AllergyProfile>(DEFAULT_ALLERGY_PROFILE)
   const [pantry, setPantry] = useState<Pantry>(DEFAULT_PANTRY)
   const [regularFoods, setRegularFoods] = useState<string[]>(DEFAULT_REGULAR_FOODS)
@@ -93,7 +95,8 @@ export function FoodSettingsApp() {
 
   // 初回マウント時にのみlocalStorageから復元する（SSR中はstorage.ts側でwindowアクセスをスキップする）
   useEffect(() => {
-    setHousehold(loadHousehold())
+    setMembers(loadMembers())
+    setSelectedMemberIds(loadSelectedMemberIds())
     setAllergyProfile(loadAllergyProfile())
     setPantry(loadPantry())
     setRegularFoods(loadRegularFoods())
@@ -105,8 +108,12 @@ export function FoodSettingsApp() {
 
   // タップ・入力したその場でFOOD専用localStorageへ保存する（復元前にデフォルト値で上書きしない）
   useEffect(() => {
-    if (loaded) saveHousehold(household)
-  }, [household, loaded])
+    if (loaded) saveMembers(members)
+  }, [members, loaded])
+
+  useEffect(() => {
+    if (loaded) saveSelectedMemberIds(selectedMemberIds)
+  }, [selectedMemberIds, loaded])
 
   useEffect(() => {
     if (loaded) saveAllergyProfile(allergyProfile)
@@ -131,6 +138,18 @@ export function FoodSettingsApp() {
   useEffect(() => {
     if (loaded) saveFoodPreferences(preferences)
   }, [preferences, loaded])
+
+  // 新規メンバーは原則「今日食べる人」にも含める
+  const handleAddMember = (member: Member) => {
+    setMembers((prev) => [...prev, member])
+    setSelectedMemberIds((prev) => [...prev, member.id])
+  }
+
+  // 削除時は members / selectedMemberIds 両方から取り除く（不整合な参照を残さない）
+  const handleRemoveMember = (id: string) => {
+    setMembers((prev) => prev.filter((m) => m.id !== id))
+    setSelectedMemberIds((prev) => prev.filter((sid) => sid !== id))
+  }
 
   const countSummary = (count: number) => (count > 0 ? `${count}件設定済み` : undefined)
 
@@ -158,8 +177,13 @@ export function FoodSettingsApp() {
         <p className="text-[11px] text-gray-500 dark:text-gray-400">すべて任意です。あとから変更できます。</p>
       </div>
 
-      <AccordionSection number={1} title="家族・安全" open={openSections[1]} onToggle={() => toggleSection(1)}>
-        <HouseholdSettings value={household} onChange={setHousehold} />
+      <AccordionSection number={1} title="一緒に食べる人・安全" open={openSections[1]} onToggle={() => toggleSection(1)}>
+        <MemberSettings
+          value={members}
+          onChange={setMembers}
+          onAdd={handleAddMember}
+          onRemove={handleRemoveMember}
+        />
         <AllergyDislikeInput value={allergyProfile} onChange={setAllergyProfile} />
       </AccordionSection>
 

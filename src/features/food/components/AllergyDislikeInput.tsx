@@ -86,24 +86,6 @@ function TagInput({
 export function AllergyDislikeInput({ value, onChange }: Props) {
   return (
     <div className="space-y-4">
-      <div className="space-y-1.5 border border-red-200 dark:border-red-900/50 p-3">
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px] tracking-[0.1em] text-red-600 dark:text-red-400 font-medium">
-            ⚠ 必ず除外
-          </span>
-          <span className="text-[9px] tracking-[0.15em] text-gray-400 dark:text-gray-600 uppercase">アレルギー</span>
-        </div>
-        <TagInput
-          placeholder="例：卵、えび"
-          onAdd={(name) => onChange({ ...value, allergies: [...value.allergies, name] })}
-        />
-        <TagList
-          items={value.allergies}
-          emptyLabel="登録されているアレルギーはありません"
-          onRemove={(i) => onChange({ ...value, allergies: value.allergies.filter((_, idx) => idx !== i) })}
-        />
-      </div>
-
       <div className="space-y-1.5 border border-amber-200 dark:border-amber-900/50 p-3">
         <div className="flex items-center gap-1.5">
           <span className="text-[10px] tracking-[0.1em] text-amber-600 dark:text-amber-400 font-medium">

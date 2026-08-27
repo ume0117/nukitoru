@@ -7,7 +7,7 @@
 // 保存値が壊れている・古い形式の場合も例外を投げず、安全な初期値へ戻す。
 // ============================================================
 
-import type { Household, AllergyProfile, Pantry, FoodPreferences, StockStatusEntry } from '@/features/food/types'
+import type { Household, AllergyProfile, Pantry, FoodPreferences, StockStatusEntry, Member } from '@/features/food/types'
 
 const KEY_HOUSEHOLD = 'nukitoru_food_household'
 const KEY_ALLERGY_PROFILE = 'nukitoru_food_allergy_profile'
@@ -18,6 +18,11 @@ const KEY_REGULAR_FOODS = 'nukitoru_food_regular_foods'
 const KEY_FROZEN_FOODS = 'nukitoru_food_frozen_foods'
 const KEY_PANTRY_FOODS = 'nukitoru_food_pantry_foods'
 const KEY_STOCK_STATUS = 'nukitoru_food_stock_status'
+const KEY_MEMBERS = 'nukitoru_food_members'
+const KEY_SELECTED_MEMBERS = 'nukitoru_food_selected_members'
+
+/** 「自分」は常にこの固定IDを使う。reloadやmigrationのたびに変わってはいけない。 */
+export const SELF_MEMBER_ID = 'self'
 
 function safeGet<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') return fallback
@@ -39,7 +44,7 @@ function safeSet<T>(key: string, value: T): void {
   }
 }
 
-export const DEFAULT_HOUSEHOLD: Household = { adults: 2, children: 0, childrenAges: [] }
+export const DEFAULT_HOUSEHOLD: Household = { adults: 0, children: 0, childrenAges: [] }
 export const DEFAULT_ALLERGY_PROFILE: AllergyProfile = { allergies: [], dislikes: [] }
 export const DEFAULT_PANTRY: Pantry = { staples: [] }
 
@@ -142,4 +147,51 @@ export function loadStockStatus(): Record<string, StockStatusEntry> {
 
 export function saveStockStatus(value: Record<string, StockStatusEntry>): void {
   safeSet(KEY_STOCK_STATUS, value)
+}
+
+// ------------------------------------------------------------
+// MISSION 2.10 — Member Storage Foundation
+//
+// 既存の nukitoru_food_allergy_profile（世帯全体でフラットなallergies）から
+// 「自分」という1名のMemberへ安全に移行する。
+// 既存のアレルギー情報は必ず引き継ぎ、allergyConfirmedは常にfalseから始める
+// （旧allergiesが空配列だったとしても「アレルギーなし確認済み」とはみなさない）。
+// migrateToMembersはmembers keyが未作成/破損している場合にのみ使う導出ロジックで、
+// それ自体はlocalStorageへ書き込まない（副作用を持たない）。
+// ------------------------------------------------------------
+
+function migrateToMembers(): Member[] {
+  const old = loadAllergyProfile()
+  return [
+    {
+      id: SELF_MEMBER_ID,
+      label: '自分',
+      allergies: old.allergies,
+      allergyConfirmed: false,
+    },
+  ]
+}
+
+export function loadMembers(): Member[] {
+  const raw = safeGet<Member[] | null>(KEY_MEMBERS, null)
+  if (raw === null) return migrateToMembers()
+  return raw
+}
+
+export function saveMembers(value: Member[]): void {
+  safeSet(KEY_MEMBERS, value)
+}
+
+/**
+ * 未保存時は「現在存在する全メンバー」をデフォルトの選択状態とする
+ * （新規メンバー追加時も原則selectedへ含める、という仕様に合わせる）。
+ */
+export function loadSelectedMemberIds(): string[] {
+  const raw = safeGet<string[] | null>(KEY_SELECTED_MEMBERS, null)
+  if (raw === null) return loadMembers().map((m) => m.id)
+  return raw
+}
+
+export function saveSelectedMemberIds(value: string[]): void {
+  safeSet(KEY_SELECTED_MEMBERS, value)
 }

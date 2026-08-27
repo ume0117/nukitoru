@@ -23,8 +23,13 @@ import {
   savePantry,
   loadStockStatus,
   saveStockStatus,
+  loadMembers,
+  saveMembers,
+  loadSelectedMemberIds,
+  saveSelectedMemberIds,
+  SELF_MEMBER_ID,
 } from '../storage'
-import type { StockStatusEntry } from '@/features/food/types'
+import type { StockStatusEntry, Member } from '@/features/food/types'
 
 /** vitestは environment: 'node' のため、既定では window が存在しない（＝SSR相当）。 */
 function installFakeLocalStorage() {
@@ -128,5 +133,86 @@ describe('storage.ts — round-trip（localStorageあり）', () => {
 
     expect(loadRegularFoods()).toEqual(['卵'])
     expect(loadPantry()).toEqual({ staples: ['しょうゆ'] })
+  })
+})
+
+describe('storage.ts — Member Storage Foundation（MISSION 2.10 PHASE A）', () => {
+  beforeEach(() => {
+    installFakeLocalStorage()
+  })
+  afterEach(() => {
+    removeFakeWindow()
+  })
+
+  it('TEST 1: 完全新規ユーザーは self 1名のみ・allergyConfirmed=false から始まる', () => {
+    const members = loadMembers()
+    expect(members).toEqual([
+      { id: SELF_MEMBER_ID, label: '自分', allergies: [], allergyConfirmed: false },
+    ])
+  })
+
+  it('TEST 2: 旧allergy=["卵"]が保存済みの場合、selfへ卵を引き継ぐが allergyConfirmed=false のまま', () => {
+    saveAllergyProfile({ allergies: ['卵'], dislikes: [] })
+    const members = loadMembers()
+    expect(members).toEqual([
+      { id: SELF_MEMBER_ID, label: '自分', allergies: ['卵'], allergyConfirmed: false },
+    ])
+  })
+
+  it('TEST 3: 旧allergy=[]（空配列）でも「なし確認済み」扱いにせず allergyConfirmed=false とする', () => {
+    saveAllergyProfile({ allergies: [], dislikes: [] })
+    const members = loadMembers()
+    expect(members[0].allergyConfirmed).toBe(false)
+    expect(members[0].allergies).toEqual([])
+  })
+
+  it('TEST 4: members保存済みの場合、reload（再load）しても内容が不変', () => {
+    const saved: Member[] = [
+      { id: SELF_MEMBER_ID, label: '自分', allergies: ['卵'], allergyConfirmed: true },
+      { id: 'member-2', label: 'パートナー', allergies: ['えび'], allergyConfirmed: true },
+    ]
+    saveMembers(saved)
+    expect(loadMembers()).toEqual(saved)
+    expect(loadMembers()).toEqual(saved) // 複数回呼んでも安定している（新規IDが生成されない）
+  })
+
+  it('TEST 5: selected member IDs の保存・復元', () => {
+    saveMembers([
+      { id: SELF_MEMBER_ID, label: '自分', allergies: [], allergyConfirmed: true },
+      { id: 'member-2', label: 'パートナー', allergies: [], allergyConfirmed: true },
+    ])
+    saveSelectedMemberIds([SELF_MEMBER_ID])
+    expect(loadSelectedMemberIds()).toEqual([SELF_MEMBER_ID])
+  })
+
+  it('TEST 5b: selected未保存の場合は現在の全メンバーIDがデフォルトになる', () => {
+    saveMembers([
+      { id: SELF_MEMBER_ID, label: '自分', allergies: [], allergyConfirmed: true },
+      { id: 'member-2', label: 'パートナー', allergies: [], allergyConfirmed: true },
+    ])
+    expect(loadSelectedMemberIds()).toEqual([SELF_MEMBER_ID, 'member-2'])
+  })
+
+  it('TEST 6: 壊れたmembers JSONの場合、crashせず旧allergy情報からselfへ安全にfallbackする（allergyConfirmed=false）', () => {
+    saveAllergyProfile({ allergies: ['乳'], dislikes: [] })
+    const store = installFakeLocalStorage()
+    store.set('nukitoru_food_household', JSON.stringify(DEFAULT_HOUSEHOLD))
+    store.set('nukitoru_food_allergy_profile', JSON.stringify({ allergies: ['乳'], dislikes: [] }))
+    store.set('nukitoru_food_members', '{not valid json')
+
+    const members = loadMembers()
+    expect(members).toEqual([
+      { id: SELF_MEMBER_ID, label: '自分', allergies: ['乳'], allergyConfirmed: false },
+    ])
+  })
+
+  it('TEST 7: 既存household(adults=2)が保存済みの場合、DEFAULT_HOUSEHOLDを0に変えても保存済み値は維持される', () => {
+    saveHousehold({ adults: 2, children: 0, childrenAges: [] })
+    expect(loadHousehold()).toEqual({ adults: 2, children: 0, childrenAges: [] })
+  })
+
+  it('TEST 8: 新規household（未保存）は adults=0 がデフォルトになる', () => {
+    expect(DEFAULT_HOUSEHOLD.adults).toBe(0)
+    expect(loadHousehold()).toEqual({ adults: 0, children: 0, childrenAges: [] })
   })
 })
