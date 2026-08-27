@@ -60,7 +60,7 @@ export const metadata: Metadata = {
     siteName: 'NUKITORU',
     images: [
       {
-        url: `${BASE_URL}/ogp.png`,
+        url: `${BASE_URL}/ogp-home.png`,
         width: 1200,
         height: 630,
         alt: 'NUKITORU - 面倒を、抜き取る。',
@@ -71,7 +71,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'NUKITORU | 面倒を、抜き取る。',
     description: 'NUKITORU FOODとNUKITORU SCAN。毎日の食事や読み取り作業の面倒をラクにするツール。',
-    images: [`${BASE_URL}/ogp.png`],
+    images: [`${BASE_URL}/ogp-home.png`],
   },
   robots: {
     index: true,

@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     siteName: 'NUKITORU',
     images: [
       {
-        url: `${BASE_URL}/ogp.png`,
+        url: `${BASE_URL}/ogp-scan.png`,
         width: 1200,
         height: 630,
         alt: 'NUKITORU SCAN - PDF・画像からコードを一発抽出',
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'NUKITORU SCAN - PDF・画像からJANコード一括抽出｜楽天・Amazon・Yahoo!価格比較',
     description: 'PDFや画像からJANコード・バーコードを無料で一括抽出。楽天・Amazon・Yahoo!最安値比較。EC事業者・棚卸し・商品登録に最適。',
-    images: [`${BASE_URL}/ogp.png`],
+    images: [`${BASE_URL}/ogp-scan.png`],
   },
 }
 
