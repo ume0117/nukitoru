@@ -503,6 +503,13 @@ export interface RecipeFieldVerification {
    * （exact値へ収縮させない。単位は自由記述、例: "分"）。
    */
   evidenceRange?: { min: number; max: number; unit: string }
+  /**
+   * MISSION 2.13 — Evidence Variant Foundation。このfieldのEvidenceがvariant境界に
+   * 対してどう関係するかの分類（純粋なメタデータ。isRecipePublishable()は参照しない）。
+   */
+  variantRelation?: VariantEvidenceRelation
+  /** variantRelationが'variant-specific'の場合のみ意味を持つ。対応するRecipeVariantIdentity.variantId */
+  variantId?: string
 }
 
 /**
@@ -556,7 +563,56 @@ export interface RecipeIdentity {
    * 既存recipeIdentityは未設定のままでよく、書き換え不要。
    */
   originContext?: RegionContext
+  /**
+   * MISSION 2.13 — Evidence Variant Foundation。このRecipe Identityが具体的に
+   * どのRecipeVariantIdentityへ紐づくか（任意）。「同じ料理名」を理由にした
+   * variant混同を防ぐための、安定したID付きの構造化variant情報。
+   * `variant`（自由記述の説明文）は引き続き維持し、この構造化フィールドで
+   * 置き換えない。既存recipeIdentityは未設定のままでよく、書き換え不要。
+   */
+  variantIdentity?: RecipeVariantIdentity
 }
+
+/**
+ * MISSION 2.13 — Evidence Variant Foundation。
+ *
+ * 「同じ料理の、正当な別の作り方」を表す、安定した人間管理IDによる識別情報。
+ * 数値の食い違いを解消するためだけに新設してはならない（EVIDENCE_POLICY.md参照）。
+ * AI生成・fuzzy matching・source数の多数決による自動生成は絶対に行わない。
+ */
+export interface RecipeVariantIdentity {
+  /** 安定したID。数値conflictの解消のためだけに作らない */
+  variantId: string
+  /** 任意。将来のCanonicalFoodId的な「料理そのもの」への緩い紐付け */
+  canonicalDishId?: string
+  /** 人間が読むための表示用ラベル（UI表示用ローカライズ文言ではない） */
+  label?: string
+  /** 例: "フライパン法（油・酒・ふた使用）"、"だし仕立て" */
+  preparationStyle?: string
+  /**
+   * このvariantを正当に区別する具体的な調理上の特徴（cooking method / sauce-base
+   * structure / major ingredient structure / regional style / serving form /
+   * preparation method等）。以下だけを根拠に設定してはならない:
+   * 数値の違いのみ・情報源の著者の違いのみ・ブランドの好み・Product Decision。
+   */
+  definingCharacteristics: string[]
+}
+
+/**
+ * MISSION 2.13 — Evidence Variant Foundation。
+ * ある1つのfieldのEvidenceが、variantの境界に対してどう関係するかの分類。
+ * 純粋な分類メタデータであり、isRecipePublishable()の判定を緩めたり
+ * 迂回したりするために一切参照されない（既存supportTypeベースの判定は不変）。
+ */
+export type VariantEvidenceRelation =
+  /** このfieldの事実はvariantに依存しない（どのvariantでも同じ） */
+  | 'variant-independent'
+  /** このfieldの事実は特定のvariantId固有（RecipeFieldVerification.variantId参照） */
+  | 'variant-specific'
+  /** 複数のvariant候補が存在し、どちらに属するfieldなのかまだ確定していない */
+  | 'unresolved-between-variants'
+  /** 同一variant内で、値そのものが矛盾している（真のConflict） */
+  | 'conflicting-within-variant'
 
 // ============================================================
 // MISSION 2.11 PHASE E.1 — Global Foundation

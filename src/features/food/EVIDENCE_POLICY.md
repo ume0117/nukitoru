@@ -85,3 +85,42 @@ RecipeをVERIFIEDへ変更できるのは、次のすべてを満たす場合の
 8. Safety Gate（Allergy HARD EXCLUSION等）・既存Evidence Gate（AQ〜BZ）すべてPASS
 
 **1件もVERIFIEDにならなくてもMISSION成功とする。件数目標を設定しない。** 無理な昇格よりも、正しく`review`/`blocked`に留めることの方が高い品質である。
+
+## Evidence Variant Foundation（MISSION 2.13で確立）
+
+MISSION 2.12 PHASE Bの実調査で繰り返し発生した問題：「複数の正当なSourceが同じ料理名について異なる数値を示す」という状況を、次の4つの異なる概念へ明確に分離する。
+
+| 区分 | 意味 | 扱い |
+|---|---|---|
+| **A. CONFLICT（真の対立）** | 同一Recipe Identity・同一variant・同一文脈で、値が両立しない | 平均化・中間値・多数決・新しいsourceの自動採用のいずれも禁止。`review`を維持する |
+| **B. LEGITIMATE VARIANT（正当なvariant）** | 同じ料理の、意味のある調理上の違いに基づく別の正当な作り方 | `RecipeVariantIdentity`として構造化できる。ただしVariant確立はEvidence解決を意味しない（下記） |
+| **C. RECIPE IDENTITY MISMATCH（別Recipe Identity）** | `coreMethod`・`definingIngredients`等が異なり、そもそも同じRecipeとして比較できない | 直接比較・平均化の対象にしない。`supportType: 'variant'`のまま |
+| **D. RANGE（既存概念）** | Evidence Fact自体が単一値ではなくrangeとして提示されている | `evidenceRange`として保持。Variantを確立してもrangeがexact Evidenceへ変わることはない |
+
+**絶対原則: Variantを理由にEvidence基準を緩めない。** 「いろいろな作り方がある」という事実は「好きな数値を選んでよい」という意味ではない。数値の食い違いだけを理由に新しいvariantを発明することを禁止する（Source Aが しょうゆ30ml、Source Bが60mlというだけでは、2つのvariantには自動的にならない）。
+
+### Variant Establishment Rule（採用ルール）
+
+`recipe-variant.ts`の`isEstablishedVariant()`が機械的に検査する。variantとして確立できるのは次のすべてを満たす場合のみ:
+
+1. 安定した`variantId`を持つ（数値conflictの解消のためだけに作らない）
+2. `definingCharacteristics`が1件以上ある
+3. その特徴が、意味のある調理上の次元（`cooking-method` / `sauce-base` / `major-ingredient-structure` / `regional-style` / `serving-form` / `preparation-method`）の少なくとも1つに基づく
+4. 「2件以上の独立したsourceがこのvariant概念を支持する」**または**「1件の権威ある情報源（政府・メーカー公式・専門家等）がそれ自体でこのvariantを明示している」のいずれかを満たす
+5. 「数値の食い違いを解消するためだけに作った」ものではない（人間の研究者が誠実性フラグで明示的に確認する）
+
+`seasoning-amount`（調味料の量の違いのみ）・`source-author`（情報源の著者が違うだけ）・`numeric-difference`（数値が違うだけ）・`brand-preference`（ブランドの好み）・`product-decision`（Product Decision）は、単独では絶対にvariantの根拠にならない。
+
+### Variant Evidence Relation（field単位の分類）
+
+`RecipeFieldVerification.variantRelation`（任意）は、あるfieldのEvidenceがvariant境界に対してどう関係するかを示す純粋な分類メタデータである：`variant-independent`（どのvariantでも共通の事実）/ `variant-specific`（特定の`variantId`固有）/ `unresolved-between-variants`（複数variant候補があり未確定）/ `conflicting-within-variant`（同一variant内の真のConflict）。
+
+**この分類は`isRecipePublishable()`の判定を一切変更しない。** 既存の`supportType`ベースの解決判定（`direct`/`derivation`付き`derived`のみが解決済み、`range`/`variant`/未設定は常に未解決）はMISSION 2.13でも完全に不変である。Variant支援は第二のpublishability gateを作らない。
+
+### Product Decision Firewall（既存原則の再確認）
+
+`RecipeProductDecision`は次のいずれも行えない: Evidenceを作る／Conflictを解決する／Rangeを解決する／Variantを確立する／`review`を`verified`へ昇格させる。Product Decisionは表示・ランキング・フィルタ用の値の選択のみに使う。
+
+### Global / Cultural Neutrality
+
+Variant基盤はlocale・region・canonical food id・将来の世界各国料理と両立する設計とする。ある地域の調理伝統は自動的にConflictを意味しない一方、地域ラベルがあるだけで自動的にVariant成立を意味することもない——distinction は必ずEvidenceが確立する。「本場/authentic」「日本式がデフォルトで優位」等の文化的上下関係・authenticityスコアは実装しない。地域ステレオタイプからvariantを推測することも禁止する。

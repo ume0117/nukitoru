@@ -396,8 +396,18 @@ export const RECIPE_CATALOG: Recipe[] = [
         { field: 'requiredIngredients', sourceIds: ['kikkoman-gyudon-2026'], supportType: 'direct' },
         { field: 'ingredientAmounts', sourceIds: ['kikkoman-gyudon-2026'], supportType: 'direct' },
         { field: 'seasonings', sourceIds: ['kikkoman-gyudon-2026'], supportType: 'direct' },
-        { field: 'seasoningAmounts', sourceIds: ['kikkoman-gyudon-2026'], supportType: 'direct' },
-        { field: 'cookingLiquids', sourceIds: ['kikkoman-gyudon-2026'], supportType: 'direct' },
+        {
+          field: 'seasoningAmounts',
+          sourceIds: ['kikkoman-gyudon-2026'],
+          supportType: 'direct',
+          variantRelation: 'conflicting-within-variant',
+        },
+        {
+          field: 'cookingLiquids',
+          sourceIds: ['kikkoman-gyudon-2026'],
+          supportType: 'direct',
+          variantRelation: 'conflicting-within-variant',
+        },
         { field: 'cookingTimeMinutes', sourceIds: ['kikkoman-gyudon-2026'], supportType: 'direct' },
       ],
       reviewNotes: [
@@ -406,6 +416,12 @@ export const RECIPE_CATALOG: Recipe[] = [
           + 'しょうゆ(大さじ2 vs 大さじ4)・水(100ml vs 200ml)がservings差を考慮しても大きく食い違うこと'
           + 'が判明した（詳細はコード内コメント参照）。平均化・どちらか一方の恣意的採用はせず、'
           + '両立場をCONFLICTとして記録しREVIEWを維持する。',
+        'MISSION 2.13 — Evidence Variant Foundationの分類基準に照らして再確認した。'
+          + 'Kikkoman・sirogohanのどちらも「基本の牛丼」と自称するのみで、cooking-method/'
+          + 'sauce-base等の意味のある調理上の次元を明示的に区別していないため、'
+          + 'isEstablishedVariant()の条件を満たさない。よってこれは正当なvariantの相違では'
+          + 'なく「A. likely true conflict」（同一Recipe Identity・同一variant内の真の'
+          + '数値矛盾）として分類する。数値の食い違いだけを理由にvariantを新設しない。',
       ],
       hasUnsupportedInference: false,
     },
@@ -476,8 +492,18 @@ export const RECIPE_CATALOG: Recipe[] = [
       fieldVerifications: [
         { field: 'requiredIngredients', sourceIds: ['kikkoman-oyakodon-2026'], supportType: 'direct' },
         { field: 'ingredientAmounts', sourceIds: ['kikkoman-oyakodon-2026'], supportType: 'direct' },
-        { field: 'seasonings', sourceIds: ['kikkoman-oyakodon-2026'], supportType: 'direct' },
-        { field: 'seasoningAmounts', sourceIds: ['kikkoman-oyakodon-2026'], supportType: 'direct' },
+        {
+          field: 'seasonings',
+          sourceIds: ['kikkoman-oyakodon-2026'],
+          supportType: 'direct',
+          variantRelation: 'conflicting-within-variant',
+        },
+        {
+          field: 'seasoningAmounts',
+          sourceIds: ['kikkoman-oyakodon-2026'],
+          supportType: 'direct',
+          variantRelation: 'conflicting-within-variant',
+        },
         { field: 'cookingLiquids', sourceIds: ['kikkoman-oyakodon-2026'], supportType: 'direct' },
         { field: 'cookingTimeMinutes', sourceIds: ['kikkoman-oyakodon-2026'], supportType: 'direct' },
       ],
@@ -488,6 +514,14 @@ export const RECIPE_CATALOG: Recipe[] = [
           + '（白ごはん.com）はだし汁・砂糖を使う別coreMethodのvariantであり、直接比較の対象外'
           + '（詳細はコード内コメント参照）。平均化・恣意的採用はせずCONFLICTとして記録し'
           + 'REVIEWを維持する。',
+        'MISSION 2.13 — Evidence Variant Foundationの分類基準に照らして再分類した。'
+          + 'sirogohan/Ajinomotoの「だし＋砂糖を使う」coreMethodは、cooking-method/'
+          + 'sauce-base次元でKikkoman/NUKITORUの「だしなし」coreMethodと明確に異なり、'
+          + '「C. recipe identity mismatch」（別Recipe Identity。単純な数値conflictではない）'
+          + 'として分類する。一方、Kikkoman単独source内の卵個数・しょうゆ/みりん量は、'
+          + '同一Recipe Identity内で独立した第2sourceによる裏付けがまだ得られていない状態'
+          + 'であり、これはisEstablishedVariant()の条件（意味のある次元＋2独立source or '
+          + '権威ある情報源の明示）を満たさないため、正当なvariantとして確立しない。',
       ],
       hasUnsupportedInference: false,
     },
@@ -953,6 +987,23 @@ export const RECIPE_CATALOG: Recipe[] = [
         intendedTasteProfile: '素材の味を活かした、塩のみのシンプルな塩焼き',
         coreMethod: '鮭に塩をふり、フライパンまたはグリルで両面を焼く（油・酒・ふたなし）',
         definingIngredients: ['鮭'],
+        // MISSION 2.13 — Evidence Variant Foundation。kikkoman-sakeyakikata-2026自身が
+        // 「フライパン法（油・酒・ふた使用）」と「グリル法（無油）」を明確に別セクション
+        // として提示しており（1件の権威ある情報源がそれ自体でvariantを明示する例）、
+        // isEstablishedVariant()の条件を満たす正当なvariantとして確立できる。NUKITORUの
+        // 現在の調理法（油・酒を使わない）はこのうち「グリル法」variantに一致するため、
+        // そちらへ紐付ける（isRecipePublishable()の判定には一切影響しない。純粋な
+        // 分類メタデータ）。
+        variantIdentity: {
+          variantId: 'sake-shioyaki-grill-no-oil',
+          canonicalDishId: 'sake-shioyaki',
+          label: 'グリル/トースター法（無油）',
+          preparationStyle: 'グリルまたはトースターで、油を使わず焼く',
+          definingCharacteristics: [
+            '油を使わない（無油）',
+            'フライパン+油+酒+ふたによる蒸し焼き方式ではない',
+          ],
+        },
       },
       fieldVerifications: [
         { field: 'requiredIngredients', sourceIds: ['oishikenko-sakeshioyaki-2026'], supportType: 'direct' },
@@ -966,10 +1017,21 @@ export const RECIPE_CATALOG: Recipe[] = [
           derivation:
             'Evidence Factは調理法により4〜8分というrangeのみ（フライパン+油+酒:4〜5分／グリル両面:4分+余熱3分／グリル片面:3分+2〜3分／グリルまたはトースター無油:7〜8分）。Recipeのcookingtime=8分はこのrangeから選んだ代表値であり、Evidence直接支持ではなくProduct Decision（下記productDecisions参照）。',
           evidenceRange: { min: 4, max: 8, unit: '分' },
+          // MISSION 2.13 — 「グリル法」variant内でもoishi-kenkoの7〜8分という幅は残る
+          // ため、variantを確立してもrangeがexact Evidenceに変わるわけではない
+          // （Section 8: Range remains independent from Variant）。
+          variantRelation: 'variant-specific',
+          variantId: 'sake-shioyaki-grill-no-oil',
         },
         { field: 'servingsBase', sourceIds: ['oishikenko-sakeshioyaki-2026'], supportType: 'direct' },
         { field: 'criticalSteps', sourceIds: ['oishikenko-sakeshioyaki-2026'], supportType: 'direct' },
-        { field: 'equipment', sourceIds: ['oishikenko-sakeshioyaki-2026'], supportType: 'variant' },
+        {
+          field: 'equipment',
+          sourceIds: ['oishikenko-sakeshioyaki-2026'],
+          supportType: 'variant',
+          variantRelation: 'variant-specific',
+          variantId: 'sake-shioyaki-grill-no-oil',
+        },
         { field: 'allergyIdentity', sourceIds: ['oishikenko-sakeshioyaki-2026'], supportType: 'direct' },
       ],
       productDecisions: [
@@ -988,6 +1050,18 @@ export const RECIPE_CATALOG: Recipe[] = [
           + 'D.7-B.1のEvidence Range Integrity Fixに準拠）。equipmentもSOURCE Aは'
           + 'グリル/トースターのみを扱いフライパンでの無油調理は直接検証していないため'
           + 'variant扱いとした。他のfield（食材・分量・調味料・人数・工程）はdirectで解決済み。',
+        'MISSION 2.13 — Evidence Variant Foundation。kikkoman-sakeyakikata-2026自身が'
+          + '「フライパン法（油・酒・ふた使用）」「グリル法（無油）」を明示的に別methodとして'
+          + '提示しており、これはisEstablishedVariant()の条件（cooking-method次元＋1件の'
+          + '権威ある情報源による明示）を満たす正当なvariantである（「B. likely legitimate '
+          + 'variant」）。NUKITORUの現在のrecipeIdentity.variantIdentityは「グリル法（無油）」'
+          + 'へ紐付けたが、それでもcookingTimeMinutesはこのvariant内部でも7〜8分という幅が'
+          + '残るためrangeのまま（variantの確立はrangeをexact Evidenceに変えない）。また'
+          + 'NUKITORUの現在のequipmentフィールドは「フライパンまたはグリル」と2つの'
+          + 'variantを1つのfieldへ併記しており、Section 11「Do not merge values across '
+          + 'variants into one synthetic recipe」の観点では将来的に一方へ確定させるか、'
+          + '両variantを別々にEvidence裏付けする必要がある、という設計上の課題として記録する'
+          + '（本ミッションではrecipe fact自体は変更しない）。',
       ],
       hasUnsupportedInference: false,
     },
@@ -1225,6 +1299,15 @@ export const RECIPE_CATALOG: Recipe[] = [
           + 'WHY: 調査した複数のメーカー公式サイトがいずれも「適量」表記で、しょうゆの'
           + 'exact標準量を明記した信頼できるsourceが見つからなかった（お好みで調整する'
           + '調味料であるため） / EVIDENCE TYPE: NOT_FOUND。',
+        'MISSION 2.13 — Evidence Variant Foundationの分類基準に照らして再分類する。'
+          + '豆腐量については、対立する2件の独立sourceが存在するわけではなく、根拠のある'
+          + 'source（Ajinomoto、1/4丁/人）とNUKITORU側の無根拠な既存値（1/2丁/人）の'
+          + '食い違いに過ぎないため、PHASE Bの「CONFLICT」表記は精度を欠いていた。'
+          + '正しくは「E. NOT_FOUND/under-specified」（豆腐1丁の重量が製品により大きく'
+          + '異なるため、特定製品を仮定しない限り根拠のあるratioを確定できない）として'
+          + '再分類する。しょうゆ量も同様にE（推測禁止・確定不能）。isEstablishedVariant()'
+          + 'の条件（意味のある次元＋複数独立source or 権威ある情報源の明示）を満たさない'
+          + 'ため、variantとしても確立しない。',
       ],
       hasUnsupportedInference: true,
     },
@@ -1419,6 +1502,12 @@ export const RECIPE_CATALOG: Recipe[] = [
       },
       fieldVerifications: [
         { field: 'requiredIngredients', sourceIds: ['yamaki-misoshiru-2026'], supportType: 'variant' },
+        {
+          field: 'cookingLiquids',
+          sourceIds: ['yamaki-misoshiru-2026', 'marukome-misoshiru-faq-2026'],
+          supportType: 'direct',
+          variantRelation: 'conflicting-within-variant',
+        },
       ],
       reviewNotes: [
         'CURRENT: 水400ml・味噌大さじ1と1/2 / SOURCE A: ヤマキ公式（2人分・だし400ml・'
@@ -1428,6 +1517,13 @@ export const RECIPE_CATALOG: Recipe[] = [
           + '自体が異なり（200ml/大さじ vs 160ml/大さじ）、平均化は禁止されているため'
           + '水400mlをEvidence直接支持として採用できない。CONFLICTとしてREVIEWを維持する '
           + '/ EVIDENCE TYPE: CONFLICT。',
+        'MISSION 2.13 — Evidence Variant Foundationの分類基準に照らすと、本Recipeには'
+          + '性質の異なる2つの問題が混在している。(1) 具材（豆腐 vs ヤマキの油揚げ）は'
+          + 'major-ingredient-structureが異なる「C. recipe identity mismatch」。'
+          + '(2) 味噌:水比率（ヤマキ200ml/大さじ vs マルコメ160ml/大さじ）は、具材に'
+          + '依存しないはずの一般的比率でありながらメーカー間で食い違う「A. likely true '
+          + 'conflict」（variant-independentなfieldでのconflict）。いずれもisEstablishedVariant()'
+          + 'の条件を満たさずvariantとして確立しないため、数値を選ばずREVIEWを維持する。',
       ],
       hasUnsupportedInference: true,
     },

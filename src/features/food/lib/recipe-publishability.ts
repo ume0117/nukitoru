@@ -146,6 +146,17 @@ export function isRecipePublishable(
     return false
   }
 
+  // MISSION 2.13 — Evidence Variant Foundation。variantIdentityを設定する場合、
+  // 空のvariantId・空のdefiningCharacteristicsという「中身のないvariant」を
+  // VERIFIEDへ通さない（現在の44 RecipeはどれもまだvariantIdentityを設定して
+  // いないため、この分岐は現時点では常に無害＝挙動を変えない）。
+  if (v.recipeIdentity.variantIdentity) {
+    const vi = v.recipeIdentity.variantIdentity
+    if (!vi.variantId.trim() || vi.definingCharacteristics.length === 0) {
+      return false
+    }
+  }
+
   // 重要fieldのEvidenceが揃っていること（各fieldVerificationのsourceIdsは
   // 空でなく、かつverification.sourceIdsの部分集合であること）。
   // Gate BV: supportType='variant'（またはsupportType未設定）は「解決済み」として
