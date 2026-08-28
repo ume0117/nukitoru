@@ -169,6 +169,26 @@ export interface MealSuggestion {
   notes: string[]
 
   /**
+   * MISSION 2.11 PHASE C — この提案の元になったRecipeのid（任意）。
+   * 将来のRecipe詳細画面（準備するもの/作り方/ちょいアレンジ）が、
+   * ここから RECIPE_CATALOG を再検索して詳細情報を表示できるようにする。
+   * 既存のcombo型suggestion（複数dishesを持つ場合）にはまだ付与しない。
+   */
+  recipeId?: string
+
+  /**
+   * MISSION 2.11 PHASE D — 「今ある食材で作れる」(true) か
+   * 「あと1つで作れる」(false) かをUI側が文字列パース（reasonの文言判定等）
+   * に頼らず判定できるようにする明示的フラグ。
+   * A（true）は候補一覧で常にB（false）より上位に表示・優先される
+   * （NUKITORU FOODの最重要コンセプト。この優先順位を逆転させない）。
+   */
+  isFullyAvailable?: boolean
+
+  /** isFullyAvailable=false の場合に不足している食材名（元のRecipe表記のまま） */
+  missingIngredients?: string[]
+
+  /**
    * AI提案が守るべき制約の可視化領域。将来の実装は例えば以下を warnings に含めることを想定する:
    * - 存在しない食材を家にあると断定していないか
    * - unknown quantity を勝手に数値化していないか
@@ -255,4 +275,441 @@ export type StockStatus = 'available' | 'low' | 'out'
 export interface StockStatusEntry {
   status: StockStatus
   updatedAt?: string
+}
+
+// ============================================================
+// MISSION 2.11 PHASE A — Recipe Schema Foundation
+//
+// 既存 Dish / MealSuggestion 等は変更しない。Recipeは将来のcatalog拡張・
+// 複数候補化・詳細画面（準備するもの/作り方/ちょいアレンジ）に備えた
+// データ構造のみをここで定義する。今回はcatalogへの投入・候補生成ロジック
+// への組み込みは行わない（既存の動作は一切変わらない）。
+//
+// アレルギー安全性の絶対ルール:
+//   allergyRelevantIngredients(recipe) = requiredIngredients + seasonings
+// arrangements.addIngredients は基本Recipeのハード除外対象に含めない
+// （アレンジのために基本料理そのものまで除外しない）。個別のアレンジ提案は
+// 別途 addIngredients だけを対象に安全判定できる構造にする。
+// ------------------------------------------------------------
+
+export interface RecipeArrangement {
+  id: string
+  label: string
+  /** このアレンジ特有の追加食材。基本Recipeのアレルギー判定には含めない */
+  addIngredients?: string[]
+}
+
+/**
+ * MISSION 2.11 PHASE D.3 — Recipe Ingredient & Seasoning Amount Foundation。
+ *
+ * amountはあえて string とし、value:number/unit:string等への過剰な構造化は
+ * しない（大さじ1と1/2、1/2個、少々、適量 等、数値だけでは表現できない
+ * 日本語の分量表現をそのまま保持するため）。将来の自動人数換算schemaは
+ * 別MISSIONで設計する。
+ *
+ * amountは常に「Recipe.servingsBase人数分の基準量」を表す。
+ * selectedMembers数（今日の人数）に応じた自動計算・自動換算は行わない。
+ *
+ * name / amount を別フィールドにすることで、将来の英語UI展開時に
+ * nameだけを翻訳・置換できる構造を維持する（"大さじ"等のlocale変換は
+ * 別MISSION）。
+ */
+export interface RecipeIngredient {
+  name: string
+  amount: string
+}
+
+/**
+ * MISSION 2.11 PHASE D.4 — 調理に必要だが候補判定・Stock照合・
+ * allergy判定の対象にしない基礎液体（水・湯のみを想定）。
+ * requiredIngredientsへ入れない理由: ユーザーが冷蔵庫に「水」を
+ * 登録しないとRecipeがA候補にならない、という不自然なUXを避けるため。
+ * amountはRecipeIngredientと同様、servingsBase人数分の基準量。
+ */
+export interface RecipeCookingLiquid {
+  name: string
+  amount: string
+}
+
+/**
+ * MISSION 2.11 PHASE D.5 — Allergen Alert Foundation。
+ *
+ * しょうゆ・味噌・だしの素等、レシピ上は単純な調味料名だが実際の商品に
+ * よって原材料・アレルゲンが異なり得るものへの「原材料表示を確認してください」
+ * 注意喚起（PRODUCT CHECK ALERT）を表す。
+ *
+ * これは既存のAllergy HARD EXCLUSION（allergyRelevantIngredients経由の
+ * 候補除外）とは完全に別のレイヤーであり、candidate A/B判定・
+ * allergyRelevantIngredientsのいずれにも一切使わない。
+ *
+ * messageをここに持たせない理由: 表示文言を44件（将来数千件）のRecipe
+ * データに複製すると、Recipe Factoryでの大量生成時に文言が揺れたり、
+ * 誤って「含みません」等の安全断定表現が紛れ込むリスクが上がる。
+ * 表示文言は product-check-messages.ts の1箇所に集約し、ここでは
+ * ingredientNameのみを保持する（recipe-labels.tsのCUISINE_LABELSと
+ * 同じ「データはid、表示文言は別レイヤー」の設計に揃える）。
+ */
+export interface RecipeIngredientCheck {
+  /** requiredIngredients または seasonings に実在するcanonical名と一致させる */
+  ingredientName: string
+}
+
+/**
+ * MISSION 2.11 PHASE C — 将来世界各国の家庭料理を扱うためのcuisine分類。
+ * 既存 FoodPreferences.favoriteCuisines が使う Cuisine 型（'western'という
+ * 大括りを持つ）とは別の型として独立させ、既存機能へは影響させない。
+ * 「無理に外国料理へ分類しない」方針のため、家庭で一般的な和食は
+ * 'japanese' とし、由来が明確な料理のみ個別のcuisineを付与する。
+ */
+export type RecipeCuisine =
+  | 'japanese'
+  | 'chinese'
+  | 'korean'
+  | 'italian'
+  | 'french'
+  | 'thai'
+  | 'vietnamese'
+  | 'indian'
+  | 'mexican'
+  | 'american'
+  | 'spanish'
+  | 'other'
+
+/**
+ * MISSION 2.11 PHASE D.6 — Recipe Provenance & Fact/Evidence Gate。
+ *
+ * 「レシピの重要情報には事実と根拠が必須」というルールをschema化する。
+ * AIの一般知識・推測だけでRecipeの重要情報（分量・水量・調理時間・工程等）を
+ * 確定してはならない。根拠が確認できない場合はunverified/reviewに留め、
+ * 矛盾する情報源がある場合も平均値等をAI判断で作成しない。
+ *
+ * unverified = Evidence確認前（Recipe.verification未設定はこの状態として扱う）
+ * review     = 根拠は存在するが、source間差異や判断事項があり人間確認が必要
+ * verified   = 必要な事実・根拠が確認され、validationを通過
+ * blocked    = 根拠不足・矛盾・重要情報欠落・unsupported inference等により公開不可
+ */
+export type RecipeVerificationStatus = 'unverified' | 'review' | 'verified' | 'blocked'
+
+/**
+ * Source品質のTier分類（詳細はEVIDENCE_POLICY.md参照）。
+ * 匿名投稿・出所不明・AI生成ページはいずれの型にも該当しない
+ * （＝型システム上、正当なsourceTypeとして登録できない）。
+ */
+export type RecipeSourceType =
+  | 'government'
+  | 'public-institution'
+  | 'manufacturer'
+  | 'professional'
+  | 'other-trusted'
+
+/**
+ * Evidence Source（情報源）。RecipeへEmbedせず、evidence-sources.tsの
+ * EVIDENCE_SOURCE_CATALOGへ集約し、RecipeVerification.sourceIdsで参照する
+ * （数千〜数万Recipeでも同一sourceの重複複製が起きない正規化設計）。
+ * URLが存在するだけではEvidence成立とみなさない
+ * （publisher/title/sourceType/checkedAtも必須）。
+ */
+export interface RecipeEvidenceSource {
+  id: string
+  publisher: string
+  title: string
+  url: string
+  sourceType: RecipeSourceType
+  /** ISO日付文字列。この情報源をいつ確認したか */
+  checkedAt: string
+  /**
+   * MISSION 2.11 PHASE E.1 — Global Foundation。この情報源が属する国（任意）。
+   * 「日本の情報源だから日本食にしか使えない」という単純ルールを意味しない
+   * （relevanceはRecipe Identity + variant + country/region contextの組み合わせで
+   * 人間が判断する。この値だけで自動フィルタしない）。既存14 sourceは未設定のまま
+   * （書き換え不要・省略時は従来通り扱う）。
+   */
+  sourceCountry?: CountryCode
+  /** この情報源の言語/ロケール（任意）。sourceCountryと同様、単独で判定材料にしない */
+  sourceLocale?: Locale
+}
+
+/** Field-level evidenceの対象領域（Recipeの重要情報のうちEvidence追跡が必要なもの） */
+export type RecipeVerifiableField =
+  | 'requiredIngredients'
+  | 'ingredientAmounts'
+  | 'seasonings'
+  | 'seasoningAmounts'
+  | 'cookingLiquids'
+  | 'cookingTimeMinutes'
+  | 'servingsBase'
+  | 'criticalSteps'
+  | 'equipment'
+  | 'allergyIdentity'
+
+/**
+ * MISSION 2.11 PHASE D.7-B / D.7-B.1 — Evidence Resolution Protocol。
+ * fieldVerificationがどの根拠区分に基づくかを明示する（EVIDENCE_POLICY.md参照）。
+ *
+ * - direct: Sourceに書かれた値がNUKITORUの値と直接一致する（導出不要）
+ * - derived: Sourceに直接同じ値はないが、明示された事実（複数の直接事実の組み合わせ等）
+ *            から機械的・説明可能に導出した（derivationフィールドに導出方法・使用した
+ *            事実・計算式・前提条件を必ず記録する。rangeからの代表値選択はここに含めない）
+ * - range: Sourceがrange（例:40〜60分）のみを提示しており、Recipeの値（単一の数値）が
+ *          そのrangeから選ばれた代表値であることを示す。
+ *          【D.7-B.1で確定した絶対ルール】rangeはVERIFIEDの「解決済み」として
+ *          **絶対にカウントしない**。derivationを付けても、明示的なNUKITORU Product
+ *          Policyを記録しても、rangeが「exact値のEvidence直接支持」に昇格することはない。
+ *          「rangeの中央値を採用すればEvidence上のexact valueになる」という扱いは禁止。
+ *          Evidence Fact上、40〜60分は最後まで40〜60分である。実際にRecipeへ採用した
+ *          単一の値は、Evidenceではなく`RecipeVerification.productDecisions`に
+ *          Product Decisionとして別途記録する（isRecipePublishableの判定には使わない）。
+ * - variant: Sourceは実在するが、料理のvariant/styleがNUKITORUと異なるため直接支持にならない
+ *            （variant supportのみのfieldはVERIFIEDの「解決済み」としてカウントしない）
+ */
+export type EvidenceSupportType = 'direct' | 'derived' | 'range' | 'variant'
+
+export interface RecipeFieldVerification {
+  field: RecipeVerifiableField
+  /** この情報を裏付けるsourceId（RecipeVerification.sourceIdsの部分集合） */
+  sourceIds: string[]
+  /** この根拠がどの区分か（未設定はvariant相当＝VERIFIEDの解決済みとしてカウントしない） */
+  supportType?: EvidenceSupportType
+  /** supportTypeが'derived'の場合は必須: 導出方法・使用した事実・計算式・前提条件 */
+  derivation?: string
+  /**
+   * supportTypeが'range'の場合、Evidence Fact自体のmin/maxをそのまま保持する
+   * （exact値へ収縮させない。単位は自由記述、例: "分"）。
+   */
+  evidenceRange?: { min: number; max: number; unit: string }
+}
+
+/**
+ * MISSION 2.11 PHASE D.7-B.1 — Product Decision。
+ *
+ * EvidenceがrangeまたはNOT_APPLICABLEな粒度でしか事実を提供しない場合でも、
+ * Recipe schemaやUI・candidate filter（例: cookingTimeMinutesという単一数値の
+ * フィールド）は具体的な1つの値を必要とする。その「具体的な1つの値を採用する」
+ * という判断はEvidence Factそのものではなく、NUKITORU側のProduct Decisionである。
+ * Product DecisionはisRecipePublishable()のEvidence解決判定には一切使わない
+ * （Product Decisionを積んでもVERIFIEDへは近づかない）。UI側でこの値を
+ * 「Evidenceが直接支持した値」であるかのように表示してはならない。
+ */
+export interface RecipeProductDecision {
+  field: RecipeVerifiableField
+  /** 採用した具体的な値（Recipe本体のamount等と一致させる） */
+  value: string
+  /** なぜこの値を採用したか（rangeのどこを、どんな理由で選んだか） */
+  reason: string
+  /** 参考にしたsourceId（参考情報であり、Evidence resolutionの根拠にはしない） */
+  referenceSourceIds?: string[]
+}
+
+/**
+ * MISSION 2.11 PHASE D.7-B — Recipe Identity。
+ *
+ * 「同じ料理名なら同じRecipe」という扱いを禁止するための最小限の識別情報。
+ * 「牛丼」という名前だけで異なる牛丼Sourceを混ぜたり、「まぐろ丼」と「漬けまぐろ丼」を
+ * 混同したりしないよう、Evidence比較の前提としてRecipeが何を指すかを明示する。
+ * Evidence Verified = 「世界で唯一正しい味」ではない。料理には複数の正当なvariantが
+ * 存在し、NUKITORUはRecipe Identity・intended taste profile・Evidenceの組み合わせを
+ * 検証する（例: 家庭的/濃いめ/あっさり/メーカー公式style/地域style等）。
+ */
+export interface RecipeIdentity {
+  /** 料理の系統名（例: "鶏そぼろ丼"）。Recipe.nameと同じでよいが、明示的に固定する */
+  canonicalDish: string
+  /** variant/style（例: "二色丼(みそ味)ではないシンプルな3種調味料そぼろ"） */
+  variant: string
+  /** このRecipe Identityが前提とする基準人数 */
+  servingsBasis: number
+  /** 想定する味の方向性（例: "家庭的・あっさりめ"）。唯一の正解を意味しない */
+  intendedTasteProfile: string
+  /** 核となる調理法（例: "ひき肉をしょうゆ・砂糖・みりんで炒め煮する"） */
+  coreMethod: string
+  /** このRecipeを特徴づける食材（比較時にvariant一致判定の基準にする） */
+  definingIngredients: string[]
+  /**
+   * MISSION 2.11 PHASE E.1 — Global Foundation。このRecipe Identityが前提とする
+   * 国/地域文脈（任意）。Cuisine（RecipeCuisine）とは別概念（例: 「イタリア料理」だが
+   * 前提とする作り手はJP、のようなケースを将来表現できるようにする）。
+   * 既存recipeIdentityは未設定のままでよく、書き換え不要。
+   */
+  originContext?: RegionContext
+}
+
+// ============================================================
+// MISSION 2.11 PHASE E.1 — Global Foundation
+// Locale / Country / Units / Canonical Food Identityの最小基盤。
+// 詳細な設計方針はGLOBAL_FOUNDATION.md参照。
+//
+// 絶対原則:
+// - Locale ≠ Country ≠ Language ≠ Cuisineであり、混同しない。
+// - 表示文字列（米/rice/riz等）そのものをFood Identityとして扱わない
+//   （canonicalFoodIdは表示文字列から独立したidであり、fuzzy matchingでは解決しない）。
+// - ここに追加する型は既存のRecipe/RecipeIngredient/RecipeCuisine/
+//   ingredient-normalization.ts/recipe-safety.tsの挙動を一切変更しない
+//   （Allergy HARD EXCLUSION・既存44 Recipeの内容は無傷のまま）。
+// ============================================================
+
+/**
+ * MISSION 2.11 PHASE E.1.1 — ISO 639-1相当の言語コードを表すGlobal（open）primitive。
+ * 「現在ja/enのみサポートしている」ことと「将来世界中の言語コードを表現できる基盤である」
+ * ことを混同しない。型としてはstringであり、'ja'|'en'に構造的に限定されない
+ * （将来ko/zh/th等を追加してもこの型自体の再設計は不要）。
+ * 現在NUKITORUがProductとして正式サポートする言語は SupportedLanguageCode を参照する。
+ * 形式検証が必要な場合は global-codes.ts の isValidLanguageCodeFormat() を使う
+ * （大規模なISO 639 datasetは導入しない）。
+ */
+export type LanguageCode = string
+
+/**
+ * ISO 3166-1 alpha-2相当の国コードを表すGlobal（open）primitive。
+ * LanguageCodeと同じ設計方針（現在JP/USのみサポート、将来任意の国コードを表現できる
+ * 基盤であることを混同しない）。現在の正式サポート国は SupportedCountryCode を参照する。
+ */
+export type CountryCode = string
+
+/**
+ * 現在NUKITORUがProductとして正式サポートする言語（closed）。LanguageCodeの部分集合。
+ * サポート言語を追加する際はこのunionとglobal-codes.tsのSUPPORTED_LANGUAGESを更新する
+ * （LanguageCode自体の再設計は不要）。
+ */
+export type SupportedLanguageCode = 'ja' | 'en'
+
+/**
+ * 現在NUKITORUがProductとして正式サポートする国（closed）。CountryCodeの部分集合。
+ * サポート国を追加する際はこのunionとglobal-codes.tsのSUPPORTED_COUNTRIESを更新する
+ * （CountryCode自体の再設計は不要）。
+ */
+export type SupportedCountryCode = 'JP' | 'US'
+
+/**
+ * Language/Country/Localeは概念的に別軸。Localeは常にlanguageとcountryの組で表現し、
+ * 「日本語=日本」のような暗黙の等値化をしない（例: 将来のen-GB/en-AUはlanguage:'en'
+ * のままcountryだけが変わる）。LanguageCode/CountryCodeがopenになったため、Localeも
+ * 構造的にja-JP/en-US以外を表現できる。
+ */
+export interface Locale {
+  language: LanguageCode
+  country: CountryCode
+}
+
+/**
+ * 現在NUKITORUがProductとして正式サポートするlocale（closed）。構造的にLocaleの部分集合
+ * （SupportedLanguageCode ⊂ LanguageCode、SupportedCountryCode ⊂ CountryCodeのため、
+ * SupportedLocaleの値はそのままLocaleとしても扱える）。
+ */
+export interface SupportedLocale {
+  language: SupportedLanguageCode
+  country: SupportedCountryCode
+}
+
+/**
+ * Cuisine（RecipeCuisine）とCountry/Regionは別概念。「日本料理=日本製」
+ * 「イタリア料理=イタリアでしか作られない」という前提を置かない。
+ * regionは自由記述の最小構造（今はenum化しない）。
+ */
+export interface RegionContext {
+  country?: CountryCode
+  region?: string
+}
+
+/**
+ * 表示文字列から独立したFood Identity。「米」「rice」「riz」等の表示ラベルは
+ * すべてこのidに紐づくlabel/synonymに過ぎず、id自体が文字列比較のfuzzy matchingで
+ * 解決されることは絶対にない（canonical-food.ts参照）。
+ */
+export type CanonicalFoodId = string
+
+export interface CanonicalFoodLabel {
+  canonicalFoodId: CanonicalFoodId
+  locale: Locale
+  label: string
+  /** そのlocale内での表記ゆれ（人間が確認した明示リストのみ。fuzzy matching禁止） */
+  synonyms?: string[]
+}
+
+/**
+ * 単位の基盤型（今回は型定義のみ。自動換算ロジックは実装しない）。
+ * US cup / metric cup / Japanese cupは意図的に別値として区別する。
+ * 大さじ/小さじ（osaji/kosaji）もUS tsp/tbspとは別概念として区別する。
+ */
+export type UnitCode =
+  | 'g'
+  | 'kg'
+  | 'ml'
+  | 'l'
+  | 'tsp'
+  | 'tbsp'
+  | 'osaji'
+  | 'kosaji'
+  | 'cup-us'
+  | 'cup-metric'
+  | 'cup-jp'
+  | 'oz'
+  | 'lb'
+  | 'piece'
+  | 'other'
+
+export interface Quantity {
+  value: number
+  unit: UnitCode
+  /** Evidence Sourceに記載された原文の単位表記をそのまま保持する（無言換算・丸め禁止） */
+  rawText?: string
+}
+
+export interface RecipeVerification {
+  status: RecipeVerificationStatus
+  /** このRecipe全体で参照する情報源のid一覧（evidence-sources.tsのEVIDENCE_SOURCE_CATALOGを参照） */
+  sourceIds: string[]
+  /** どのsourceがどのfieldを裏付けるかの追跡（将来Recipe Factoryが利用） */
+  fieldVerifications?: RecipeFieldVerification[]
+  /** review状態で残っている未解決事項。verifiedの場合はここが空でなければならない */
+  reviewNotes?: string[]
+  /**
+   * true = このRecipeにはまだ未置換のAI/人間推測値が残っている。
+   * PHASE D.7のEvidence Audit中の中間状態を明示するための逃げ道フラグ。
+   * trueの場合、他の条件に関わらずisRecipePublishable()は必ずfalseになる。
+   */
+  hasUnsupportedInference?: boolean
+  /** MISSION 2.11 PHASE D.7-B — VERIFIEDに必須のRecipe Identity（Gate BU） */
+  recipeIdentity?: RecipeIdentity
+  /**
+   * MISSION 2.11 PHASE D.7-B.1 — Evidence Factとは別枠のProduct Decision一覧。
+   * range等、Evidenceが単一値を提供しない場合にRecipe/UIが必要とする具体値の
+   * 採用理由を記録する。isRecipePublishable()のEvidence解決判定には使わない。
+   */
+  productDecisions?: RecipeProductDecision[]
+}
+
+export interface Recipe {
+  id: string
+  name: string
+  type: DishType
+  /** 由来料理圏。任意（未設定のRecipeも許容する） */
+  cuisine?: RecipeCuisine
+
+  /** 必須食材。アレルギー判定対象。amountはservingsBase人数分の基準量 */
+  requiredIngredients: RecipeIngredient[]
+  /** 実際にこのレシピで使う調味料。アレルギー判定対象。amountはservingsBase人数分の基準量 */
+  seasonings?: RecipeIngredient[]
+  /** 調理に使う基礎液体（水・湯）。候補判定・allergy判定には一切使わない */
+  cookingLiquids?: RecipeCookingLiquid[]
+  /** 商品によって原材料が異なり得る食材への注意喚起。候補判定・HARD EXCLUSIONには一切使わない */
+  ingredientChecks?: RecipeIngredientCheck[]
+
+  cookingTimeMinutes: number
+  /** レシピが想定する人数の参考値。selectedMembers数に応じた自動計算はまだ行わない */
+  servingsBase: number
+
+  /** 普通/あっさり/がっつり/時短/子ども向け 等を表現する汎用タグ */
+  tags?: string[]
+  /** 準備するもの（調理器具・食器等、消費しない物のみ。食材はここに含めない） */
+  equipment?: string[]
+  steps?: string[]
+
+  arrangements?: RecipeArrangement[]
+  notes?: string[]
+
+  /**
+   * MISSION 2.11 PHASE D.6 — 未設定（undefined）は実効的に
+   * status='unverified'として扱う（getVerificationStatus()参照）。
+   * 既存44 RecipeはこのPHASEで一切書き換えない＝全件が実効的にunverified。
+   */
+  verification?: RecipeVerification
 }

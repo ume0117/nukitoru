@@ -10,11 +10,13 @@ import { PantrySelector } from './PantrySelector'
 import { ConditionSelector } from './ConditionSelector'
 import { CookingTimeSelector } from './CookingTimeSelector'
 import { MealResultView } from './MealResultView'
+import { RecipeDetailView } from './RecipeDetailView'
 import { CookingConfirmationPanel } from './CookingConfirmationPanel'
 import { mockMealProvider } from '@/features/food/lib/mock-meal-provider'
 import { getSeasonFromDate } from '@/features/food/lib/season'
 import { getConfirmableIngredientNames, applyStockUpdates, type StockUpdateEntry } from '@/features/food/lib/cooking-completion'
 import { sanitizeSelectedMemberIds, getSelectedMembers, mergeMemberAllergies } from '@/features/food/lib/members'
+import { getRecipeById } from '@/features/food/lib/recipe-catalog'
 import {
   DEFAULT_ALLERGY_PROFILE,
   DEFAULT_COOKING_PREFERENCE,
@@ -100,6 +102,8 @@ export function FoodApp() {
 
   const [status, setStatus] = useState<Status>('idle')
   const [result, setResult] = useState<MealSuggestionResponse | null>(null)
+  // 候補一覧(null)か、選択されたRecipeの詳細画面(recipeId)かを切り替える
+  const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null)
 
   // 料理完了後の使用食材確認（MISSION 2.4）。nullの間はパネルを表示しない。
   const [confirmingItems, setConfirmingItems] = useState<string[] | null>(null)
@@ -148,6 +152,13 @@ export function FoodApp() {
   const safetyGateOpen = todayMemberCount > 0 && unconfirmedSelectedMembers.length === 0
   const canSubmit = hasIngredients && safetyGateOpen
 
+  // 「今日、一緒に食べる人」全員のallergiesをunion。献立生成・Recipe Detailの
+  // arrangement安全フィルタの両方でこの同じ値を使う（別々に計算し直さない）。
+  const mergedAllergies = useMemo(
+    () => mergeMemberAllergies(members, selectedMemberIds),
+    [members, selectedMemberIds],
+  )
+
   const handleUpdateMember = (id: string, patch: Partial<Member>) => {
     setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)))
   }
@@ -155,11 +166,9 @@ export function FoodApp() {
   const handleSubmit = async () => {
     if (!canSubmit) return
     setStatus('loading')
+    setSelectedRecipeId(null) // 再生成のたびに候補一覧へ戻す
     try {
-      // 「今日、一緒に食べる人」全員のallergiesをunionし、既存のHARD EXCLUSION
-      // （mock-meal-provider.ts）へそのまま渡す。household（旧・固定人数）は
-      // 献立人数のSource of Truthとして使わないため、requestには含めない。
-      const mergedAllergies = mergeMemberAllergies(members, selectedMemberIds)
+      // household（旧・固定人数）は献立人数のSource of Truthとして使わないため、requestには含めない。
       const request: MealSuggestionRequest = {
         ingredients,
         allergyProfile: { allergies: mergedAllergies, dislikes: allergyProfile.dislikes },
@@ -273,11 +282,35 @@ export function FoodApp() {
             {status === 'loading' ? '考え中...' : '今日の献立を考える'}
           </button>
 
-          <MealResultView
-            result={status === 'result' ? result : null}
-            hasIngredients={hasIngredients}
-            onCookedClick={status === 'result' && !confirmingItems ? handleCookedClick : undefined}
-          />
+          {(() => {
+            const selectedSuggestion =
+              status === 'result' && selectedRecipeId
+                ? result?.suggestions.find((s) => s.recipeId === selectedRecipeId)
+                : undefined
+            const selectedRecipe = selectedRecipeId ? getRecipeById(selectedRecipeId) : undefined
+
+            if (selectedSuggestion && selectedRecipe) {
+              return (
+                <RecipeDetailView
+                  recipe={selectedRecipe}
+                  suggestion={selectedSuggestion}
+                  todayMemberCount={todayMemberCount}
+                  availableIngredientNames={ingredients.map((i) => i.name)}
+                  mergedAllergyNames={mergedAllergies}
+                  onBack={() => setSelectedRecipeId(null)}
+                  onCookedClick={() => handleCookedClick(selectedSuggestion)}
+                />
+              )
+            }
+
+            return (
+              <MealResultView
+                result={status === 'result' ? result : null}
+                hasIngredients={hasIngredients}
+                onSelectRecipe={(recipeId) => setSelectedRecipeId(recipeId)}
+              />
+            )
+          })()}
 
           {status === 'error' && (
             <p className="text-[12px] text-red-500 dark:text-red-400">
