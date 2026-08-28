@@ -268,6 +268,10 @@ export const RECIPE_CATALOG: Recipe[] = [
         'CURRENT: requiredIngredients=マグロ200g・ごはん2杯分(2人分) / SOURCE A: kamada-maguro-zukedon-2026「刺身用マグロ200g・ごはん2人分」/ DECISION: 変更なし（現状維持） / WHY: 魚種・重量・人数はSourceと一致するが、Sourceは「漬け丼」variant（さしみ醤油大さじ2+みりん大さじ1に漬け込む）でありNUKITORUの「そのままのせて添える」variantとは調理法(coreMethod)が異なるため、Recipe Identity不一致によりVARIANT SUPPORTと判定し「解決済み」としてはカウントしない / EVIDENCE TYPE: variant。',
         'CURRENT: seasonings=しょうゆ大さじ1（添える用）/ SOURCE A: 同上（漬け込み用の分量） / DECISION: 変更なし / WHY: 「添えるだけ」variantの具体的な分量を明記した信頼できるsourceが見つからなかった（食卓で各自使う分のため定量化が難しい可能性がある）。漬け込み用の分量をそのまま流用するのはvariant混同にあたるため採用しない / EVIDENCE TYPE: NOT_FOUND。',
         '1 sourceのみで、かつ独立した第2のsourceも見つかっていない。',
+        'MISSION 2.12 PHASE B — 「漬け込まずそのまま乗せて醤油を添える」というNUKITORUの'
+          + 'variantに一致する専門家/メーカー/公的機関sourceを再調査したが（「刺身丼 基本」'
+          + '「まぐろ丼 漬けない」等で検索）、見つかったのは引き続き漬け丼variantのみ'
+          + '（クックパッド等の匿名投稿を除く）。REVIEWを維持する。',
       ],
       hasUnsupportedInference: true,
     },
@@ -368,9 +372,18 @@ export const RECIPE_CATALOG: Recipe[] = [
     // 大さじ2・砂糖大さじ1という一致部分に加え、他の全fieldを具体的数値で明記しており、
     // 現行値より明らかに正確。単一source(独立した第2source未確認)のためVERIFIEDには
     // しないが、値そのものはDIRECT SUPPORTとして採用する / EVIDENCE TYPE: direct。
+    // MISSION 2.12 PHASE B — 独立した第2source（白ごはん.com/専門家）を実際に調査。
+    // CURRENT: 玉ねぎ1/2個・みりん大さじ3・酒100ml・水100ml / SOURCE B:
+    // sirogohan-gyudon-2026「丼もので人気No.1牛丼」(2〜3人分) 牛肉250g・玉ねぎ1/2個
+    // (約150g)・しょうゆ大さじ4(60ml)・みりん50ml・砂糖大さじ3・酒50ml・水200ml、
+    // 調理時間30分 / DECISION: 変更なし（現状維持） / WHY: SOURCE B（専門家）は
+    // Recipe Identity（基本の牛丼・つゆだくでない甘辛煮）はKikkomanと概ね一致するが、
+    // 人数比を揃えても砂糖(約3倍)・しょうゆ(約2倍)・水(約2倍)がKikkomanと大きく異なり、
+    // 単純平均は禁止されているため、どちらが「正しい」かをAIが決めることはできない /
+    // EVIDENCE TYPE: CONFLICT（Kikkoman=direct基準値, sirogohanとの間で数値相違）。
     verification: {
       status: 'review',
-      sourceIds: ['kikkoman-gyudon-2026'],
+      sourceIds: ['kikkoman-gyudon-2026', 'sirogohan-gyudon-2026'],
       recipeIdentity: {
         canonicalDish: '牛丼',
         variant: '基本の牛丼（つゆだくでない、家庭の甘辛煮）',
@@ -388,8 +401,11 @@ export const RECIPE_CATALOG: Recipe[] = [
         { field: 'cookingTimeMinutes', sourceIds: ['kikkoman-gyudon-2026'], supportType: 'direct' },
       ],
       reviewNotes: [
-        'キッコーマン公式(kikkoman-gyudon-2026)に基づき、玉ねぎ・みりん・酒・cookingLiquids・cookingTimeMinutesを修正済み（詳細はコード内コメント参照）。',
-        '独立した第2のsourceがまだ見つかっていない（Source Independence未達）ため、内容は大幅に改善したがVERIFIEDへは昇格させずREVIEWのまま維持する。',
+        'MISSION 2.12 PHASE B — 独立した第2source（白ごはん.com、専門家）を実査した結果、'
+          + '同じ「基本の牛丼」variantでありながら、砂糖(Kikkoman大さじ1 vs sirogohan大さじ3)・'
+          + 'しょうゆ(大さじ2 vs 大さじ4)・水(100ml vs 200ml)がservings差を考慮しても大きく食い違うこと'
+          + 'が判明した（詳細はコード内コメント参照）。平均化・どちらか一方の恣意的採用はせず、'
+          + '両立場をCONFLICTとして記録しREVIEWを維持する。',
       ],
       hasUnsupportedInference: false,
     },
@@ -433,15 +449,28 @@ export const RECIPE_CATALOG: Recipe[] = [
     // Recipeのamount文字列として保持し、独自の代表値選定は行わない（rangeそのものを
     // そのまま複製しているため、point-selectionを伴うrange supportではなくdirect
     // support として扱う） / EVIDENCE TYPE: direct。
+    // MISSION 2.12 PHASE B — 独立した第2/第3sourceを実際に調査。
+    // SOURCE B: ajinomoto-oyakodon-2026（味の素パーク公式・2人分）鶏もも肉100g・卵2個・
+    // 玉ねぎ1/2個(100g)・しょうゆ大さじ1・みりん大さじ1・砂糖大さじ1/2・水3/4カップ+
+    // ほんだし小さじ1、調理時間15分。SOURCE C: sirogohan-oyakodon-2026（専門家・2人分）
+    // 鶏もも肉100g・卵4個・玉ねぎ1/8個(だし汁ベースのvariant)・しょうゆ大さじ2〜2.5・
+    // みりん大さじ4・だし汁大さじ4・砂糖小さじ2、調理時間20分。
+    // DECISION: 変更なし（現状維持） / WHY: 玉ねぎ量・調理時間はKikkomanと一致するが、
+    // 卵個数（3個 vs Ajinomoto2個 vs sirogohan4個）・しょうゆ/みりん比率が3source間で
+    // 食い違う。特にAjinomoto・sirogohanは「だし（ほんだし/だし汁）＋砂糖」を使う
+    // coreMethodであり、Kikkoman/NUKITORUの「だしなし・砂糖なし」のcoreMethodとは
+    // 前提が異なるvariantのため、直接比較・平均化はしない / EVIDENCE TYPE:
+    // AjinomotoはCONFLICT（同一variant内での卵個数相違）、sirogohanはVARIANT
+    // （coreMethod相違＝だし使用の有無）。
     verification: {
       status: 'review',
-      sourceIds: ['kikkoman-oyakodon-2026'],
+      sourceIds: ['kikkoman-oyakodon-2026', 'ajinomoto-oyakodon-2026', 'sirogohan-oyakodon-2026'],
       recipeIdentity: {
         canonicalDish: '親子丼',
-        variant: '基本の親子丼（つゆだく・だし重ねタイプではない）',
+        variant: '基本の親子丼（つゆだく・だし重ねタイプではない、だし・砂糖を使わない）',
         servingsBasis: 2,
         intendedTasteProfile: '家庭的な甘辛味、卵はとろとろ半熟',
-        coreMethod: '鶏肉・玉ねぎをしょうゆ・みりん・水で煮て、溶き卵でとじる',
+        coreMethod: '鶏肉・玉ねぎをしょうゆ・みりん・水で煮て、溶き卵でとじる（だし・砂糖は使わない）',
         definingIngredients: ['鶏肉', '卵', 'ごはん'],
       },
       fieldVerifications: [
@@ -453,8 +482,12 @@ export const RECIPE_CATALOG: Recipe[] = [
         { field: 'cookingTimeMinutes', sourceIds: ['kikkoman-oyakodon-2026'], supportType: 'direct' },
       ],
       reviewNotes: [
-        'キッコーマン公式(kikkoman-oyakodon-2026)に基づき、鶏肉量・卵個数・みりん・cookingTimeMinutesを修正済み（詳細はコード内コメント参照）。鶏肉は「1/2枚（100〜120g）」とsourceのrange表記をそのまま採用し、rangeの無言exact値化は行っていない。',
-        '独立した第2のsourceがまだ見つかっていない（Source Independence未達）ため、内容は大幅に改善したがVERIFIEDへは昇格させずREVIEWのまま維持する。',
+        'MISSION 2.12 PHASE B — 独立した第2source（味の素パーク公式）を実査した結果、'
+          + '玉ねぎ量・調理時間はKikkomanと一致する一方、卵個数（Kikkoman/NUKITORU3個 vs '
+          + 'Ajinomoto2個）としょうゆ・みりんの比率が食い違うことが判明した。第3source'
+          + '（白ごはん.com）はだし汁・砂糖を使う別coreMethodのvariantであり、直接比較の対象外'
+          + '（詳細はコード内コメント参照）。平均化・恣意的採用はせずCONFLICTとして記録し'
+          + 'REVIEWを維持する。',
       ],
       hasUnsupportedInference: false,
     },
@@ -892,12 +925,72 @@ export const RECIPE_CATALOG: Recipe[] = [
     cuisine: 'japanese',
     requiredIngredients: [{ name: '鮭', amount: '1切れ' }],
     seasonings: [{ name: '塩', amount: '少々' }],
-    cookingTimeMinutes: 15,
+    cookingTimeMinutes: 8,
     servingsBase: 1,
     tags: ['焼き物', '時短'],
     equipment: ['フライパンまたはグリル'],
     steps: ['鮭に軽く塩をふる', 'グリルまたはフライパンで両面を焼く', '中心まで火が通ったら完成'],
     notes: ['鮭は中心まで火が通っていることを確認してください。'],
+    // MISSION 2.12 PHASE B — First 10 Families Starter Set Evidence Resolution。
+    // CURRENT: cookingTimeMinutes=15分 / SOURCE A: oishikenko-sakeshioyaki-2026
+    // （管理栄養士監修・1人分）鮭1切れ(70g)・塩0.6g、グリルまたはトースターで7〜8分 /
+    // SOURCE B: kikkoman-sakeyakikata-2026（キッコーマン公式）フライパン(油+酒使用・
+    // ふた使用)で4〜5分、両面グリルで4分+余熱3分、片面グリルで3分+2〜3分 /
+    // DECISION: 15分→8分へ変更 / WHY: 2つの独立したsource（Tier3専門家＋Tier2メーカー）
+    // がいずれも15分よりはるかに短い4〜8分の範囲を示しており、現行の15分は明確に長すぎる
+    // と判断できる。ただしSOURCE間で調理法（油・酒・ふた使用の有無）が異なりEvidence Fact
+    // 自体は単一のexact値ではなくrange（約4〜8分）であるため、rangeの中央値等を無言で
+    // exact化せず、NUKITORUの調理法（油・酒を使わない基本のグリル/フライパン）に最も近い
+    // SOURCE A（無油・グリルまたはトースター・7〜8分）の上限値をProduct Decisionとして
+    // 採用し、安全側（生焼け防止）に倒す / EVIDENCE TYPE: cookingTimeMinutes=range。
+    verification: {
+      status: 'review',
+      sourceIds: ['kikkoman-sakeyakikata-2026', 'oishikenko-sakeshioyaki-2026'],
+      recipeIdentity: {
+        canonicalDish: '鮭の塩焼き',
+        variant: '油・酒・ふたを使わない基本の塩焼き（下味用の1%塩＋化粧塩等の凝った下処理はしない）',
+        servingsBasis: 1,
+        intendedTasteProfile: '素材の味を活かした、塩のみのシンプルな塩焼き',
+        coreMethod: '鮭に塩をふり、フライパンまたはグリルで両面を焼く（油・酒・ふたなし）',
+        definingIngredients: ['鮭'],
+      },
+      fieldVerifications: [
+        { field: 'requiredIngredients', sourceIds: ['oishikenko-sakeshioyaki-2026'], supportType: 'direct' },
+        { field: 'ingredientAmounts', sourceIds: ['oishikenko-sakeshioyaki-2026'], supportType: 'direct' },
+        { field: 'seasonings', sourceIds: ['oishikenko-sakeshioyaki-2026'], supportType: 'direct' },
+        { field: 'seasoningAmounts', sourceIds: ['oishikenko-sakeshioyaki-2026'], supportType: 'direct' },
+        {
+          field: 'cookingTimeMinutes',
+          sourceIds: ['kikkoman-sakeyakikata-2026', 'oishikenko-sakeshioyaki-2026'],
+          supportType: 'range',
+          derivation:
+            'Evidence Factは調理法により4〜8分というrangeのみ（フライパン+油+酒:4〜5分／グリル両面:4分+余熱3分／グリル片面:3分+2〜3分／グリルまたはトースター無油:7〜8分）。Recipeのcookingtime=8分はこのrangeから選んだ代表値であり、Evidence直接支持ではなくProduct Decision（下記productDecisions参照）。',
+          evidenceRange: { min: 4, max: 8, unit: '分' },
+        },
+        { field: 'servingsBase', sourceIds: ['oishikenko-sakeshioyaki-2026'], supportType: 'direct' },
+        { field: 'criticalSteps', sourceIds: ['oishikenko-sakeshioyaki-2026'], supportType: 'direct' },
+        { field: 'equipment', sourceIds: ['oishikenko-sakeshioyaki-2026'], supportType: 'variant' },
+        { field: 'allergyIdentity', sourceIds: ['oishikenko-sakeshioyaki-2026'], supportType: 'direct' },
+      ],
+      productDecisions: [
+        {
+          field: 'cookingTimeMinutes',
+          value: '8分',
+          reason:
+            '調理法によりEvidence Factが4〜8分のrangeであるため、NUKITORUの油・酒を使わない'
+              + '基本のグリル/フライパン調理法に最も近いSOURCE A（無油・グリルまたはトースター）'
+              + 'の上限値7〜8分のうち、生焼け防止の観点から安全側の8分を代表値として採用した。',
+          referenceSourceIds: ['oishikenko-sakeshioyaki-2026'],
+        },
+      ],
+      reviewNotes: [
+        'cookingTimeMinutesのEvidence FactはrangeであるためCritical Fieldが未解決（PHASE '
+          + 'D.7-B.1のEvidence Range Integrity Fixに準拠）。equipmentもSOURCE Aは'
+          + 'グリル/トースターのみを扱いフライパンでの無油調理は直接検証していないため'
+          + 'variant扱いとした。他のfield（食材・分量・調味料・人数・工程）はdirectで解決済み。',
+      ],
+      hasUnsupportedInference: false,
+    },
   },
   {
     id: 'maguro-yamakake',
@@ -949,12 +1042,85 @@ export const RECIPE_CATALOG: Recipe[] = [
     type: 'side',
     cuisine: 'japanese',
     requiredIngredients: [{ name: '卵', amount: '1個' }],
-    seasonings: [{ name: '油', amount: '小さじ1' }],
+    seasonings: [{ name: '油', amount: '小さじ1と1/2' }],
     cookingTimeMinutes: 5,
     servingsBase: 1,
     tags: ['朝食', '時短', '子ども向け'],
     equipment: ['フライパン'],
     steps: ['フライパンに油を熱する', '卵を割り入れる', '好みの固さになるまで焼く'],
+    // MISSION 2.12 PHASE B — First 10 Families Starter Set Evidence Resolution。
+    // CURRENT: 油 小さじ1 / SOURCE A: kyounoryouri-medamayaki-2026（NHKみんなのきょうの
+    // 料理・瀬田金行シェフ監修、2人分）卵2個・サラダ油大さじ1・調理時間10分（1個ずつ
+    // 順に焼く方式）/ SOURCE B: kikkoman-medamayaki-tips-2026（キッコーマン公式）
+    // 油少々・弱火で3〜4分 / DECISION: 油を小さじ1→小さじ1と1/2へ変更 / WHY: SOURCE Aの
+    // 「2個で大さじ1」を卵1個あたりへ機械的に等分（大さじ1/2＝小さじ1と1/2）。卵の個数と
+    // 油の量は同一調理法内で線形に扱って妥当（片面焼きのまま個数だけが変わる）。SOURCE B
+    // の「油少々」は数値化されていないが小さじ1と1/2という少量と矛盾しない。
+    // cookingTimeMinutesは変更なし（5分） / WHY: SOURCE Aの卵1個あたりの実質加熱時間は
+    // 本文「弱めの中火で3分ほど」+初期の予熱・卵を割り入れる時間を合わせて5分程度が妥当な
+    // 範囲であり、SOURCE Bの「3〜4分」（弱火加熱のみ、予熱等含まず）とも整合する。
+    // どちらのSourceも複数の異なる調理器具・条件によるrangeを示しているわけではなく、
+    // 単一の調理法の中での近似のため、rangeとしてではなくderivedとして扱う /
+    // EVIDENCE TYPE: 油=derived、cookingTimeMinutes=derived、その他=direct。
+    verification: {
+      status: 'verified',
+      sourceIds: ['kyounoryouri-medamayaki-2026', 'kikkoman-medamayaki-tips-2026'],
+      recipeIdentity: {
+        canonicalDish: '目玉焼き',
+        variant: '片面焼き・水を使わない基本の目玉焼き（蒸し焼きバージョンではない）',
+        servingsBasis: 1,
+        intendedTasteProfile: '黄身が半熟〜好みの固さの、シンプルな塩味なしの目玉焼き（油と卵のみ）',
+        coreMethod: 'フライパンに油を熱し、卵を割り入れて水を使わず好みの固さまで焼く',
+        definingIngredients: ['卵'],
+      },
+      fieldVerifications: [
+        {
+          field: 'requiredIngredients',
+          sourceIds: ['kyounoryouri-medamayaki-2026'],
+          supportType: 'direct',
+        },
+        {
+          field: 'ingredientAmounts',
+          sourceIds: ['kyounoryouri-medamayaki-2026'],
+          supportType: 'derived',
+          derivation: 'NHK「2人分・卵2個」＝1人分1個という1:1の卵数比率をそのまま適用。',
+        },
+        {
+          field: 'seasonings',
+          sourceIds: ['kyounoryouri-medamayaki-2026', 'kikkoman-medamayaki-tips-2026'],
+          supportType: 'direct',
+        },
+        {
+          field: 'seasoningAmounts',
+          sourceIds: ['kyounoryouri-medamayaki-2026'],
+          supportType: 'derived',
+          derivation:
+            'NHK「2個でサラダ油大さじ1」を卵1個あたりへ機械的に等分（大さじ1/2＝小さじ1と1/2）。キッコーマンの「油少々」はこの少量と矛盾しない。',
+        },
+        {
+          field: 'cookingTimeMinutes',
+          sourceIds: ['kyounoryouri-medamayaki-2026', 'kikkoman-medamayaki-tips-2026'],
+          supportType: 'derived',
+          derivation:
+            'NHKの卵1個あたりの加熱記述（弱めの中火で3分ほど）＋予熱・卵を割り入れる工程を合わせ5分程度。キッコーマンの「弱火3〜4分」（加熱のみ）とも整合する近似値。',
+        },
+        {
+          field: 'servingsBase',
+          sourceIds: ['kyounoryouri-medamayaki-2026'],
+          supportType: 'derived',
+          derivation: 'NHK「2人分・卵2個」から、卵1個＝1人分という比率を採用。',
+        },
+        {
+          field: 'criticalSteps',
+          sourceIds: ['kyounoryouri-medamayaki-2026', 'kikkoman-medamayaki-tips-2026'],
+          supportType: 'direct',
+        },
+        { field: 'equipment', sourceIds: ['kyounoryouri-medamayaki-2026'], supportType: 'direct' },
+        { field: 'allergyIdentity', sourceIds: ['kyounoryouri-medamayaki-2026'], supportType: 'direct' },
+      ],
+      reviewNotes: [],
+      hasUnsupportedInference: false,
+    },
   },
   {
     id: 'tamagoyaki',
@@ -1025,6 +1191,43 @@ export const RECIPE_CATALOG: Recipe[] = [
       { id: 'hiyayakko-negi', label: 'ねぎをのせる', addIngredients: ['ねぎ'] },
       { id: 'hiyayakko-katsuobushi', label: 'かつお節をのせる', addIngredients: ['かつお節'] },
     ],
+    // MISSION 2.12 PHASE B — First 10 Families Starter Set Evidence Resolution。
+    // CURRENT: 豆腐1/2丁(1人分)・しょうゆ小さじ1 / SOURCE A: ajinomoto-hiyayakko-2026
+    // （味の素パーク公式）絹ごし豆腐1丁・4人分、しょうゆは「適量」（数値なし）/
+    // DECISION: 変更なし（現状維持） / WHY: 豆腐の人数比はSOURCE A（1丁/4人＝1/4丁/人）と
+    // NUKITORU（1/2丁/1人）で2倍の開きがあるが、豆腐ブロックのサイズ・銘柄自体が製品により
+    // 大きく異なるため、比率の一致・不一致だけで結論を出せない。しょうゆはSOURCE Aを含め
+    // 調査した複数のメーカー公式・専門家サイトのいずれも「適量」表記でありexactな標準比率
+    // が存在しない（お好みで量を調整する調味料であるため）/ EVIDENCE TYPE: 豆腐量=CONFLICT
+    // （製品サイズ差の可能性があり結論不能）、しょうゆ=NOT_FOUND。
+    verification: {
+      status: 'review',
+      sourceIds: ['ajinomoto-hiyayakko-2026'],
+      recipeIdentity: {
+        canonicalDish: '冷奴',
+        variant: '基本の冷奴（薬味なし、しょうゆのみ）',
+        servingsBasis: 1,
+        intendedTasteProfile: '豆腐そのものの味を活かした、しょうゆのみのシンプルな冷奴',
+        coreMethod: '豆腐を切って器に盛り、しょうゆをかける（加熱調理なし）',
+        definingIngredients: ['豆腐'],
+      },
+      fieldVerifications: [
+        { field: 'requiredIngredients', sourceIds: ['ajinomoto-hiyayakko-2026'], supportType: 'variant' },
+        { field: 'criticalSteps', sourceIds: ['ajinomoto-hiyayakko-2026'], supportType: 'direct' },
+      ],
+      reviewNotes: [
+        'CURRENT: 豆腐1/2丁(1人分) / SOURCE A: ajinomoto-hiyayakko-2026（絹ごし豆腐1丁・'
+          + '4人分＝1/4丁/人）/ DECISION: 変更なし（現状維持） / WHY: 豆腐1丁の重量は製品'
+          + 'により大きく異なり（300g〜400g等）、比率の単純比較では結論できない。同一製品を'
+          + '仮定しない限り解決不能なためCONFLICT扱いのままREVIEWとする / EVIDENCE TYPE: '
+          + 'CONFLICT。',
+        'CURRENT: しょうゆ小さじ1 / SOURCE A: 「適量」（数値なし）/ DECISION: 変更なし / '
+          + 'WHY: 調査した複数のメーカー公式サイトがいずれも「適量」表記で、しょうゆの'
+          + 'exact標準量を明記した信頼できるsourceが見つからなかった（お好みで調整する'
+          + '調味料であるため） / EVIDENCE TYPE: NOT_FOUND。',
+      ],
+      hasUnsupportedInference: true,
+    },
   },
   {
     id: 'iritamago',
@@ -1191,6 +1394,43 @@ export const RECIPE_CATALOG: Recipe[] = [
       '豆腐を一口大に切って加える',
       '煮立ったら火を弱め、味噌を溶き入れる',
     ],
+    // MISSION 2.12 PHASE B — First 10 Families Starter Set Evidence Resolution。
+    // CURRENT: 水400ml・味噌大さじ1と1/2(2人分) / SOURCE A: yamaki-misoshiru-2026
+    // （ヤマキ公式・2人分）だし400ml・味噌大さじ2・具は油揚げ1/2枚+乾燥わかめ+長ねぎ
+    // （豆腐は使わない）/ SOURCE B: marukome-misoshiru-faq-2026（マルコメ公式FAQ）
+    // 1杯あたり味噌大さじ1(17g):お湯160ccが目安 / DECISION: 変更なし（現状維持） /
+    // WHY: 水量400mlはSOURCE Aと一致するが、SOURCE Aは豆腐ではなく油揚げを使う別の
+    // definingIngredientのvariantであり、直接比較の対象にできない。一方、味噌:水の
+    // 比率で見るとSOURCE B（2人分換算で大さじ2:320ml、約160ml/大さじ1）とSOURCE A
+    // （2人分で大さじ2:400ml、約200ml/大さじ1）はメーカー間で比率自体が食い違っており、
+    // 平均化は禁止されているため水量400mlをVERIFIEDの根拠にはできない /
+    // EVIDENCE TYPE: cookingLiquids(水)=CONFLICT（メーカー間の味噌:水比率相違）、
+    // requiredIngredients(豆腐)=SOURCE Aとの関係ではVARIANT（具材が油揚げで異なる）。
+    verification: {
+      status: 'review',
+      sourceIds: ['yamaki-misoshiru-2026', 'marukome-misoshiru-faq-2026'],
+      recipeIdentity: {
+        canonicalDish: '味噌汁',
+        variant: '豆腐のみを具とする味噌汁（油揚げ・わかめ・ねぎ等は加えない）',
+        servingsBasis: 2,
+        intendedTasteProfile: '家庭的なだし＋味噌のシンプルな味噌汁',
+        coreMethod: '水とだしの素を煮立て、豆腐を加えてから味噌を溶き入れる',
+        definingIngredients: ['豆腐', '味噌'],
+      },
+      fieldVerifications: [
+        { field: 'requiredIngredients', sourceIds: ['yamaki-misoshiru-2026'], supportType: 'variant' },
+      ],
+      reviewNotes: [
+        'CURRENT: 水400ml・味噌大さじ1と1/2 / SOURCE A: ヤマキ公式（2人分・だし400ml・'
+          + '味噌大さじ2、ただし具は油揚げでありNUKITORUの豆腐とはdefiningIngredientが'
+          + '異なるvariant）/ SOURCE B: マルコメ公式FAQ（1杯＝大さじ1:160cc、2人分換算で'
+          + '大さじ2:320ml）/ DECISION: 変更なし / WHY: ヤマキとマルコメで味噌:水の比率'
+          + '自体が異なり（200ml/大さじ vs 160ml/大さじ）、平均化は禁止されているため'
+          + '水400mlをEvidence直接支持として採用できない。CONFLICTとしてREVIEWを維持する '
+          + '/ EVIDENCE TYPE: CONFLICT。',
+      ],
+      hasUnsupportedInference: true,
+    },
   },
   {
     id: 'vegetable-soup',

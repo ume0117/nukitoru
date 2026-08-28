@@ -695,6 +695,12 @@ const AUDITED_RECIPE_IDS_D7A = [
   'pork-cabbage-miso-stirfry',
 ]
 
+// MISSION 2.12 PHASE B — First 10 Families Starter Set Evidence Resolutionで
+// 新たにverification（review/verified）が設定されたRecipe。
+const AUDITED_RECIPE_IDS_PHASE_B = ['medama-yaki', 'hiyayakko', 'sake-shioyaki', 'tofu-miso-soup']
+
+const ALL_AUDITED_RECIPE_IDS = [...AUDITED_RECIPE_IDS_D7A, ...AUDITED_RECIPE_IDS_PHASE_B]
+
 describe('recipe-catalog.ts — Evidence Audit Gate (BG〜BP, PHASE D.7-A)', () => {
   it('BG: EVIDENCE_SOURCE_CATALOGのsource URLが実データ用placeholderでない', () => {
     for (const source of EVIDENCE_SOURCE_CATALOG) {
@@ -763,23 +769,21 @@ describe('recipe-catalog.ts — Evidence Audit Gate (BG〜BP, PHASE D.7-A)', () 
     }
   })
 
-  it('BO: 対象10 Recipe以外（残り34件）は勝手にVERIFIEDされていない（verification未設定のまま）', () => {
+  it('BO: 監査対象以外のRecipeは勝手にVERIFIEDされていない（verification未設定のまま）', () => {
     for (const recipe of RECIPE_CATALOG) {
-      if (!AUDITED_RECIPE_IDS_D7A.includes(recipe.id)) {
+      if (!ALL_AUDITED_RECIPE_IDS.includes(recipe.id)) {
         expect(recipe.verification, `${recipe.id}: 対象外なのにverificationが設定されている`).toBeUndefined()
       }
     }
   })
 
   it('BP: 今回対象外Recipeの内容（代表サンプル）が意図せず変更されていない', () => {
-    const medamaYaki = RECIPE_CATALOG.find((r) => r.id === 'medama-yaki')!
-    expect(medamaYaki.requiredIngredients).toEqual([{ name: '卵', amount: '1個' }])
-    expect(medamaYaki.seasonings).toEqual([{ name: '油', amount: '小さじ1' }])
-    expect(medamaYaki.cookingTimeMinutes).toBe(5)
+    const tamagoyaki = RECIPE_CATALOG.find((r) => r.id === 'tamagoyaki')!
+    expect(tamagoyaki.requiredIngredients).toEqual([{ name: '卵', amount: '3個' }])
+    expect(tamagoyaki.cookingTimeMinutes).toBe(10)
 
-    const sakeShioyaki = RECIPE_CATALOG.find((r) => r.id === 'sake-shioyaki')!
-    expect(sakeShioyaki.requiredIngredients).toEqual([{ name: '鮭', amount: '1切れ' }])
-    expect(sakeShioyaki.cookingTimeMinutes).toBe(15)
+    const iritamago = RECIPE_CATALOG.find((r) => r.id === 'iritamago')!
+    expect(iritamago.requiredIngredients).toEqual([{ name: '卵', amount: '2個' }])
 
     expect(RECIPE_CATALOG.length).toBe(44)
   })
@@ -793,23 +797,22 @@ describe('recipe-catalog.ts — Evidence Audit Gate (BG〜BP, PHASE D.7-A)', () 
     }
   })
 
-  it('BY: 対象10 Recipe以外（残り34件）はPHASE D.7-Bでも引き続きUNVERIFIED（verification未設定）のまま', () => {
+  it('BY: 監査対象以外のRecipeはPHASE D.7-B以降も引き続きUNVERIFIED（verification未設定）のまま', () => {
     for (const recipe of RECIPE_CATALOG) {
-      if (!AUDITED_RECIPE_IDS_D7A.includes(recipe.id)) {
+      if (!ALL_AUDITED_RECIPE_IDS.includes(recipe.id)) {
         expect(recipe.verification, `${recipe.id}: 対象外なのにverificationが設定されている`).toBeUndefined()
         expect(getVerificationStatus(recipe)).toBe('unverified')
       }
     }
   })
 
-  it('BZ: 今回対象外Recipeの内容（追加の代表サンプル）がPHASE D.7-Bでも意図せず変更されていない', () => {
-    const hiyayakko = RECIPE_CATALOG.find((r) => r.id === 'hiyayakko')!
-    expect(hiyayakko.requiredIngredients).toEqual([{ name: '豆腐', amount: '1/2丁' }])
-    expect(hiyayakko.seasonings).toEqual([{ name: 'しょうゆ', amount: '小さじ1' }])
-
+  it('BZ: 今回対象外Recipeの内容（追加の代表サンプル）がPHASE D.7-B以降も意図せず変更されていない', () => {
     const tonjiru = RECIPE_CATALOG.find((r) => r.id === 'tonjiru')!
     expect(tonjiru.seasonings).toEqual([{ name: '味噌', amount: '大さじ2' }])
     expect(tonjiru.cookingLiquids).toEqual([{ name: '水', amount: '600ml' }])
     expect(tonjiru.cookingTimeMinutes).toBe(25)
+
+    const nikujaga = RECIPE_CATALOG.find((r) => r.id === 'nikujaga')!
+    expect(nikujaga.cookingTimeMinutes).toBe(30)
   })
 })

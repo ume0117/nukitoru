@@ -116,9 +116,9 @@ describe('Global Foundation Gate (CB〜CN)', () => {
     expect(RECIPE_CATALOG.length).toBe(44)
   })
 
-  it('CM: verified状態のRecipe件数はD.7-B.1終了時点から変化していない（0件）', () => {
+  it('CM: verified状態のRecipe件数はGlobal Foundation自体によっては変化しない（MISSION 2.12 PHASE Bで1件VERIFIED化したのはEvidence監査の結果であり、本Gateの対象であるGlobal Foundation側の変更とは無関係）', () => {
     const verifiedCount = RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').length
-    expect(verifiedCount).toBe(0)
+    expect(verifiedCount).toBe(1)
   })
 
   it('CN: Allergy HARD EXCLUSIONはGlobal Foundation追加後も無傷（requiredIngredients+seasoningsのみ対象）', () => {
@@ -214,9 +214,9 @@ describe('Global Code Extensibility Gate (CO〜CZ)', () => {
     expect(RECIPE_CATALOG.length).toBe(44)
   })
 
-  it('CY: verified状態のRecipe件数は本FIXで変化していない（0件のまま）', () => {
+  it('CY: verified状態のRecipe件数はGlobal Code Extensibility Fix自体によっては変化しない（MISSION 2.12 PHASE BのEvidence監査による1件は本Gateの対象外）', () => {
     const verifiedCount = RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').length
-    expect(verifiedCount).toBe(0)
+    expect(verifiedCount).toBe(1)
   })
 
   it('CZ: CANONICAL_FOOD_SAMPLE（Gate CB〜CNのfixture）は本FIXで変化していない', () => {

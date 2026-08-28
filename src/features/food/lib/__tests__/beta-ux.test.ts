@@ -188,9 +188,9 @@ describe('First 10 Families Beta Gate (DA〜DO)', () => {
     expect(isRecipePublishable(recipeWithRange!)).toBe(false)
   })
 
-  it('DO: VERIFIED件数は0のまま（PHASE A追加後もRecipe内容・検証状態は無傷）', () => {
+  it('DO: VERIFIED件数はPHASE A（Dinner Decision UX）自体によっては変化しない（MISSION 2.12 PHASE BのEvidence監査による1件は本Gateの対象外）', () => {
     const verifiedCount = RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').length
-    expect(verifiedCount).toBe(0)
+    expect(verifiedCount).toBe(1)
     expect(RECIPE_CATALOG.length).toBe(44)
   })
 
