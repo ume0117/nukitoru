@@ -5,6 +5,7 @@ import { cuisineLabel } from '@/features/food/lib/recipe-labels'
 import { filterSafeArrangements } from '@/features/food/lib/recipe-safety'
 import { splitRequiredIngredients } from '@/features/food/lib/recipe-suggestion-engine'
 import { productCheckMessage } from '@/features/food/lib/product-check-messages'
+import { RecipeFeedback } from './RecipeFeedback'
 
 interface Props {
   recipe: Recipe
@@ -220,6 +221,8 @@ export function RecipeDetailView({
       >
         作った！
       </button>
+
+      <RecipeFeedback recipeId={recipe.id} />
     </div>
   )
 }

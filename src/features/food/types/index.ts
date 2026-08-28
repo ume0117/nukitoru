@@ -204,6 +204,32 @@ export interface MealSuggestionResponse {
   suggestions: MealSuggestion[]
 }
 
+// ------------------------------------------------------------
+// MISSION 2.12 PHASE A — Dinner Decision MVP
+//
+// 「提案された」ではなく「選ばれた」を将来測定できるようにするための、
+// 最小限のDecision/Feedback概念。大規模analyticsは作らない。
+// allergy情報・世帯プロフィール・共有先/連絡先はこれらの型に一切含めない
+// （フィールドとして存在しないため、実装側が誤って複製することもできない）。
+// ------------------------------------------------------------
+
+export type MealCandidateType = 'A' | 'B'
+
+export interface MealDecision {
+  recipeId: string
+  decidedAt: string
+  selectedMemberIds: string[]
+  candidateType: MealCandidateType
+}
+
+export type MealFeedbackRating = 'good' | 'neutral' | 'bad'
+
+export interface MealFeedback {
+  recipeId: string
+  recordedAt: string
+  rating: MealFeedbackRating
+}
+
 // ============================================================
 // MISSION 2.2 — Household Profile & Stock Master (types only)
 //

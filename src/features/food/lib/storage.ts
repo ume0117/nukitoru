@@ -7,7 +7,17 @@
 // 保存値が壊れている・古い形式の場合も例外を投げず、安全な初期値へ戻す。
 // ============================================================
 
-import type { Household, AllergyProfile, Pantry, FoodPreferences, StockStatusEntry, Member } from '@/features/food/types'
+import type {
+  Household,
+  AllergyProfile,
+  Pantry,
+  FoodPreferences,
+  StockStatusEntry,
+  Member,
+  MealDecision,
+  MealCandidateType,
+  MealFeedback,
+} from '@/features/food/types'
 
 const KEY_HOUSEHOLD = 'nukitoru_food_household'
 const KEY_ALLERGY_PROFILE = 'nukitoru_food_allergy_profile'
@@ -194,4 +204,58 @@ export function loadSelectedMemberIds(): string[] {
 
 export function saveSelectedMemberIds(value: string[]): void {
   safeSet(KEY_SELECTED_MEMBERS, value)
+}
+
+// ------------------------------------------------------------
+// MISSION 2.12 PHASE A — Dinner Decision MVP
+//
+// 「提案された」ではなく「選ばれた」を将来測定できるようにする最小限の
+// 保存。allergy情報・世帯プロフィール・共有先/連絡先は一切保存しない
+// （MealDecision/MealFeedback型にそもそもそのフィールドが存在しない）。
+// 無制限に肥大化しないよう、直近N件のみを保持する。
+// ------------------------------------------------------------
+
+const KEY_MEAL_DECISIONS = 'nukitoru_food_meal_decisions'
+const KEY_MEAL_FEEDBACK = 'nukitoru_food_meal_feedback'
+const MAX_STORED_DECISIONS = 50
+const MAX_STORED_FEEDBACK = 50
+
+export const DEFAULT_MEAL_DECISIONS: MealDecision[] = []
+export const DEFAULT_MEAL_FEEDBACK: MealFeedback[] = []
+
+/**
+ * MealDecisionを組み立てる純粋関数（localStorageへは触れない）。
+ * 渡された recipeId / candidateType をそのまま保持し、他の値を推測して
+ * 補わない。decidedAtを省略した場合のみ現在時刻を使う。
+ */
+export function buildMealDecision(params: {
+  recipeId: string
+  candidateType: MealCandidateType
+  selectedMemberIds: string[]
+  decidedAt?: string
+}): MealDecision {
+  return {
+    recipeId: params.recipeId,
+    decidedAt: params.decidedAt ?? new Date().toISOString(),
+    selectedMemberIds: [...params.selectedMemberIds],
+    candidateType: params.candidateType,
+  }
+}
+
+export function loadMealDecisions(): MealDecision[] {
+  return safeGet(KEY_MEAL_DECISIONS, DEFAULT_MEAL_DECISIONS)
+}
+
+export function recordMealDecision(decision: MealDecision): void {
+  const next = [...loadMealDecisions(), decision].slice(-MAX_STORED_DECISIONS)
+  safeSet(KEY_MEAL_DECISIONS, next)
+}
+
+export function loadMealFeedback(): MealFeedback[] {
+  return safeGet(KEY_MEAL_FEEDBACK, DEFAULT_MEAL_FEEDBACK)
+}
+
+export function recordMealFeedback(feedback: MealFeedback): void {
+  const next = [...loadMealFeedback(), feedback].slice(-MAX_STORED_FEEDBACK)
+  safeSet(KEY_MEAL_FEEDBACK, next)
 }

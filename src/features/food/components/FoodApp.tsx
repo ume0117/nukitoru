@@ -8,7 +8,7 @@ import { AllergyOnboarding } from './AllergyOnboarding'
 import { AllergyDislikeInput } from './AllergyDislikeInput'
 import { PantrySelector } from './PantrySelector'
 import { ConditionSelector } from './ConditionSelector'
-import { CookingTimeSelector } from './CookingTimeSelector'
+import { QuickConditionSelector, resolveQuickCondition, type QuickConditionKey } from './QuickConditionSelector'
 import { MealResultView } from './MealResultView'
 import { RecipeDetailView } from './RecipeDetailView'
 import { CookingConfirmationPanel } from './CookingConfirmationPanel'
@@ -19,7 +19,6 @@ import { sanitizeSelectedMemberIds, getSelectedMembers, mergeMemberAllergies } f
 import { getRecipeById } from '@/features/food/lib/recipe-catalog'
 import {
   DEFAULT_ALLERGY_PROFILE,
-  DEFAULT_COOKING_PREFERENCE,
   DEFAULT_PANTRY,
   DEFAULT_STOCK_STATUS,
   loadAllergyProfile,
@@ -34,11 +33,14 @@ import {
   savePantry,
   saveSelectedMemberIds,
   saveStockStatus,
+  buildMealDecision,
+  recordMealDecision,
 } from '@/features/food/lib/storage'
 import type {
   AllergyProfile,
   DailyCondition,
   Ingredient,
+  MealCandidateType,
   MealSuggestion,
   MealSuggestionRequest,
   MealSuggestionResponse,
@@ -93,9 +95,12 @@ export function FoodApp() {
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([])
   const [allergyProfile, setAllergyProfile] = useState<AllergyProfile>(DEFAULT_ALLERGY_PROFILE)
   const [pantry, setPantry] = useState<Pantry>(DEFAULT_PANTRY)
-  const [maxCookingMinutes, setMaxCookingMinutes] = useState<number | null>(
-    DEFAULT_COOKING_PREFERENCE.maxCookingMinutes,
-  )
+  // MISSION 2.12 PHASE A — 「今日どうする？」Quick Condition。
+  // 実際にmockMealProviderへ渡す値（maxCookingMinutes / onlyFullyAvailable）は
+  // resolveQuickCondition()経由で導出するだけで、既存のCookingPreference
+  // storage schema（{maxCookingMinutes}）自体は変更しない。
+  const [quickCondition, setQuickCondition] = useState<QuickConditionKey>('anything')
+  const { maxCookingMinutes, onlyFullyAvailable } = resolveQuickCondition(quickCondition)
   const [loaded, setLoaded] = useState(false)
 
   const [showMoreConditions, setShowMoreConditions] = useState(false)
@@ -117,7 +122,10 @@ export function FoodApp() {
     setSelectedMemberIds(sanitizeSelectedMemberIds(loadedMembers, loadSelectedMemberIds()))
     setAllergyProfile(loadAllergyProfile())
     setPantry(loadPantry())
-    setMaxCookingMinutes(loadCookingPreference().maxCookingMinutes)
+    const persistedMaxMinutes = loadCookingPreference().maxCookingMinutes
+    if (persistedMaxMinutes === 15) setQuickCondition('15min')
+    else if (persistedMaxMinutes === 30) setQuickCondition('30min')
+    else setQuickCondition('anything')
     setStockStatusMap(loadStockStatus())
     setLoaded(true)
   }, [])
@@ -163,8 +171,13 @@ export function FoodApp() {
     setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)))
   }
 
-  const handleSubmit = async () => {
+  // MISSION 2.12 PHASE A — 候補0件時に「条件を「おまかせ」にする」を押した場合、
+  // setQuickConditionのstate更新を待たず正しい値で即座に再検索できるよう、
+  // 明示的にoverrideを受け取れるようにする（stale closure回避）。
+  const handleSubmit = async (overrideCondition?: QuickConditionKey) => {
     if (!canSubmit) return
+    const { maxCookingMinutes: effectiveMaxMinutes, onlyFullyAvailable: effectiveOnlyAvailable } =
+      resolveQuickCondition(overrideCondition ?? quickCondition)
     setStatus('loading')
     setSelectedRecipeId(null) // 再生成のたびに候補一覧へ戻す
     try {
@@ -175,15 +188,34 @@ export function FoodApp() {
         pantry,
         dailyCondition,
         // Release 0.1では買い物条件UIを表示しない。ユーザーには選択させず固定値を渡す。
-        cookingPreference: { maxCookingMinutes, shoppingMode: 'none' },
+        cookingPreference: { maxCookingMinutes: effectiveMaxMinutes, shoppingMode: 'none' },
         season,
       }
       const response = await mockMealProvider.suggest(request)
-      setResult(response)
+      // MISSION 2.12 PHASE A — 「家にあるもので」はrankRecipes自体を変えず、
+      // 既に安全な結果をUI層でisFullyAvailableのみへ絞り込むだけ
+      // （Allergy HARD EXCLUSION・Evidence判定には一切影響しない）。
+      const filtered = effectiveOnlyAvailable
+        ? { ...response, suggestions: response.suggestions.filter((s) => s.isFullyAvailable) }
+        : response
+      setResult(filtered)
       setStatus('result')
     } catch {
       setStatus('error')
     }
+  }
+
+  const handleRelaxConditions = () => {
+    setQuickCondition('anything')
+    void handleSubmit('anything')
+  }
+
+  // MISSION 2.12 PHASE A — 「これ作る」＝「提案された」ではなく「選ばれた」の記録。
+  // allergy情報・世帯プロフィールはMealDecisionへ一切複製しない
+  // （buildMealDecisionの引数にそもそも存在しない）。
+  const handleSelectRecipe = (recipeId: string, candidateType: MealCandidateType) => {
+    recordMealDecision(buildMealDecision({ recipeId, candidateType, selectedMemberIds }))
+    setSelectedRecipeId(recipeId)
   }
 
   // 「作った！」が押されただけでは在庫状態は一切変更しない。使用食材の候補を出すだけ。
@@ -209,7 +241,7 @@ export function FoodApp() {
 
       <div className="space-y-1">
         <h1 className="text-[11px] tracking-[0.3em] text-gray-400 dark:text-gray-600 uppercase">NUKITORU FOOD</h1>
-        <p className="text-lg font-medium text-gray-900 dark:text-white">冷蔵庫にあるもので、今日の献立。</p>
+        <p className="text-lg font-medium text-gray-900 dark:text-white">今日、何つくる？</p>
         {now && (
           <p className="text-[10px] text-gray-400 dark:text-gray-600">
             {now} ｜ 季節：{SEASON_LABELS[season]}
@@ -247,7 +279,22 @@ export function FoodApp() {
 
       {loaded && safetyGateOpen && (
         <>
-          {/* ② 条件（苦手食材・常備調味料など） */}
+          {/* ② 家にあるもの */}
+          <IngredientInput ingredients={ingredients} onChange={setIngredients} />
+
+          {/* ③ 今日どうする？ */}
+          <QuickConditionSelector value={quickCondition} onChange={setQuickCondition} />
+
+          {/* ④ 今日の献立を考える */}
+          <button
+            onClick={() => handleSubmit()}
+            disabled={!canSubmit || status === 'loading'}
+            className="w-full h-12 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white text-[12px] tracking-[0.15em] uppercase font-medium transition-colors"
+          >
+            {status === 'loading' ? '考え中...' : '今日の献立を考える'}
+          </button>
+
+          {/* 条件を追加する（苦手食材・常備調味料・体調など。主要フローの下に格納） */}
           <div className="space-y-3">
             <button
               onClick={() => setShowMoreConditions((v) => !v)}
@@ -260,27 +307,10 @@ export function FoodApp() {
               <div className="space-y-4 border-t border-gray-100 dark:border-gray-800 pt-3">
                 <AllergyDislikeInput value={allergyProfile} onChange={setAllergyProfile} />
                 <PantrySelector value={pantry} onChange={setPantry} />
+                <ConditionSelector value={dailyCondition} onChange={setDailyCondition} />
               </div>
             )}
           </div>
-
-          {/* ③ 今日の体調 */}
-          <ConditionSelector value={dailyCondition} onChange={setDailyCondition} />
-
-          {/* ④ 食材 */}
-          <IngredientInput ingredients={ingredients} onChange={setIngredients} />
-
-          {/* ⑤ 調理時間 */}
-          <CookingTimeSelector value={maxCookingMinutes} onChange={setMaxCookingMinutes} />
-
-          {/* ⑥ 今日の献立を考える */}
-          <button
-            onClick={handleSubmit}
-            disabled={!canSubmit || status === 'loading'}
-            className="w-full h-12 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white text-[12px] tracking-[0.15em] uppercase font-medium transition-colors"
-          >
-            {status === 'loading' ? '考え中...' : '今日の献立を考える'}
-          </button>
 
           {(() => {
             const selectedSuggestion =
@@ -307,7 +337,9 @@ export function FoodApp() {
               <MealResultView
                 result={status === 'result' ? result : null}
                 hasIngredients={hasIngredients}
-                onSelectRecipe={(recipeId) => setSelectedRecipeId(recipeId)}
+                onlyFullyAvailable={onlyFullyAvailable}
+                onSelectRecipe={handleSelectRecipe}
+                onRelaxConditions={handleRelaxConditions}
               />
             )
           })()}

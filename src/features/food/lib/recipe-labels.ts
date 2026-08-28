@@ -28,3 +28,12 @@ export function cuisineLabel(cuisine: RecipeCuisine | undefined): string | undef
   if (!cuisine) return undefined
   return CUISINE_LABELS[cuisine]
 }
+
+/**
+ * MISSION 2.12 PHASE A — 内部開発用語「A」「B」を一般ユーザーへそのまま
+ * 表示しないための自然な文言。判定ロジック自体（isFullyAvailable）は
+ * 変更しない。表示文言のみをここに集約する。
+ */
+export function candidateAvailabilityLabel(isFullyAvailable: boolean): string {
+  return isFullyAvailable ? '家にあるもので作れます' : 'あと1つで作れます'
+}
