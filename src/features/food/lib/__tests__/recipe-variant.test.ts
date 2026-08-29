@@ -67,6 +67,17 @@ function makeIdentity(overrides: Partial<RecipeIdentity> = {}): RecipeIdentity {
   }
 }
 
+/** MISSION 2.14B — 全applicable critical fieldがsourceIdを唯一の引数として参照する場合に、
+ *  そのsourceを漏れなくカバーするcoherent状態のCoherenceReviewを組み立てるテスト用ヘルパー。 */
+function makeCoherentReview(sourceId: string): RecipeVerification['coherenceReview'] {
+  return {
+    status: 'coherent',
+    sourceProcessNotes: [{ sourceId, equipment: 'テスト器具', heatSequence: '単一source内で一貫した加熱' }],
+    reviewedDimensions: ['equipment', 'heat-sequence'],
+    rationale: 'テスト用: 単一sourceのみが全fieldを支持しており、process不整合の余地がない。',
+  }
+}
+
 describe('Evidence Variant Foundation Gate (EF〜FF)', () => {
   it('EF: variantIdは安定した文字列であり、同一入力に対して常に同一の判定結果を返す（決定論的）', () => {
     const input: VariantEstablishmentInput = {
@@ -128,24 +139,24 @@ describe('Evidence Variant Foundation Gate (EF〜FF)', () => {
     expect(sakeShioyaki.verification?.recipeIdentity?.variantIdentity?.variantId).toBe('sake-shioyaki-grill-no-oil')
   })
 
-  it('EK: variant分類の存在自体はREVIEWをVERIFIEDへ昇格させない（sake-shioyakiは正当なvariantを持つがREVIEWのまま）', () => {
+  it('EK: variant分類の存在自体はREVIEWをVERIFIEDへ昇格させない（sake-shioyakiは正当なvariantを持つが、seasonings/criticalStepsのprocess不整合によりREVIEWのまま。MISSION 2.14 CORRECTION）', () => {
     const sakeShioyaki = RECIPE_CATALOG.find((r) => r.id === 'sake-shioyaki')!
     expect(sakeShioyaki.verification?.recipeIdentity?.variantIdentity).toBeDefined()
     expect(sakeShioyaki.verification?.status).toBe('review')
     expect(isRecipePublishable(sakeShioyaki)).toBe(false)
   })
 
-  it('EL: rangeは自動的にvariantへ変換されない（sake-shioyakiのcookingTimeMinutesはvariant確立後もrangeのまま）', () => {
-    const sakeShioyaki = RECIPE_CATALOG.find((r) => r.id === 'sake-shioyaki')!
-    const timeField = sakeShioyaki.verification?.fieldVerifications?.find((f) => f.field === 'cookingTimeMinutes')
+  it('EL: rangeは自動的にvariantへ変換されない（shio-musubiのcookingTimeMinutesは未解決のrangeのまま）', () => {
+    const shioMusubi = RECIPE_CATALOG.find((r) => r.id === 'shio-musubi')!
+    const timeField = shioMusubi.verification?.fieldVerifications?.find((f) => f.field === 'cookingTimeMinutes')
     expect(timeField?.supportType).toBe('range')
-    expect(timeField?.evidenceRange).toEqual({ min: 4, max: 8, unit: '分' })
-    expect(hasUnresolvedRangeEvidence(sakeShioyaki)).toBe(true)
+    expect(timeField?.evidenceRange).toEqual({ min: 40, max: 60, unit: '分' })
+    expect(hasUnresolvedRangeEvidence(shioMusubi)).toBe(true)
   })
 
-  it('EM: Product Decisionの存在はvariantを確立しない（isEstablishedVariantの引数にproductDecisionsは存在しない）', () => {
-    const sakeShioyaki = RECIPE_CATALOG.find((r) => r.id === 'sake-shioyaki')!
-    expect((sakeShioyaki.verification?.productDecisions ?? []).length).toBeGreaterThan(0)
+  it('EM: Product Decisionの存在はvariantを確立しない（isEstablishedVariantの引数にproductDecisionsは存在しない。shio-musubiで実データ確認）', () => {
+    const shioMusubi = RECIPE_CATALOG.find((r) => r.id === 'shio-musubi')!
+    expect((shioMusubi.verification?.productDecisions ?? []).length).toBeGreaterThan(0)
     // isEstablishedVariantはproductDecisionsを一切受け取らない設計であること自体がfirewall
     const result = isEstablishedVariant({
       variantId: 'pd-only-variant',
@@ -164,12 +175,12 @@ describe('Evidence Variant Foundation Gate (EF〜FF)', () => {
     expect(isRecipePublishable(gyudon)).toBe(false)
   })
 
-  it('EO: Product DecisionはRangeを解決しない（sake-shioyakiのcookingTimeMinutes fieldVerificationはproductDecisionsを参照しない）', () => {
-    const sakeShioyaki = RECIPE_CATALOG.find((r) => r.id === 'sake-shioyaki')!
-    const timeField = sakeShioyaki.verification?.fieldVerifications?.find((f) => f.field === 'cookingTimeMinutes')
+  it('EO: Product DecisionはRangeを解決しない（shio-musubiのcookingTimeMinutes fieldVerificationはproductDecisionsを参照しない）', () => {
+    const shioMusubi = RECIPE_CATALOG.find((r) => r.id === 'shio-musubi')!
+    const timeField = shioMusubi.verification?.fieldVerifications?.find((f) => f.field === 'cookingTimeMinutes')
     expect(timeField?.supportType).not.toBe('direct')
     expect(timeField?.supportType).not.toBe('derived')
-    expect(isRecipePublishable(sakeShioyaki)).toBe(false)
+    expect(isRecipePublishable(shioMusubi)).toBe(false)
   })
 
   it('EP: 未解決のvariantId（空のdefiningCharacteristics）を持つRecipeはpublishできない', () => {
@@ -186,14 +197,28 @@ describe('Evidence Variant Foundation Gate (EF〜FF)', () => {
     expect(isRecipePublishable({ ...recipe, verification }, [source])).toBe(false)
   })
 
-  it('EQ: 特定variantでVERIFIEDにするには、そのvariantでも全critical fieldがsupportされている必要がある（medama-yakiで回帰確認）', () => {
-    const medamaYaki = RECIPE_CATALOG.find((r) => r.id === 'medama-yaki')!
-    expect(medamaYaki.verification?.status).toBe('verified')
-    const coveredFields = new Set((medamaYaki.verification?.fieldVerifications ?? []).map((fv) => fv.field))
-    for (const field of applicableFieldsFor(medamaYaki)) {
+  it('EQ: 特定variantでVERIFIEDにするには、そのvariantでも全critical fieldがsupportされている必要がある（medama-yakiはMISSION 2.14BでREVIEWへ差し戻されたため、合成fixtureで確認）', () => {
+    const recipe = makeRecipe({ id: 'eq-complete-r1', requiredIngredients: [ri('鮭', '1切れ')] })
+    const source = makeSource({ id: 'eq-complete-s1' })
+    const verification: RecipeVerification = {
+      status: 'verified',
+      sourceIds: ['eq-complete-s1'],
+      recipeIdentity: makeIdentity({
+        variantIdentity: { variantId: 'eq-established-variant', definingCharacteristics: ['明確な調理法の違い'] },
+      }),
+      fieldVerifications: applicableFieldsFor(recipe).map((field) => ({
+        field,
+        sourceIds: ['eq-complete-s1'],
+        supportType: 'direct',
+      })),
+      coherenceReview: makeCoherentReview('eq-complete-s1'),
+    }
+    const testRecipe = { ...recipe, verification }
+    const coveredFields = new Set((verification.fieldVerifications ?? []).map((fv) => fv.field))
+    for (const field of applicableFieldsFor(testRecipe)) {
       expect(coveredFields.has(field)).toBe(true)
     }
-    expect(isRecipePublishable(medamaYaki)).toBe(true)
+    expect(isRecipePublishable(testRecipe, [source])).toBe(true)
   })
 
   it('ER: Starter Set内Recipeのsource idsはすべてEVIDENCE_SOURCE_CATALOGに存在する', () => {
@@ -212,11 +237,23 @@ describe('Evidence Variant Foundation Gate (EF〜FF)', () => {
     }
   })
 
-  it('ET: isRecipePublishableは唯一のPublic Gateであり続ける（Variant関連フィールドを追加してもGate関数は同一の結論を返す）', () => {
+  it('ET: isRecipePublishableは唯一のPublic Gateであり続ける（Variant/Coherence関連フィールドを追加してもGate関数は同一の結論を返す。medama-yakiはMISSION 2.14B CorrectionによりREVIEWへ差し戻されたため、trueの例は合成fixtureで確認する）', () => {
+    const recipe = makeRecipe({ id: 'et-complete-r1', requiredIngredients: [ri('鮭', '1切れ')] })
+    const source = makeSource({ id: 'et-complete-s1' })
+    const verification: RecipeVerification = {
+      status: 'verified',
+      sourceIds: ['et-complete-s1'],
+      recipeIdentity: makeIdentity(),
+      fieldVerifications: applicableFieldsFor(recipe).map((field) => ({
+        field,
+        sourceIds: ['et-complete-s1'],
+        supportType: 'direct',
+      })),
+      coherenceReview: makeCoherentReview('et-complete-s1'),
+    }
     const medamaYaki = RECIPE_CATALOG.find((r) => r.id === 'medama-yaki')!
-    const sakeShioyaki = RECIPE_CATALOG.find((r) => r.id === 'sake-shioyaki')!
-    expect(isRecipePublishable(medamaYaki)).toBe(true)
-    expect(isRecipePublishable(sakeShioyaki)).toBe(false)
+    expect(isRecipePublishable({ ...recipe, verification }, [source])).toBe(true)
+    expect(isRecipePublishable(medamaYaki)).toBe(false)
   })
 
   it('EU: Allergy HARD EXCLUSIONはVariant Foundation追加後も無傷', () => {
@@ -273,19 +310,20 @@ describe('Evidence Variant Foundation Gate (EF〜FF)', () => {
     expect(resolveCanonicalFoodId('ごはん', jaJP)).toBe('rice_cooked')
   })
 
-  it('FB: sake-shioyakiは未解決rangeが残るためREVIEWのまま', () => {
-    const sakeShioyaki = RECIPE_CATALOG.find((r) => r.id === 'sake-shioyaki')!
-    expect(sakeShioyaki.verification?.status).toBe('review')
-    expect(hasUnresolvedRangeEvidence(sakeShioyaki)).toBe(true)
+  it('FB: shio-musubiは未解決rangeが残るためREVIEWのまま', () => {
+    const shioMusubi = RECIPE_CATALOG.find((r) => r.id === 'shio-musubi')!
+    expect(shioMusubi.verification?.status).toBe('review')
+    expect(hasUnresolvedRangeEvidence(shioMusubi)).toBe(true)
   })
 
-  it('FC: medama-yakiはVERIFIEDのまま', () => {
+  it('FC: medama-yakiはMISSION 2.14B Recipe Coherence CorrectionによりREVIEWへ差し戻された（seasoningsがNHKの実際のsource内容と矛盾していたため）', () => {
     const medamaYaki = RECIPE_CATALOG.find((r) => r.id === 'medama-yaki')!
-    expect(medamaYaki.verification?.status).toBe('verified')
+    expect(medamaYaki.verification?.status).toBe('review')
+    expect(medamaYaki.verification?.coherenceReview?.status).toBe('incoherent')
   })
 
-  it('FD: Beta Publishable Starterはmedama-yakiのみのまま', () => {
-    expect(getBetaPublishableStarterRecipes().map((r) => r.id)).toEqual(['medama-yaki'])
+  it('FD: Beta Publishable Starterは現在0件（medama-yaki・sake-shioyakiともにMISSION 2.14/2.14B CORRECTIONによりREVIEWへ差し戻されたため）', () => {
+    expect(getBetaPublishableStarterRecipes().map((r) => r.id)).toEqual([])
   })
 
   it('FE: 数値conflictを解消するためだけに作られたvariantは確立されない（gyudonのconflictを模した架空のvariant試行）', () => {
@@ -319,20 +357,28 @@ describe('Evidence Variant Foundation Gate (EF〜FF)', () => {
   // 個別に確認する。
   // ============================================================
 
-  it('FG (A): variantIdentity未設定のRecipeはlegacy挙動のまま（完全に解決していればpublishable、そうでなければfalse）', () => {
+  it('FG (A): variantIdentity未設定のRecipeはlegacy挙動のまま（完全に解決していれば、かつMISSION 2.14B以降はCoherence Reviewも揃っていればpublishable）', () => {
     const recipe = makeRecipe({ id: 'legacy-r1', requiredIngredients: [ri('米', '1合')] })
     const source = makeSource({ id: 'legacy-s1' })
-    const verification: RecipeVerification = {
+    const fieldVerifications = applicableFieldsFor(recipe).map((field) => ({
+      field,
+      sourceIds: ['legacy-s1'],
+      supportType: 'direct' as const,
+    }))
+    const verificationWithoutCoherence: RecipeVerification = {
       status: 'verified',
       sourceIds: ['legacy-s1'],
       recipeIdentity: makeIdentity(), // variantIdentityを設定しない
-      fieldVerifications: applicableFieldsFor(recipe).map((field) => ({
-        field,
-        sourceIds: ['legacy-s1'],
-        supportType: 'direct',
-      })),
+      fieldVerifications,
     }
-    expect(isRecipePublishable({ ...recipe, verification }, [source])).toBe(true)
+    // MISSION 2.14B: Field Evidenceが全解決していてもCoherence Reviewがなければpublishできない
+    expect(isRecipePublishable({ ...recipe, verification: verificationWithoutCoherence }, [source])).toBe(false)
+
+    const verificationWithCoherence: RecipeVerification = {
+      ...verificationWithoutCoherence,
+      coherenceReview: makeCoherentReview('legacy-s1'),
+    }
+    expect(isRecipePublishable({ ...recipe, verification: verificationWithCoherence }, [source])).toBe(true)
   })
 
   it('FH (B): 空のvariantIdまたは空のdefiningCharacteristicsを持つvariantIdentityはどちらの組み合わせでもpublishableにならない', () => {
@@ -391,11 +437,30 @@ describe('Evidence Variant Foundation Gate (EF〜FF)', () => {
     expect(isRecipePublishable(gyudon)).toBe(false)
   })
 
-  it('FK (F): 正当なVariantに紐づいていても、未解決のRangeが残っていればpublishableにならない（sake-shioyakiの実データで確認）', () => {
-    const sakeShioyaki = RECIPE_CATALOG.find((r) => r.id === 'sake-shioyaki')!
-    expect(sakeShioyaki.verification?.recipeIdentity?.variantIdentity).toBeDefined()
-    expect(hasUnresolvedRangeEvidence(sakeShioyaki)).toBe(true)
-    expect(isRecipePublishable(sakeShioyaki)).toBe(false)
+  it('FK (F): 正当なVariantに紐づいていても、未解決のRangeが残っていればpublishableにならない（sake-shioyakiのcookingTimeMinutesは既にrange解決済みのため、この一般則は合成fixtureで確認する）', () => {
+    const recipe = makeRecipe({ id: 'variant-range-r1', requiredIngredients: [ri('鮭', '1切れ')] })
+    const source = makeSource({ id: 'variant-range-s1' })
+    const identity = makeIdentity({
+      variantIdentity: {
+        variantId: 'variant-range-established',
+        definingCharacteristics: ['グリルで焼く（無油）'],
+      },
+    })
+    const fieldVerifications = applicableFieldsFor(recipe).map((field) =>
+      field === 'cookingTimeMinutes'
+        ? { field, sourceIds: [source.id], supportType: 'range' as const, evidenceRange: { min: 4, max: 8, unit: '分' } }
+        : { field, sourceIds: [source.id], supportType: 'direct' as const },
+    )
+    const verification: RecipeVerification = {
+      status: 'verified',
+      sourceIds: [source.id],
+      recipeIdentity: identity,
+      fieldVerifications,
+    }
+    const testRecipe = { ...recipe, verification }
+    expect(testRecipe.verification?.recipeIdentity?.variantIdentity).toBeDefined()
+    expect(hasUnresolvedRangeEvidence(testRecipe)).toBe(true)
+    expect(isRecipePublishable(testRecipe, [source])).toBe(false)
   })
 
   it('FL (G): 正当なVariantに紐づいていても、未解決のConflict（reviewNotes）が残っていればpublishableにならない', () => {
@@ -454,7 +519,27 @@ describe('Evidence Variant Foundation Gate (EF〜FF)', () => {
         sourceIds: ['variant-complete-s1'],
         supportType: 'direct',
       })),
+      coherenceReview: makeCoherentReview('variant-complete-s1'),
     }
     expect(isRecipePublishable({ ...recipe, verification }, [source])).toBe(true)
+  })
+
+  it('FO: sake-shioyakiが現在publishできないのはRangeではなく、seasonings/criticalStepsのprocess不整合が未解決だからである（MISSION 2.14 CORRECTION — obsoleteなReview理由を主張しないための実データ回帰）', () => {
+    const sakeShioyaki = RECIPE_CATALOG.find((r) => r.id === 'sake-shioyaki')!
+    // cookingTimeMinutes自体はMISSION 2.14で正当にderived解決済み・rangeは残っていない
+    const timeField = sakeShioyaki.verification?.fieldVerifications?.find((f) => f.field === 'cookingTimeMinutes')
+    expect(timeField?.supportType).toBe('derived')
+    expect(hasUnresolvedRangeEvidence(sakeShioyaki)).toBe(false)
+    // 未解決の原因はseasonings/seasoningAmounts/criticalStepsのsupportType未設定（process不整合）
+    const seasonings = sakeShioyaki.verification?.fieldVerifications?.find((f) => f.field === 'seasonings')
+    const seasoningAmounts = sakeShioyaki.verification?.fieldVerifications?.find((f) => f.field === 'seasoningAmounts')
+    const criticalSteps = sakeShioyaki.verification?.fieldVerifications?.find((f) => f.field === 'criticalSteps')
+    expect(seasonings?.supportType).toBeUndefined()
+    expect(seasoningAmounts?.supportType).toBeUndefined()
+    expect(criticalSteps?.supportType).toBeUndefined()
+    expect(seasonings?.variantRelation).toBe('unresolved-between-variants')
+    expect(criticalSteps?.variantRelation).toBe('unresolved-between-variants')
+    expect(sakeShioyaki.verification?.status).toBe('review')
+    expect(isRecipePublishable(sakeShioyaki)).toBe(false)
   })
 })

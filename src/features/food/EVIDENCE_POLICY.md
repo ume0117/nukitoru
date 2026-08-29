@@ -124,3 +124,89 @@ MISSION 2.12 PHASE Bの実調査で繰り返し発生した問題：「複数の
 ### Global / Cultural Neutrality
 
 Variant基盤はlocale・region・canonical food id・将来の世界各国料理と両立する設計とする。ある地域の調理伝統は自動的にConflictを意味しない一方、地域ラベルがあるだけで自動的にVariant成立を意味することもない——distinction は必ずEvidenceが確立する。「本場/authentic」「日本式がデフォルトで優位」等の文化的上下関係・authenticityスコアは実装しない。地域ステレオタイプからvariantを推測することも禁止する。
+
+## Source Silence Policy（MISSION 2.14Bで確立）
+
+**情報源の沈黙は、否定的事実のEvidenceにならない。**
+
+ある情報源が特定の食材・調味料・工程・器具・process上の特徴に一切言及していないとき、その沈黙自体を「使わない」「存在しない」ことの直接支持として扱ってはならない。
+
+例:
+- 情報源が塩に言及していない ≠ そのレシピが「塩を使わない」ことのEvidence
+- 情報源がふたに言及していない ≠ 「ふたを使ってはいけない」ことのEvidence
+- 情報源が水に言及していない ≠ 「水を使わない」ことのEvidence
+
+これはMISSION 2.14Aの監査でmedama-yakiの`seasonings`フィールドが実際に踏んだ誤りである（キッコーマンの沈黙を「塩味なし」の根拠として扱っていた）。否定的事実を確立するには、その情報源が完全な手順を明示的に記述しており、かつ当該要素が意図的に省かれていることが文脈上明らかである場合に限る（例: 「本レシピでは油を使いません」のような明示的な否定文）。単なる話題の不在では成立しない。
+
+**`SourceProcessNote`へ値を記入する際も同じ原則が適用される。** `isCoherenceReviewValid()`（MISSION 2.14B FINAL HARDENING）は、宣言した`reviewedDimensions`に対応する非空の値が`SourceProcessNote`に存在することを機械的に要求するが、この要求を満たすためだけに「lid: 'なし'」のような否定的事実を、情報源が実際には確立していないのに書き込んではならない。その次元について情報源が実際に確立した事実がない場合は、正しい対応は値を捏造することではなく、その次元を`reviewedDimensions`から外す、または`status`を`needs-review`のままにすることである。この規律は機械的には検査されない（人間の誠実性に依存する）。
+
+## Recipe Coherence Review（MISSION 2.14Bで確立）
+
+MISSION 2.14/2.14Aの監査で、sake-shioyaki・medama-yakiの2件について同一の構造的問題が発覚した: 各Critical FieldにField Evidence（「このsourceはこの事実を支持するか」）が個別に存在していても、複数sourceの異なる調理process（火加減sequence・ふた・水・調味の有無等）を組み合わせることで、**どのEvidence Sourceにも実在しないSynthetic Recipe**がVERIFIEDになり得る。
+
+Field EvidenceとRecipe Coherenceは別の問いに答える、独立した必須ゲートである:
+
+- **Field Evidence**: 「この情報源はこの具体的な事実を支持するか？」
+- **Recipe Coherence**: 「支持された事実群は、互いに矛盾しない1つのRecipe process（Recipe Identity/Variant内）を構成するか？」
+
+どちらか一方だけでは不十分。Recipe Coherenceは未支持のfieldを支持済みにしない。支持済みのfieldの集合は自動的にCoherenceを意味しない。
+
+### 構造（`types/index.ts`）
+
+`RecipeVerification.coherenceReview?: RecipeCoherenceReview`（任意）。既存Recipeはこのfieldを設定しない限り、`isRecipePublishable()`は自動的にfalseを返す（後述）。既存VERIFIED状態から自動的にcoherentへ移行することは絶対に行わない。
+
+`RecipeCoherenceReview.status`: `'unreviewed' | 'coherent' | 'incoherent' | 'needs-review'`。**`'coherent'`のみが**publishability要件を満たし得る。
+
+`RecipeCoherenceReview.sourceProcessNotes: SourceProcessNote[]` — 各採用sourceが実際にどのprocessを記述しているかの、人間が読んだ事実の要約（`equipment`/`fatOrOil`/`liquidOrWater`/`lid`/`heatSequence`/`flip`/`restOrResidualHeat`/`seasoningSequence`/`preparationSequence`、すべて任意）。source本文の著作物性のある表現をそのまま転記しない（事実構造のみ）。
+
+`RecipeCoherenceReview.reviewedDimensions: ProcessDimension[]` — 比較した次元（`equipment`/`fat-or-oil`/`liquid-or-water`/`lid`/`heat-sequence`/`flip-or-turn`/`rest-or-residual-heat`/`seasoning-sequence`/`major-preparation-sequence`）。authenticity・quality score・culture ranking・popularity・brand preference・sponsor情報は次元として絶対に含めない。
+
+`RecipeCoherenceReview.rationale: string` — なぜcoherent/incoherent/needs-reviewと判断したかの人間による説明。空文字不可。
+
+### Naked Boolean Escape Hatchの禁止
+
+`sourceProcessCompatible: true`のような、根拠構造を伴わないbooleanフラグ単体でCoherenceを成立させることは絶対に行わない。`isCoherenceReviewValid()`（`recipe-publishability.ts`）は次のすべてを機械的に検査する:
+
+1. `status === 'coherent'`
+2. `rationale`が空でない
+3. `reviewedDimensions`が1件以上
+4. `sourceProcessNotes`が1件以上
+5. direct/derivedで解決済みの全applicable critical fieldが参照するsourceIdが、漏れなく`sourceProcessNotes`に含まれる（Field Evidenceに寄与しないsourceまでCoherence Reviewの対象にする必要はない）
+6. `sourceProcessNotes`が参照する全sourceIdが`EVIDENCE_SOURCE_CATALOG`に実在し、metadataが完全である
+
+AI推測・自動prose比較は一切行わない。人間が入力した構造化metadataの機械的整合性チェックのみ。
+
+### 既存Gateとの独立性（Firewall）
+
+- Range/Conflict Firewall: Coherenceが`coherent`であっても、未解決のRange・reviewNotesによるConflict・NOT_FOUND・未支持のCritical Fieldは引き続き`isRecipePublishable()`を独立にfalseにする。Coherenceはこれらを一切rescueしない。
+- Variant Firewall: 正当なVariant確立はCoherenceを意味しない。Coherentな判定はVariantを自動確立しない。両者は完全に独立した概念である。
+- Product Decision Firewall: `RecipeProductDecision`はCoherenceを一切確立できない（`isCoherenceReviewValid()`は`productDecisions`を参照しない）。
+- Field Evidence Firewall: Coherence Reviewは未支持のfieldのsupportTypeを変更したり、Field Evidence判定を代替したりしない。
+
+### Publishability Gate拡張
+
+既存の唯一の公開判定関数`isRecipePublishable()`を拡張する（第二のgateは作らない）。全既存条件をすべて満たし、かつ`isCoherenceReviewValid()`が`true`の場合のみpublishableになる。`manualPublish`・`trustedOverride`・betaの特例・一時的な例外は一切存在しない。
+
+この変更により、MISSION 2.14B時点で既存44 Recipeのうち`coherenceReview`を明示的に設定しているものは0件であり、**現在VERIFIEDだった/なりかけていたRecipeも含め、明示的にCoherence Reviewされるまで一律publishableでなくなる**。これは意図的な挙動であり、件数を回復するための緩和は行わない。
+
+## cookingTimeMinutes 意味論ポリシー（MISSION 2.14A/2.14Bで確認された未解決の懸念）
+
+現在の`cookingTimeMinutes`フィールドは、Recipeごとに異なる意味論で使われていることが監査で確認された（例: sake-shioyakiは「予熱を除いたactive加熱+余熱」、medama-yakiは「active加熱の一部+NUKITORU独自の予熱見積もり」を混在、shio-musubi/onigiri-noriは「炊飯器のrange時間」と「握るという非加熱の準備作業」を合算）。この不整合はまだ解消していない。
+
+**cookingTimeMinutesの意味論がRecipe横断で正規化されるまで、あるRecipeを、scopeの異なる時間（例: 予熱を含む時間と予熱を含まない時間、加熱時間と非加熱の準備時間）を混在させたderivationによってVERIFIEDにしてはならない。** 単一のsourceが明示する単一の値の機械的合算（例: sake-shioyakiの「4分+3分」——どちらも同一sourceの同一methodについて明示された、同じscopeの直接事実）は許容されるが、scopeの異なる複数の推定を足し合わせて一つの値にすることは、この意味論が確定するまで許容しない。この懸念自体の解消（意味論の正規化）は本ポリシーの範囲外であり、別途Commanderの判断を要する。
+
+## criticalSteps の direct 判定ポリシー（MISSION 2.14A/2.14Bで確立）
+
+`criticalSteps`フィールドに`supportType: 'direct'`を付与するには、引用したEvidence Sourceが**実質的な手順**を直接支持している必要がある。
+
+NUKITORUの文言がsource本文の言い回しをそのままコピーする必要はない——paraphraseは想定内であり、むしろ望ましい（著作物のコピーを避けるため。Source本文の著作物性のある表現の転記は禁止）。
+
+しかし、次のような**実質的な手順の変更**をdirectの名目で隠してはならない:
+- 火加減のsequence（例: 強火→弱火の切り替えタイミング）
+- ふた・水の有無
+- 休ませる・余熱を使う工程の有無
+- 裏返す・裏返さないの違い
+- 主要な準備工程の有無（例: 卵を先にボウルへ割り入れる工程の省略）
+- 調味のsequence（いつ・何を加えるか）
+
+これは**verbatim-copy要件ではなく、semantic equivalence（実質的等価性）要件**である。NUKITORUのstepsが、引用したsourceの実際の手順と実質的に異なる場合（simplifiedすぎる、複数sourceのhybridになっている等）、`supportType`を外し未解決として扱う（`variantRelation: 'unresolved-between-variants'`等で分類可能）。

@@ -18,11 +18,14 @@
 // ============================================================
 
 import type {
+  ProcessDimension,
   Recipe,
   RecipeEvidenceSource,
   RecipeSourceType,
   RecipeVerifiableField,
+  RecipeVerification,
   RecipeVerificationStatus,
+  SourceProcessNote,
 } from '@/features/food/types'
 import { EVIDENCE_SOURCE_CATALOG, getEvidenceSourceById, isPlaceholderUrl } from './evidence-sources'
 
@@ -96,6 +99,121 @@ export function applicableFieldsFor(recipe: Recipe): RecipeVerifiableField[] {
     fields.push('equipment')
   }
   return fields
+}
+
+/**
+ * MISSION 2.14B — Recipe Coherence Review。
+ *
+ * このRecipeの、direct/derivedで「解決済み」として扱われているapplicable
+ * fieldが実際に参照しているsourceIdの集合を返す（range/variant/未設定の
+ * fieldは対象外＝Coherence Reviewの対象にする必要がない）。
+ */
+function coherenceContributingSourceIds(recipe: Recipe, v: RecipeVerification): Set<string> {
+  const ids = new Set<string>()
+  const fieldVerificationMap = new Map((v.fieldVerifications ?? []).map((fv) => [fv.field, fv]))
+  for (const field of applicableFieldsFor(recipe)) {
+    const fv = fieldVerificationMap.get(field)
+    if (!fv) continue
+    if (fv.supportType !== 'direct' && fv.supportType !== 'derived') continue
+    for (const sourceId of fv.sourceIds) {
+      ids.add(sourceId)
+    }
+  }
+  return ids
+}
+
+/**
+ * MISSION 2.14B — FINAL COHERENCE ATTESTATION HARDENING。
+ *
+ * ProcessDimensionとSourceProcessNoteの対応する具体的fieldの、決定論的な
+ * マッピング。動的推測は一切行わない。'flip-or-turn'は既存の型定義
+ * （`SourceProcessNote.flip`）に合わせて`flip`へ対応させる（schema変更を
+ * 避けるため、フィールド名自体は変更しない）。
+ */
+const DIMENSION_FIELD_MAP: Record<ProcessDimension, keyof SourceProcessNote> = {
+  equipment: 'equipment',
+  'fat-or-oil': 'fatOrOil',
+  'liquid-or-water': 'liquidOrWater',
+  lid: 'lid',
+  'heat-sequence': 'heatSequence',
+  'flip-or-turn': 'flip',
+  'rest-or-residual-heat': 'restOrResidualHeat',
+  'seasoning-sequence': 'seasoningSequence',
+  'major-preparation-sequence': 'preparationSequence',
+}
+
+/** undefined・空文字・空白のみの文字列を「値なし」として扱う（Section 3） */
+function isNonEmptyProcessValue(value: string | undefined): boolean {
+  return typeof value === 'string' && value.trim().length > 0
+}
+
+/**
+ * MISSION 2.14B — Recipe Coherence Review（Gate: Section 6/13、FINAL HARDENING: Section 2〜4）。
+ *
+ * status==='coherent'であるだけでは不十分（naked boolean escape hatch禁止）。
+ * 以下すべてを機械的に満たす場合のみtrueを返す：
+ * - rationaleが空でない
+ * - reviewedDimensionsが空でない
+ * - sourceProcessNotesが空でない
+ * - direct/derivedで解決済みのcritical fieldが参照する全sourceIdが
+ *   sourceProcessNotesに漏れなく含まれる（Section 7: 関係ないsourceは対象外）
+ * - sourceProcessNotesが参照するsourceIdはすべてEVIDENCE_SOURCE_CATALOGに
+ *   実在し、metadataが完全であること
+ * - FINAL HARDENING: reviewedDimensionsに列挙された各次元について、
+ *   全ての「critical contributing source」のnoteに、対応するfieldの
+ *   非空の値が実在すること（宣言した次元ぶんの事実が伴わない
+ *   「中身のないcoherent宣言」を無効化する）。全9次元を要求するわけではなく、
+ *   宣言した次元にだけ事実の裏付けを要求する（Section 4）。
+ *
+ * AI推測・自動prose比較は一切行わない（人間が入力した構造化metadataの
+ * 機械的整合性チェックのみ）。Field Evidence判定・Variant判定・
+ * Product Decisionを一切参照しない（Section 8/9/10のfirewall）。
+ */
+export function isCoherenceReviewValid(
+  recipe: Recipe,
+  catalog: RecipeEvidenceSource[] = EVIDENCE_SOURCE_CATALOG,
+): boolean {
+  const v = recipe.verification
+  if (!v) return false
+  const review = v.coherenceReview
+  if (!review) return false
+  if (review.status !== 'coherent') return false
+  if (!review.rationale.trim()) return false
+  if (review.reviewedDimensions.length === 0) return false
+  if (review.sourceProcessNotes.length === 0) return false
+
+  const notedSourceIds = new Set(review.sourceProcessNotes.map((n) => n.sourceId))
+  const contributingSourceIds = coherenceContributingSourceIds(recipe, v)
+  for (const sourceId of contributingSourceIds) {
+    if (!notedSourceIds.has(sourceId)) return false
+  }
+
+  for (const note of review.sourceProcessNotes) {
+    const source = getEvidenceSourceById(note.sourceId, catalog)
+    if (!source) return false
+    if (!isValidEvidenceSource(source)) return false
+  }
+
+  // FINAL HARDENING: 宣言された各次元について、全critical contributing sourceの
+  // noteに対応する非空の事実が存在すること（Section 2〜4）。
+  const contributingNotes = review.sourceProcessNotes.filter((n) => contributingSourceIds.has(n.sourceId))
+  for (const dimension of review.reviewedDimensions) {
+    const noteField = DIMENSION_FIELD_MAP[dimension]
+    for (const note of contributingNotes) {
+      if (!isNonEmptyProcessValue(note[noteField])) return false
+    }
+  }
+
+  return true
+}
+
+/**
+ * MISSION 2.14B — Coherence Reviewが'coherent'として妥当な状態にない場合にtrue。
+ * hasUnresolvedRangeEvidence()と同じ設計意図（テスト・監査での可読性のための
+ * 明示的ヘルパー）。isRecipePublishable内のロジックと同じ結論を返す。
+ */
+export function hasUnresolvedCoherenceReview(recipe: Recipe, catalog: RecipeEvidenceSource[] = EVIDENCE_SOURCE_CATALOG): boolean {
+  return !isCoherenceReviewValid(recipe, catalog)
 }
 
 /**
@@ -182,6 +300,15 @@ export function isRecipePublishable(
       return false
     }
   }
+
+  // MISSION 2.14B — Recipe Coherence Review（Gate: Section 11）。
+  // 各fieldが個別にEvidence解決済みであっても、それらが互いに矛盾しない
+  // 1つのRecipe process（Recipe Identity/Variant内）を構成すると人間が
+  // 明示的に確認していなければpublishできない。既存recipeはこのfieldを
+  // 設定していないため、この行を追加した時点で現在VERIFIED状態にある
+  // Recipeも含め、明示的にCoherence Reviewされるまで一律publishableでは
+  // なくなる（意図的な挙動。Section 12: 自動coherent移行は行わない）。
+  if (!isCoherenceReviewValid(recipe, catalog)) return false
 
   return true
 }

@@ -74,11 +74,11 @@ describe('First 10 Families Starter Set Gate (DP〜EE)', () => {
     }
   })
 
-  it('DX: RecipeProductDecisionの存在はisRecipePublishableのEvidence解決判定を代替しない（sake-shioyakiで再確認）', () => {
-    const sakeShioyaki = RECIPE_CATALOG.find((r) => r.id === 'sake-shioyaki')!
-    expect((sakeShioyaki.verification?.productDecisions ?? []).length).toBeGreaterThan(0)
-    expect(hasUnresolvedRangeEvidence(sakeShioyaki)).toBe(true)
-    expect(isRecipePublishable(sakeShioyaki)).toBe(false)
+  it('DX: RecipeProductDecisionの存在はisRecipePublishableのEvidence解決判定を代替しない（shio-musubiで再確認）', () => {
+    const shioMusubi = RECIPE_CATALOG.find((r) => r.id === 'shio-musubi')!
+    expect((shioMusubi.verification?.productDecisions ?? []).length).toBeGreaterThan(0)
+    expect(hasUnresolvedRangeEvidence(shioMusubi)).toBe(true)
+    expect(isRecipePublishable(shioMusubi)).toBe(false)
   })
 
   it('DY: Starter Set内Recipeが参照するsourceIdsはすべてEVIDENCE_SOURCE_CATALOGに実在する', () => {
@@ -97,10 +97,10 @@ describe('First 10 Families Starter Set Gate (DP〜EE)', () => {
     }
   })
 
-  it('EA: VERIFIED状態のRecipe（medama-yaki）はapplicableな全critical fieldがfieldVerificationsで裏付けられている', () => {
+  it('EA: medama-yakiはMISSION 2.14B Recipe Coherence CorrectionによりREVIEWへ差し戻され、publishableではない（seasonings/criticalSteps/cookingTimeMinutesのEvidence解決が未完了なため）', () => {
     const medamaYaki = RECIPE_CATALOG.find((r) => r.id === 'medama-yaki')!
-    expect(medamaYaki.verification?.status).toBe('verified')
-    expect(isRecipePublishable(medamaYaki)).toBe(true)
+    expect(medamaYaki.verification?.status).toBe('review')
+    expect(isRecipePublishable(medamaYaki)).toBe(false)
   })
 
   it('EB: Allergy HARD EXCLUSIONはStarter Set/Evidence作業後も無傷（requiredIngredients+seasoningsのみ対象）', () => {

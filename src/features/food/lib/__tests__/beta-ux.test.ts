@@ -188,9 +188,9 @@ describe('First 10 Families Beta Gate (DA〜DO)', () => {
     expect(isRecipePublishable(recipeWithRange!)).toBe(false)
   })
 
-  it('DO: VERIFIED件数はPHASE A（Dinner Decision UX）自体によっては変化しない（MISSION 2.12 PHASE BのEvidence監査による1件は本Gateの対象外）', () => {
+  it('DO: VERIFIED件数はPHASE A（Dinner Decision UX）自体によっては変化しない（MISSION 2.14B Recipe Coherence Correctionによりmedama-yakiもREVIEWへ差し戻され、現在VERIFIEDは0件。本Gateの対象はPHASE A UX自体が件数を動かさないことの確認であり、件数目標は設定しない）', () => {
     const verifiedCount = RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').length
-    expect(verifiedCount).toBe(1)
+    expect(verifiedCount).toBe(0)
     expect(RECIPE_CATALOG.length).toBe(44)
   })
 

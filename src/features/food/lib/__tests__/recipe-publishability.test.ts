@@ -60,6 +60,17 @@ function makeIdentity(overrides: Partial<RecipeIdentity> = {}): RecipeIdentity {
   }
 }
 
+/** MISSION 2.14B — 全applicable critical fieldが単一sourceのみを参照する場合の、
+ *  process不整合の余地がないcoherent状態のCoherenceReviewを組み立てるテスト用ヘルパー。 */
+function makeCoherentReview(sourceId: string): RecipeVerification['coherenceReview'] {
+  return {
+    status: 'coherent',
+    sourceProcessNotes: [{ sourceId, equipment: 'テスト器具', heatSequence: '単一source内で一貫した加熱' }],
+    reviewedDimensions: ['equipment', 'heat-sequence'],
+    rationale: 'テスト用: 単一sourceのみが全fieldを支持しており、process不整合の余地がない。',
+  }
+}
+
 /** applicableFieldsFor(recipe)を全てカバーするfieldVerificationsを生成するヘルパー（デフォルトdirect） */
 function fullFieldVerifications(recipe: Recipe, sourceIds: string[], supportType: 'direct' | 'derived' = 'direct') {
   return applicableFieldsFor(recipe).map((field) => ({ field, sourceIds, supportType }))
@@ -229,6 +240,7 @@ describe('recipe-publishability.ts — Evidence Resolution Protocol Gate (BQ〜B
       sourceIds: ['s1'],
       fieldVerifications: fvs,
       recipeIdentity: makeIdentity(),
+      coherenceReview: makeCoherentReview('s1'),
     }
     expect(isRecipePublishable({ ...recipe, verification }, [source])).toBe(true)
   })
@@ -378,6 +390,7 @@ describe('recipe-publishability.ts — Evidence Resolution Protocol Gate (BQ〜B
       sourceIds: ['s1'],
       fieldVerifications: fvs,
       recipeIdentity: makeIdentity({ definingIngredients: ['米', '塩'] }),
+      coherenceReview: makeCoherentReview('s1'),
     }
     expect(isRecipePublishable({ ...recipe, verification }, [source])).toBe(true)
   })
@@ -472,6 +485,7 @@ describe('recipe-publishability.ts — Provenance Tests (P1〜P14)', () => {
       sourceIds: ['s1'],
       fieldVerifications: fullFieldVerifications(recipe, ['s1']),
       recipeIdentity: makeIdentity({ definingIngredients: ['米', '塩'] }),
+      coherenceReview: makeCoherentReview('s1'),
     }
     expect(isRecipePublishable({ ...recipe, verification }, [source])).toBe(true)
   })

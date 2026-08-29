@@ -213,6 +213,47 @@ export const EVIDENCE_SOURCE_CATALOG: RecipeEvidenceSource[] = [
     sourceType: 'manufacturer',
     checkedAt: '2026-08-28',
   },
+  // ---- MISSION 2.14（First 10 Families Starter Set Evidence Resolution）で追加 ----
+  {
+    id: 'hinode-mirin-oyakodon-2026',
+    publisher: '日の出みりん',
+    title: '親子丼',
+    url: 'https://hinode-mirin.co.jp/recipe/basic/2024/07/6395/',
+    sourceType: 'manufacturer',
+    checkedAt: '2026-08-29',
+  },
+  {
+    id: 'honmirin-oyakodon-2026',
+    publisher: '全国味淋協会',
+    title: '親子丼・和風',
+    url: 'https://www.honmirin.org/recipes/217',
+    sourceType: 'other-trusted',
+    checkedAt: '2026-08-29',
+  },
+  {
+    id: 'kyounoryouri-torisoboro-2026',
+    publisher: 'NHKみんなのきょうの料理（栗原はるみ）',
+    title: '鶏そぼろ',
+    url: 'https://www.kyounoryouri.jp/recipe/19472_%E9%B6%8F%E3%81%9D%E3%81%BC%E3%82%8D.html',
+    sourceType: 'professional',
+    checkedAt: '2026-08-29',
+  },
+  {
+    id: 'oishikenko-hiyayakko-2026',
+    publisher: 'おいしい健康（管理栄養士監修）',
+    title: '冷奴（しょうが、ねぎ、しょうゆ）',
+    url: 'https://oishi-kenko.com/recipes/11970',
+    sourceType: 'professional',
+    checkedAt: '2026-08-29',
+  },
+  {
+    id: 'marukome-tofu-wakame-basic-2026',
+    publisher: 'マルコメ',
+    title: '料亭の味（だし入り）｜豆腐とわかめのおみそ汁｜基本のレシピ',
+    url: 'https://www.marukome.co.jp/recipe/basic/01/',
+    sourceType: 'manufacturer',
+    checkedAt: '2026-08-29',
+  },
 ]
 
 export function getEvidenceSourceById(

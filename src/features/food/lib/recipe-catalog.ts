@@ -303,7 +303,7 @@ export const RECIPE_CATALOG: Recipe[] = [
     notes: ['ひき肉は中心まで色が変わっていることを確認してください。'],
     verification: {
       status: 'review',
-      sourceIds: ['kikkoman-torisoborodon-2026', 'sirogohan-torisoboro-2026'],
+      sourceIds: ['kikkoman-torisoborodon-2026', 'sirogohan-torisoboro-2026', 'kyounoryouri-torisoboro-2026'],
       recipeIdentity: {
         canonicalDish: '鶏そぼろ丼',
         variant: 'みそ・卵を使わないシンプルな3種調味料（しょうゆ・砂糖・みりん）そぼろ',
@@ -329,6 +329,19 @@ export const RECIPE_CATALOG: Recipe[] = [
         'CURRENT: 鶏ひき肉200g / SOURCE A: キッコーマン公式(2人分・200g) / SOURCE B: 白ごはん.com(専門家・作りやすい分量・200g) / DECISION: 変更なし / WHY: 両source独立に200gで一致 / EVIDENCE TYPE: direct。',
         'CURRENT: しょうゆ大さじ1と1/2・砂糖大さじ1・みりん大さじ1 / SOURCE A: キッコーマン公式「二色丼」みそ大さじ2+砂糖大さじ2+しょうゆ大さじ1+しょうが汁小さじ2（卵そぼろ別添え、Recipe Identityが異なるためvariant supportのみ）/ SOURCE B: 白ごはん.com（専門家）しょうゆ大さじ3+砂糖大さじ3〜4+酒大さじ1（みそなし、NUKITORUと同じRecipe Identityだが酒でなくみりんを使う点が異なる）/ DECISION: 変更なし（保留） / WHY: SOURCE Bは同一variantで直接比較可能だが、酒→みりんの代替が1:1で成立するという確証がなく、単純平均も禁止されているため、しょうゆ・砂糖を約2倍に引き上げる修正は「未検証のderivation」になってしまう。人間による代替比率の判断が必要なためREVIEW維持 / EVIDENCE TYPE: SOURCE Aはvariant、SOURCE Bはderived候補だが未確定のためNOT_FOUND相当として扱う。',
         '独立した2つの組織（キッコーマン・白ごはん.com）からのsourceは得られているが、鶏ひき肉200gの一致以外はvariant不一致またはderivation未確定のため、Critical Fieldの一部がRESOLVEDにならずVERIFIED不可。',
+        'MISSION 2.14 — First 10 Families Starter Set Evidence Resolution。SOURCE C: '
+          + 'kyounoryouri-torisoboro-2026（NHKきょうの料理・栗原はるみ、専門家、作りやすい'
+          + '分量）鶏ひき肉200g・しょうゆ大さじ3・みりん大さじ2・砂糖大さじ2・酒大さじ1'
+          + '（みりんと酒の両方を使用）。DECISION: 変更なし（現状維持） / WHY: 鶏ひき肉200gは'
+          + '3source目でも一致し直接支持を強化した。一方、しょうゆ:みりん:砂糖の比率'
+          + '（3:2:2）はNUKITORUの比率（1.5:1:1）とちょうど2倍の関係にあり数値的には'
+          + '目を引くが、「同じ比率を半分の濃さで使う」という前提はどのsourceも明示して'
+          + 'おらず、これをderivationとして採用することはEVIDENCE_POLICY.mdが禁止する'
+          + '「暗黙のassumption」に該当する。さらに栗原レシピは酒とみりんを両方使用しており'
+          + '、NUKITORUの「酒を使わずみりんのみ」というcoreMethodとも完全には一致しない'
+          + '（3つ目の異なる調味料構成）。数値の一致に見える偶然だけでderivationを断定'
+          + 'しないため、しょうゆ・砂糖・みりんの分量は引き続きREVIEW対象のまま維持する '
+          + '/ EVIDENCE TYPE: 引き続きNOT_FOUND相当（複数variantの中で確定できず）。',
       ],
       hasUnsupportedInference: true,
     },
@@ -422,6 +435,16 @@ export const RECIPE_CATALOG: Recipe[] = [
           + 'isEstablishedVariant()の条件を満たさない。よってこれは正当なvariantの相違では'
           + 'なく「A. likely true conflict」（同一Recipe Identity・同一variant内の真の'
           + '数値矛盾）として分類する。数値の食い違いだけを理由にvariantを新設しない。',
+        'MISSION 2.14 — First 10 Families Starter Set Evidence Resolution。味の素パーク'
+          + 'の牛丼レシピ2件を追加調査した。「本格牛丼」は青ねぎ・牛肩ロース・ほんだし使用'
+          + '（玉ねぎ不使用）で別definingIngredient。「甘辛つゆだく基本の牛丼」は玉ねぎを'
+          + '使うがだし少量入り・酒と砂糖を使わないという、Kikkomanともsirogohanとも異なる'
+          + '第3の組み合わせだった。DECISION: 変更なし（現状維持） / WHY: 調査するたびに'
+          + '異なる調味料構成（だしの有無・酒/砂糖の有無・比率）が見つかっており、牛丼という'
+          + '料理自体が家庭・メーカーごとに正当に幅広いvariationを持つことが追加調査でも'
+          + '再確認された。Kikkomanの具体的な組み合わせ（だしなし・しょうゆ+みりん+砂糖+酒）'
+          + 'を独立に裏付けるsourceはまだ見つからないため、CONFLICT/不十分な独立裏付けの'
+          + 'ままREVIEWを維持する。',
       ],
       hasUnsupportedInference: false,
     },
@@ -480,7 +503,13 @@ export const RECIPE_CATALOG: Recipe[] = [
     // （coreMethod相違＝だし使用の有無）。
     verification: {
       status: 'review',
-      sourceIds: ['kikkoman-oyakodon-2026', 'ajinomoto-oyakodon-2026', 'sirogohan-oyakodon-2026'],
+      sourceIds: [
+        'kikkoman-oyakodon-2026',
+        'ajinomoto-oyakodon-2026',
+        'sirogohan-oyakodon-2026',
+        'hinode-mirin-oyakodon-2026',
+        'honmirin-oyakodon-2026',
+      ],
       recipeIdentity: {
         canonicalDish: '親子丼',
         variant: '基本の親子丼（つゆだく・だし重ねタイプではない、だし・砂糖を使わない）',
@@ -522,6 +551,21 @@ export const RECIPE_CATALOG: Recipe[] = [
           + '同一Recipe Identity内で独立した第2sourceによる裏付けがまだ得られていない状態'
           + 'であり、これはisEstablishedVariant()の条件（意味のある次元＋2独立source or '
           + '権威ある情報源の明示）を満たさないため、正当なvariantとして確立しない。',
+        'MISSION 2.14 — First 10 Families Starter Set Evidence Resolution。「だしなし」'
+          + 'identityへの独立した裏付けを求めて追加調査した。SOURCE D: hinode-mirin-'
+          + 'oyakodon-2026（みりんメーカー公式・2人分）鶏もも肉150g・卵2個・玉ねぎ1/2個・'
+          + 'みりん大さじ4・しょうゆ大さじ2・だし汁100ml（砂糖なし）、調理時間15分。'
+          + 'SOURCE E: honmirin-oyakodon-2026（全国味淋協会・2人分）本みりん30cc・'
+          + 'しょうゆ30cc・だし汁120cc・鶏もも肉100g・玉ねぎ1/2個・卵2個（黄金比 '
+          + 'みりん1:しょうゆ1:だし4）。DECISION: 変更なし（現状維持） / WHY: 独立した'
+          + '4つのsource（Ajinomoto・sirogohan・Hinode・全国味淋協会）が揃って「だし使用」の'
+          + 'coreMethodを示しており、「だしなし」というKikkoman/NUKITORUのRecipe Identity'
+          + 'は依然としてKikkoman単独でしか裏付けられていないことが、追加調査によって'
+          + 'むしろ強化された。多数のsourceが別variantを支持するからといって、NUKITORUの'
+          + 'Recipe Identityを多数派へ変更する（identity drift）ことはしない——Section 8'
+          + '「Prefer REVIEW over identity drift」に従い、現状のRecipe Identity・内容は'
+          + '変更せずREVIEWのまま維持する / EVIDENCE TYPE: 引き続きC（recipe identity '
+          + 'mismatch、だし使用variant群）+ F（Kikkoman単独source、独立裏付け不足）。',
       ],
       hasUnsupportedInference: false,
     },
@@ -959,111 +1003,213 @@ export const RECIPE_CATALOG: Recipe[] = [
     cuisine: 'japanese',
     requiredIngredients: [{ name: '鮭', amount: '1切れ' }],
     seasonings: [{ name: '塩', amount: '少々' }],
-    cookingTimeMinutes: 8,
+    cookingTimeMinutes: 7,
     servingsBase: 1,
     tags: ['焼き物', '時短'],
-    equipment: ['フライパンまたはグリル'],
-    steps: ['鮭に軽く塩をふる', 'グリルまたはフライパンで両面を焼く', '中心まで火が通ったら完成'],
+    equipment: ['両面焼きグリル'],
+    steps: [
+      '鮭に軽く塩をふる',
+      'グリルを中火で3分予熱する',
+      '鮭の皮目を上にして並べ入れ、4分焼く',
+      '火を止め、グリルの扉を少し開けて3分置く',
+      '中心まで火が通ったら完成',
+    ],
     notes: ['鮭は中心まで火が通っていることを確認してください。'],
-    // MISSION 2.12 PHASE B — First 10 Families Starter Set Evidence Resolution。
+    // MISSION 2.12 PHASE B — First 10 Families Starter Set Evidence Resolution（履歴）。
     // CURRENT: cookingTimeMinutes=15分 / SOURCE A: oishikenko-sakeshioyaki-2026
     // （管理栄養士監修・1人分）鮭1切れ(70g)・塩0.6g、グリルまたはトースターで7〜8分 /
     // SOURCE B: kikkoman-sakeyakikata-2026（キッコーマン公式）フライパン(油+酒使用・
     // ふた使用)で4〜5分、両面グリルで4分+余熱3分、片面グリルで3分+2〜3分 /
-    // DECISION: 15分→8分へ変更 / WHY: 2つの独立したsource（Tier3専門家＋Tier2メーカー）
-    // がいずれも15分よりはるかに短い4〜8分の範囲を示しており、現行の15分は明確に長すぎる
-    // と判断できる。ただしSOURCE間で調理法（油・酒・ふた使用の有無）が異なりEvidence Fact
-    // 自体は単一のexact値ではなくrange（約4〜8分）であるため、rangeの中央値等を無言で
-    // exact化せず、NUKITORUの調理法（油・酒を使わない基本のグリル/フライパン）に最も近い
-    // SOURCE A（無油・グリルまたはトースター・7〜8分）の上限値をProduct Decisionとして
-    // 採用し、安全側（生焼け防止）に倒す / EVIDENCE TYPE: cookingTimeMinutes=range。
+    // DECISION（当時）: 15分→8分（rangeからのProduct Decision）。EVIDENCE TYPE（当時）:
+    // cookingTimeMinutes=range。
+    // MISSION 2.13 — Evidence Variant Foundation（履歴）。kikkoman-sakeyakikata-2026自身が
+    // 「フライパン法（油・酒・ふた使用）」「グリル法（無油）」を明示的に別methodとして
+    // 提示しており、isEstablishedVariant()の条件（cooking-method次元＋1件の権威ある
+    // 情報源による明示）を満たす正当なvariantとして確立し、NUKITORUを「グリル法（無油）」
+    // へ紐付けた。ただしこの時点ではグリル法内部でも「両面焼き」と「片面焼き」が未分離で
+    // 7〜8分というrangeのまま残っていた。equipmentも「フライパンまたはグリル」のまま
+    // 2つのvariantを1つのfieldへ併記しており、将来的に一方へ確定させる必要がある、と
+    // 設計上の課題として記録していた。
+    // MISSION 2.14 — First 10 Families Starter Set Evidence Resolution（sake-shioyaki
+    // 特別監査）。CURRENT: equipment=フライパンまたはグリル・cookingTimeMinutes=8分
+    // （rangeからのProduct Decision）/ EVIDENCE: kikkoman-sakeyakikata-2026を再調査し、
+    // 「両面焼きグリル」の場合に限り「中火で4分焼く」「火を止めて扉を少し開け3分置く」
+    // という2つの直接事実（どちらも単一の値でrangeではない）が明示されていることを確認した
+    // （片面焼きグリルは引き続き「2〜3分」というrangeを含むため対象外のまま）。
+    // AFTER: equipmentを「両面焼きグリル」へ絞り込み（フライパン・片面焼きグリルの選択肢を
+    // 除去）、cookingTimeMinutesを8分→7分（4分+3分の合算値、予熱3分は準備段階として
+    // 含めない）へ変更 / REASON: MISSION 2.13で残っていた「equipmentが2variantを併記
+    // したまま」という設計課題を、Evidence上exact値へ解決できる「両面焼きグリル」variant
+    // へ一本化することで解消した。この4分・3分はrangeの中央値選択ではなく、単一の直接事実
+    // 2件の機械的合算（derived）である。oishikenko-sakeshioyaki-2026（Tier3専門家）の
+    // 「グリルまたはトースターで7〜8分」は7分と矛盾しない独立した補強情報として扱う。
+    // 塩・食材量・人数はoishikenko-sakeshioyaki-2026のまま変更なし。
+    //
+    // MISSION 2.14 — SAKE-SHIOYAKI EVIDENCE CORRECTION（上記VERIFIED判定を撤回）。
+    // 上記の時点でkikkoman-sakeyakikata-2026のページ全体（下ごしらえ〜グリル手順まで）を
+    // 生HTMLで再確認したところ、キッコーマンの「両面焼きグリル」プロセスは実際には
+    // 2段階の塩手順を含むことが判明した：(1) 下ごしらえとして鮭の重さの1%の塩をふり
+    // 常温で15〜30分置いて水分を抜く（フライパン・グリル共通の前段階）、(2) グリルへ
+    // 入れる直前にさらに鮭の重さの0.3%ほどの「化粧塩」を追加でふる（グリル固有の
+    // 追加ステップ、樋口氏のコメントにより明記）。一方oishikenko-sakeshioyaki-2026は
+    // 「水分を拭き取って塩をふり、そのまま焼く」という1段階のみのシンプルな塩手順で
+    // あり、15〜30分の放置工程も1%/0.3%の分割もない。NUKITORUの現在のsteps（「鮭に
+    // 軽く塩をふる」を最初の1ステップとするのみ）は、上記どちらのsourceの実際の
+    // 手順とも文字通りには一致しない、簡略化されたhybridである。cookingTimeMinutes/
+    // equipmentはkikkomanの「両面焼きグリル」という特定プロセス（1%塩+15〜30分放置が
+    // 前提）に紐づく事実である一方、seasonings/seasoningAmountsはoishikenkoの
+    // 「放置なし」という異なるプロセスの事実であり、この2つを1つのRecipeとして
+    // 組み合わせることは「異なるvariant/contextを跨いだsourceの合成」に該当する
+    // （hiyayakko特別監査で確立した禁止パターンと同種）。cookingTimeMinutes=7分
+    // （4分+3分の合算・予熱除外）というderivation自体は引き続き正当であり撤回しない。
+    // しかしseasonings/seasoningAmounts/criticalStepsはこのprocess不整合が解消される
+    // までEvidence上「解決済み」として扱えない。よってstatusをVERIFIEDからREVIEWへ
+    // 差し戻す（VERIFIED維持を目的にした緩和は行わない。Prefer REVIEW over identity
+    // drift）。equipmentの「両面焼きグリル」への絞り込み・variantIdentity自体は
+    // 引き続き正当な発見として維持する。
     verification: {
       status: 'review',
       sourceIds: ['kikkoman-sakeyakikata-2026', 'oishikenko-sakeshioyaki-2026'],
       recipeIdentity: {
         canonicalDish: '鮭の塩焼き',
-        variant: '油・酒・ふたを使わない基本の塩焼き（下味用の1%塩＋化粧塩等の凝った下処理はしない）',
+        variant:
+          '油・酒・ふたを使わない、両面焼きグリルによる基本の塩焼き（下味用の1%塩＋化粧塩等の凝った下処理はしない）',
         servingsBasis: 1,
         intendedTasteProfile: '素材の味を活かした、塩のみのシンプルな塩焼き',
-        coreMethod: '鮭に塩をふり、フライパンまたはグリルで両面を焼く（油・酒・ふたなし）',
+        coreMethod: '鮭に塩をふり、両面焼きグリルで予熱後4分焼いてから3分置く（油・酒・ふたなし）',
         definingIngredients: ['鮭'],
-        // MISSION 2.13 — Evidence Variant Foundation。kikkoman-sakeyakikata-2026自身が
-        // 「フライパン法（油・酒・ふた使用）」と「グリル法（無油）」を明確に別セクション
-        // として提示しており（1件の権威ある情報源がそれ自体でvariantを明示する例）、
-        // isEstablishedVariant()の条件を満たす正当なvariantとして確立できる。NUKITORUの
-        // 現在の調理法（油・酒を使わない）はこのうち「グリル法」variantに一致するため、
-        // そちらへ紐付ける（isRecipePublishable()の判定には一切影響しない。純粋な
-        // 分類メタデータ）。
+        // MISSION 2.13/2.14 — Evidence Variant Foundation。kikkoman-sakeyakikata-2026自身が
+        // 「フライパン法（油・酒・ふた使用）」「両面焼きグリル法（無油・4分+3分の合算＝
+        // exact値）」「片面焼きグリル法（無油・3分+2〜3分＝range含む）」を明示的に別methodと
+        // して提示しており、isEstablishedVariant()の条件（cooking-method次元＋1件の権威ある
+        // 情報源による明示）を満たす正当なvariantである。NUKITORUは「両面焼きグリル法」へ
+        // 紐付ける（isRecipePublishable()の判定には一切影響しない。純粋な分類メタデータ）。
         variantIdentity: {
           variantId: 'sake-shioyaki-grill-no-oil',
           canonicalDishId: 'sake-shioyaki',
-          label: 'グリル/トースター法（無油）',
-          preparationStyle: 'グリルまたはトースターで、油を使わず焼く',
+          label: '両面焼きグリル法（無油）',
+          preparationStyle: '両面焼きグリルで、油を使わず予熱→4分焼く→3分置く',
           definingCharacteristics: [
             '油を使わない（無油）',
             'フライパン+油+酒+ふたによる蒸し焼き方式ではない',
+            '両面焼きグリル（片面焼きグリルの2〜3分rangeとは異なり、4分+3分の合算という単一の値が明示される）',
           ],
         },
       },
       fieldVerifications: [
         { field: 'requiredIngredients', sourceIds: ['oishikenko-sakeshioyaki-2026'], supportType: 'direct' },
         { field: 'ingredientAmounts', sourceIds: ['oishikenko-sakeshioyaki-2026'], supportType: 'direct' },
-        { field: 'seasonings', sourceIds: ['oishikenko-sakeshioyaki-2026'], supportType: 'direct' },
-        { field: 'seasoningAmounts', sourceIds: ['oishikenko-sakeshioyaki-2026'], supportType: 'direct' },
+        {
+          // MISSION 2.14 CORRECTION: oishikenkoの「放置なし・1段階塩」プロセスの事実であり、
+          // kikkomanの「1%塩+15〜30分放置+追加0.3%化粧塩」という両面焼きグリルの実プロセスとは
+          // 別のprocessに属する。どちらのvariant/processに正式に紐づくか未確定のため
+          // supportTypeは付与しない（=Evidence解決済みとして扱わない）。
+          field: 'seasonings',
+          sourceIds: ['oishikenko-sakeshioyaki-2026'],
+          variantRelation: 'unresolved-between-variants',
+        },
+        {
+          field: 'seasoningAmounts',
+          sourceIds: ['oishikenko-sakeshioyaki-2026'],
+          variantRelation: 'unresolved-between-variants',
+        },
         {
           field: 'cookingTimeMinutes',
-          sourceIds: ['kikkoman-sakeyakikata-2026', 'oishikenko-sakeshioyaki-2026'],
-          supportType: 'range',
+          sourceIds: ['kikkoman-sakeyakikata-2026'],
+          supportType: 'derived',
           derivation:
-            'Evidence Factは調理法により4〜8分というrangeのみ（フライパン+油+酒:4〜5分／グリル両面:4分+余熱3分／グリル片面:3分+2〜3分／グリルまたはトースター無油:7〜8分）。Recipeのcookingtime=8分はこのrangeから選んだ代表値であり、Evidence直接支持ではなくProduct Decision（下記productDecisions参照）。',
-          evidenceRange: { min: 4, max: 8, unit: '分' },
-          // MISSION 2.13 — 「グリル法」variant内でもoishi-kenkoの7〜8分という幅は残る
-          // ため、variantを確立してもrangeがexact Evidenceに変わるわけではない
-          // （Section 8: Range remains independent from Variant）。
+            'kikkoman-sakeyakikata-2026の生HTML本文で確認した、「両面焼きグリル」について'
+              + '明示された2つの直接事実（中火で4分焼く／火を止めて扉を少し開けて3分置く）を'
+              + '機械的に合算した値（活火4分＋余熱3分=7分）。予熱3分は準備段階でありこの値には'
+              + '含めない。この2つの数値（4分・3分）はどちらも単一の値でありrangeではないため、'
+              + 'range内の代表値選択・Product Decision・片面焼きグリルのrange・フライパン法の'
+              + '時間のいずれも一切使用していない正当なderivation。'
+              + 'oishikenko-sakeshioyaki-2026の「グリルまたはトースターで7〜8分」はこの7分と'
+              + '矛盾しない（7は7〜8の範囲内）独立した補強情報として扱う。',
           variantRelation: 'variant-specific',
           variantId: 'sake-shioyaki-grill-no-oil',
         },
         { field: 'servingsBase', sourceIds: ['oishikenko-sakeshioyaki-2026'], supportType: 'direct' },
-        { field: 'criticalSteps', sourceIds: ['oishikenko-sakeshioyaki-2026'], supportType: 'direct' },
+        {
+          // MISSION 2.14 CORRECTION: 以前はsupportType='direct'としていたが、NUKITORUの
+          // 現在のsteps（「鮭に軽く塩をふる」のみ）はkikkoman（1%塩+15〜30分放置+追加0.3%
+          // 化粧塩を含む複数ステップ手順）ともoishikenko（水分を拭き取って直前に塩をふる、
+          // という1段階手順）とも文字通り一致しない簡略化されたhybridであり、direct支持は
+          // 不正確な分類だった。訂正しsupportTypeを外す（=未解決）。
+          field: 'criticalSteps',
+          sourceIds: ['kikkoman-sakeyakikata-2026', 'oishikenko-sakeshioyaki-2026'],
+          variantRelation: 'unresolved-between-variants',
+        },
         {
           field: 'equipment',
-          sourceIds: ['oishikenko-sakeshioyaki-2026'],
-          supportType: 'variant',
+          sourceIds: ['kikkoman-sakeyakikata-2026'],
+          supportType: 'direct',
           variantRelation: 'variant-specific',
           variantId: 'sake-shioyaki-grill-no-oil',
         },
         { field: 'allergyIdentity', sourceIds: ['oishikenko-sakeshioyaki-2026'], supportType: 'direct' },
       ],
-      productDecisions: [
-        {
-          field: 'cookingTimeMinutes',
-          value: '8分',
-          reason:
-            '調理法によりEvidence Factが4〜8分のrangeであるため、NUKITORUの油・酒を使わない'
-              + '基本のグリル/フライパン調理法に最も近いSOURCE A（無油・グリルまたはトースター）'
-              + 'の上限値7〜8分のうち、生焼け防止の観点から安全側の8分を代表値として採用した。',
-          referenceSourceIds: ['oishikenko-sakeshioyaki-2026'],
-        },
-      ],
       reviewNotes: [
-        'cookingTimeMinutesのEvidence FactはrangeであるためCritical Fieldが未解決（PHASE '
-          + 'D.7-B.1のEvidence Range Integrity Fixに準拠）。equipmentもSOURCE Aは'
-          + 'グリル/トースターのみを扱いフライパンでの無油調理は直接検証していないため'
-          + 'variant扱いとした。他のfield（食材・分量・調味料・人数・工程）はdirectで解決済み。',
-        'MISSION 2.13 — Evidence Variant Foundation。kikkoman-sakeyakikata-2026自身が'
-          + '「フライパン法（油・酒・ふた使用）」「グリル法（無油）」を明示的に別methodとして'
-          + '提示しており、これはisEstablishedVariant()の条件（cooking-method次元＋1件の'
-          + '権威ある情報源による明示）を満たす正当なvariantである（「B. likely legitimate '
-          + 'variant」）。NUKITORUの現在のrecipeIdentity.variantIdentityは「グリル法（無油）」'
-          + 'へ紐付けたが、それでもcookingTimeMinutesはこのvariant内部でも7〜8分という幅が'
-          + '残るためrangeのまま（variantの確立はrangeをexact Evidenceに変えない）。また'
-          + 'NUKITORUの現在のequipmentフィールドは「フライパンまたはグリル」と2つの'
-          + 'variantを1つのfieldへ併記しており、Section 11「Do not merge values across '
-          + 'variants into one synthetic recipe」の観点では将来的に一方へ確定させるか、'
-          + '両variantを別々にEvidence裏付けする必要がある、という設計上の課題として記録する'
-          + '（本ミッションではrecipe fact自体は変更しない）。',
+        'MISSION 2.14 CORRECTION: kikkoman-sakeyakikata-2026の生HTML全文を再確認した結果、'
+          + '「両面焼きグリル」プロセスは実際には(1)下ごしらえとして1%塩を15〜30分置く、'
+          + '(2)グリル投入直前に追加で0.3%の化粧塩をふる、という2段階の塩手順を含むことが'
+          + '判明した。一方oishikenko-sakeshioyaki-2026は放置なしの1段階の塩手順のみで、'
+          + '両者は同じ「グリルで焼く鮭」という結果は共有していても、途中のprocessが異なる。'
+          + 'NUKITORUの現在のsteps・seasonings/seasoningAmountsはoishikenko側の簡略な'
+          + 'processの事実に基づく一方、cookingTimeMinutes/equipmentはkikkoman側の'
+          + '「両面焼きグリル」という特定processに基づく事実であり、この2つを1つの'
+          + 'Recipeとして組み合わせることは異なるprocess/variantを跨いだsourceの合成に'
+          + '該当する（hiyayakko特別監査で確立した禁止パターンと同種）。cookingTimeMinutes'
+          + '=7分（4分+3分の合算・予熱除外）自体のderivationは正当であり撤回しないが、'
+          + 'seasonings/seasoningAmounts/criticalStepsがこのprocess不整合の下では'
+          + 'Evidence解決済みとして扱えないため、Recipe全体としてはVERIFIEDの条件を'
+          + '満たさずREVIEWのまま維持する。',
       ],
       hasUnsupportedInference: false,
+      // MISSION 2.14B — Recipe Coherence Review。上記reviewNotesで既に記録した
+      // process不整合を、Coherence Review構造として明示的に記録する。
+      coherenceReview: {
+        status: 'incoherent',
+        sourceProcessNotes: [
+          {
+            sourceId: 'kikkoman-sakeyakikata-2026',
+            equipment: '両面焼きグリル',
+            fatOrOil: 'なし（無油）',
+            liquidOrWater: 'なし',
+            lid: '該当なし（グリル）',
+            heatSequence: '予熱3分（中火）→4分焼く→火を止め扉を少し開けて3分置く',
+            flip: 'なし',
+            restOrResidualHeat: '火を止めてから3分（余熱）',
+            seasoningSequence: '下ごしらえで1%塩を15〜30分置き水分を拭き取り、グリル投入直前に'
+              + 'さらに0.3%の化粧塩を追加する2段階手順',
+            preparationSequence: '1%塩→15〜30分常温放置→水分を拭き取る→予熱→追加の化粧塩→焼く',
+          },
+          {
+            sourceId: 'oishikenko-sakeshioyaki-2026',
+            equipment: '魚焼きグリルまたはオーブントースター',
+            fatOrOil: 'なし',
+            liquidOrWater: 'なし',
+            lid: '該当なし',
+            heatSequence: '7〜8分焼く（range、放置なしの1段階手順）',
+            flip: '本文に記載なし',
+            restOrResidualHeat: '本文に記載なし',
+            seasoningSequence: '水分を拭き取って直前に塩を振る、放置なしの1段階手順',
+            preparationSequence: '水分を拭き取る→塩を振る→すぐに焼く',
+          },
+        ],
+        reviewedDimensions: ['equipment', 'heat-sequence', 'rest-or-residual-heat', 'seasoning-sequence', 'major-preparation-sequence'],
+        rationale:
+          'equipmentは両面焼きグリルへ絞り込み済みで一致し、cookingTimeMinutes'
+            + '（4分+3分=7分、予熱除外）はkikkoman単独の直接事実2件の合算として正当。'
+            + 'しかしseasoning-sequence/major-preparation-sequenceでは、kikkomanの'
+            + '「1%塩を15〜30分放置してから追加の化粧塩」という2段階processと、'
+            + 'oishikenkoの「放置なしで直前に1回だけ塩を振る」という1段階processが'
+            + '両立しない。NUKITORUの現在のseasonings/criticalStepsはoishikenko側の'
+            + '1段階processに基づく一方、equipment/cookingTimeMinutesはkikkoman側の'
+            + '2段階processが前提の「両面焼きグリル」method内の事実であり、この2つを'
+            + '1つのRecipeとして組み合わせることはprocess不整合にあたる。'
+            + 'よってincoherentと判定する。',
+      },
     },
   },
   {
@@ -1136,8 +1282,33 @@ export const RECIPE_CATALOG: Recipe[] = [
     // どちらのSourceも複数の異なる調理器具・条件によるrangeを示しているわけではなく、
     // 単一の調理法の中での近似のため、rangeとしてではなくderivedとして扱う /
     // EVIDENCE TYPE: 油=derived、cookingTimeMinutes=derived、その他=direct。
+    //
+    // MISSION 2.14A/2.14B — Recipe Process Coherence Audit & Correction（上記VERIFIED
+    // 判定を撤回）。両sourceの生HTML本文を再確認した結果、以下が判明した。
+    // (1) SOURCE A（NHK）の実際のレシピは最終ステップで「塩、こしょう各少々をふって
+    // 食べる」と明示しており、seasonings=[油]のみという「塩味なし」識別を積極的に
+    // 否定する（矛盾する）。SOURCE B（キッコーマン「基本」method）は塩・こしょうに
+    // 一切言及しないが、これは沈黙であり「塩を使わない」ことのEvidenceにはならない
+    // （MISSION 2.14B新設のSOURCE SILENCE原則: 情報源の沈黙は否定的事実の根拠にならない）。
+    // よってseasonings/seasoningAmountsをdirect/derivedとして扱っていたのは誤り。
+    // (2) NUKITORUのcriticalSteps（油を熱する→卵を割り入れる→好みの固さまで焼く）は
+    // 両sourceが共通して明示する「卵は先にボウルへ割り入れてからフライパンへ入れる」
+    // という工程を欠いている。さらに火加減もNHK（強火→白身が変わり始めたら弱めの
+    // 中火で3分ほど）とキッコーマン（中火で予熱→卵を入れたら弱火にして3〜4分）で
+    // 異なるsequenceであり、NUKITORUのstepsはどちらとも文字通り一致しないため
+    // directの根拠にならない。
+    // (3) cookingTimeMinutes=5のderivationは、NHKの「3分ほど」（弱めの中火のactive
+    // 加熱のみ、予熱を含まない）に「予熱・卵を割り入れる工程」というNUKITORU独自の
+    // 追加時間を足した上で、それをキッコーマンの「3〜4分」（予熱を含まないactive
+    // 加熱のみ）と「整合する」と比較しており、scopeの異なる時間（予熱込み vs
+    // 予熱抜き）を同一のものとして扱ってしまっている。cookingTimeMinutesの意味論が
+    // Recipe横断で確定するまで、scopeの異なる時間を混在させたderivationはVERIFIEDの
+    // 根拠にできない（EVIDENCE_POLICY.md「cookingTimeMinutes意味論ポリシー」参照）。
+    // equipment（フライパン・ふたなし・水なし）自体の識別は両source一致しており
+    // 維持する。Recipe factは一切変更しない（油小さじ1と1/2・cookingTimeMinutes=5分・
+    // steps・equipment、すべて元のまま）。statusをVERIFIEDからREVIEWへ差し戻す。
     verification: {
-      status: 'verified',
+      status: 'review',
       sourceIds: ['kyounoryouri-medamayaki-2026', 'kikkoman-medamayaki-tips-2026'],
       recipeIdentity: {
         canonicalDish: '目玉焼き',
@@ -1160,23 +1331,28 @@ export const RECIPE_CATALOG: Recipe[] = [
           derivation: 'NHK「2人分・卵2個」＝1人分1個という1:1の卵数比率をそのまま適用。',
         },
         {
+          // MISSION 2.14B CORRECTION: NHKの実レシピは「塩、こしょう各少々」を明示的な
+          // finishing stepとして含んでおり、「塩味なし」を積極的に否定する。キッコーマン
+          // 「基本」methodは塩・こしょうに一切言及しないが、これは沈黙でありSOURCE
+          // SILENCE原則によりnegative evidenceにならない。よってdirect支持を撤回。
           field: 'seasonings',
           sourceIds: ['kyounoryouri-medamayaki-2026', 'kikkoman-medamayaki-tips-2026'],
-          supportType: 'direct',
+          variantRelation: 'unresolved-between-variants',
         },
         {
           field: 'seasoningAmounts',
           sourceIds: ['kyounoryouri-medamayaki-2026'],
-          supportType: 'derived',
-          derivation:
-            'NHK「2個でサラダ油大さじ1」を卵1個あたりへ機械的に等分（大さじ1/2＝小さじ1と1/2）。キッコーマンの「油少々」はこの少量と矛盾しない。',
+          variantRelation: 'unresolved-between-variants',
         },
         {
+          // MISSION 2.14B CORRECTION: derivationがNHKの「3分ほど」（予熱抜きのactive
+          // 加熱のみ）にNUKITORU独自の予熱時間見積もりを加算した上で、それをキッコーマン
+          // の「3〜4分」（同じく予熱抜きのactive加熱のみ）と「整合する」と比較しており、
+          // 異なるscope（予熱込み vs 予熱抜き）の時間を同一視していた。cookingTimeMinutes
+          // の意味論がRecipe横断で確定するまで、この混在derivationはEvidence解決済みと
+          // 扱えない。
           field: 'cookingTimeMinutes',
           sourceIds: ['kyounoryouri-medamayaki-2026', 'kikkoman-medamayaki-tips-2026'],
-          supportType: 'derived',
-          derivation:
-            'NHKの卵1個あたりの加熱記述（弱めの中火で3分ほど）＋予熱・卵を割り入れる工程を合わせ5分程度。キッコーマンの「弱火3〜4分」（加熱のみ）とも整合する近似値。',
         },
         {
           field: 'servingsBase',
@@ -1185,15 +1361,73 @@ export const RECIPE_CATALOG: Recipe[] = [
           derivation: 'NHK「2人分・卵2個」から、卵1個＝1人分という比率を採用。',
         },
         {
+          // MISSION 2.14B CORRECTION: 両sourceが共通して明示する「卵を先にボウルへ
+          // 割り入れてからフライパンへ入れる」という工程をNUKITORUのstepsは欠いており、
+          // 火加減のsequence（NHK: 強火→白身が変わり始めたら弱めの中火3分／
+          // キッコーマン: 中火で予熱→卵を入れたら弱火にして3〜4分）も両source間で
+          // 一致しない。NUKITORUのstepsはどちらとも文字通り一致しない簡略化された
+          // hybridであり、direct支持は不正確な分類だった。
           field: 'criticalSteps',
           sourceIds: ['kyounoryouri-medamayaki-2026', 'kikkoman-medamayaki-tips-2026'],
-          supportType: 'direct',
         },
         { field: 'equipment', sourceIds: ['kyounoryouri-medamayaki-2026'], supportType: 'direct' },
         { field: 'allergyIdentity', sourceIds: ['kyounoryouri-medamayaki-2026'], supportType: 'direct' },
       ],
-      reviewNotes: [],
+      reviewNotes: [
+        'MISSION 2.14A/2.14B CORRECTION: 両source（NHKみんなのきょうの料理・キッコーマン）'
+          + 'の生HTML本文を再確認した結果、(1) seasonings=[油]のみという「塩味なし」識別を'
+          + 'NHKの実レシピ（塩・こしょうを明示的なfinishing stepとして含む）が積極的に'
+          + '否定していること、(2) キッコーマンの沈黙はSOURCE SILENCE原則により「塩を'
+          + '使わない」ことのEvidenceにならないこと、(3) NUKITORUのcriticalStepsが'
+          + '両sourceに共通する「ボウルへ先に割り入れる」工程を欠き、火加減sequenceも'
+          + '両source間で一致しないこと、(4) cookingTimeMinutes=5のderivationが予熱込み'
+          + '（NHK+独自見積もり）と予熱抜き（キッコーマン）という異なるscopeの時間を'
+          + '同一視していたこと、が判明した。equipment（フライパン・ふたなし・水なし）の'
+          + '識別自体は両source一致しており正当。Recipe factは一切変更せず、'
+          + 'seasonings/seasoningAmounts/criticalSteps/cookingTimeMinutesのEvidence'
+          + '解決状態のみを訂正し、statusをVERIFIEDからREVIEWへ差し戻す。',
+      ],
       hasUnsupportedInference: false,
+      coherenceReview: {
+        status: 'incoherent',
+        sourceProcessNotes: [
+          {
+            sourceId: 'kyounoryouri-medamayaki-2026',
+            equipment: 'フライパン',
+            fatOrOil: 'サラダ油大さじ1/2（1個あたり）',
+            liquidOrWater: 'なし（本文の水+ふた併用は備考欄の別法として明示的に区別）',
+            lid: 'なし',
+            heatSequence: '強火で熱し卵投入→白身の色が変わり始めたら弱めの中火にして3分間ほど',
+            flip: 'なし',
+            restOrResidualHeat: '本文に記載なし',
+            seasoningSequence: '仕上げに塩・こしょう各少々をふって食べる（明示的なfinishing step）',
+            preparationSequence: '卵を器に割り入れてからフライパンへ',
+          },
+          {
+            sourceId: 'kikkoman-medamayaki-tips-2026',
+            equipment: 'フライパン',
+            fatOrOil: '油少々（未数値化）',
+            liquidOrWater: 'なし（水+ふたの「蒸し焼き」は同ページ内の別named methodとして明示的に区別）',
+            lid: 'なし',
+            heatSequence: '中火で予熱→卵を入れたら弱火にし、弱火にしてから3〜4分（予熱を含まない）',
+            flip: 'なし（「ターンオーバー」は別named method）',
+            restOrResidualHeat: '本文に記載なし',
+            seasoningSequence: 'この「基本」method内では言及なし（言及なし＝塩不使用の根拠にはしない）',
+            preparationSequence: '卵を器に割り入れてからフライパンへ',
+          },
+        ],
+        reviewedDimensions: ['equipment', 'lid', 'liquid-or-water', 'heat-sequence', 'seasoning-sequence', 'major-preparation-sequence'],
+        rationale:
+          '両sourceともequipment/lid/liquid-or-water/major-preparation-sequence'
+            + '（ボウルへ先に割り入れる）は一致し、この4次元は矛盾しない1つのprocessを'
+            + '構成する。しかしheat-sequence（NHKの強火→弱めの中火 vs キッコーマンの'
+            + '中火予熱→弱火）とseasoning-sequence（NHKは明示的に塩・こしょうを使う vs '
+            + 'キッコーマンは言及なし＝SOURCE SILENCE原則により肯定にも否定にもならない）'
+            + 'の2次元で、NUKITORUの現在のRecipe（塩・こしょうなし、火加減未指定）が'
+            + 'どちらのsourceの実際のprocessとも一致しない独自のhybridになっている。'
+            + 'よってincoherentと判定する。equipment等が個別に一致することは、'
+            + 'seasoning/heat-sequenceの不一致をrescueしない。',
+      },
     },
   },
   {
@@ -1276,7 +1510,7 @@ export const RECIPE_CATALOG: Recipe[] = [
     // （製品サイズ差の可能性があり結論不能）、しょうゆ=NOT_FOUND。
     verification: {
       status: 'review',
-      sourceIds: ['ajinomoto-hiyayakko-2026'],
+      sourceIds: ['ajinomoto-hiyayakko-2026', 'oishikenko-hiyayakko-2026'],
       recipeIdentity: {
         canonicalDish: '冷奴',
         variant: '基本の冷奴（薬味なし、しょうゆのみ）',
@@ -1308,6 +1542,19 @@ export const RECIPE_CATALOG: Recipe[] = [
           + '再分類する。しょうゆ量も同様にE（推測禁止・確定不能）。isEstablishedVariant()'
           + 'の条件（意味のある次元＋複数独立source or 権威ある情報源の明示）を満たさない'
           + 'ため、variantとしても確立しない。',
+        'MISSION 2.14 — First 10 Families Starter Set Evidence Resolution（hiyayakko特別'
+          + '監査）。SOURCE B: oishikenko-hiyayakko-2026（管理栄養士監修・1人分・低ナトリウム'
+          + '献立）絹ごし豆腐1/4丁(80g)・しょうゆ小さじ1/2(3g)・ねぎ/しょうが少量、という'
+          + '"適量ではないexactな数値"が初めて見つかった。DECISION: 変更なし（現状維持） / '
+          + 'WHY: SOURCE Bは実在するexact値だが、豆腐量がNUKITORU現行値の半分（1/4丁 vs '
+          + '1/2丁）という異なる前提（同レシピは糖尿病向け低栄養管理コンテキストであり、'
+          + '通常の家庭用「1人前」より少なめに設計されている可能性が高い）であるため、'
+          + 'しょうゆ小さじ1/2だけを豆腐1/2丁の分量に無断で組み合わせることは、'
+          + '異なるcontext間で都合の良い数値だけを合成する行為（Section 14 "must NOT '
+          + 'combine sources across incompatible variants"）に該当し禁止される。したがって'
+          + 'NUKITORU自身の「1人前＝豆腐1/2丁」という前提に対応する、しょうゆのexact値は'
+          + '依然として見つかっていない / EVIDENCE TYPE: A/E混在（exact値は存在するが'
+          + '別contextのため、NUKITORUのcontextに対する値としては引き続き未確定）。',
       ],
       hasUnsupportedInference: true,
     },
@@ -1491,7 +1738,7 @@ export const RECIPE_CATALOG: Recipe[] = [
     // requiredIngredients(豆腐)=SOURCE Aとの関係ではVARIANT（具材が油揚げで異なる）。
     verification: {
       status: 'review',
-      sourceIds: ['yamaki-misoshiru-2026', 'marukome-misoshiru-faq-2026'],
+      sourceIds: ['yamaki-misoshiru-2026', 'marukome-misoshiru-faq-2026', 'marukome-tofu-wakame-basic-2026'],
       recipeIdentity: {
         canonicalDish: '味噌汁',
         variant: '豆腐のみを具とする味噌汁（油揚げ・わかめ・ねぎ等は加えない）',
@@ -1524,6 +1771,18 @@ export const RECIPE_CATALOG: Recipe[] = [
           + '依存しないはずの一般的比率でありながらメーカー間で食い違う「A. likely true '
           + 'conflict」（variant-independentなfieldでのconflict）。いずれもisEstablishedVariant()'
           + 'の条件を満たさずvariantとして確立しないため、数値を選ばずREVIEWを維持する。',
+        'MISSION 2.14 — First 10 Families Starter Set Evidence Resolution。SOURCE C: '
+          + 'marukome-tofu-wakame-basic-2026（マルコメ公式「基本のレシピ」・豆腐とわかめの'
+          + 'おみそ汁、2人分）味噌32g・水320ml・豆腐1/4丁・わかめ2g。これはマルコメの'
+          + 'FAQ簡易目安（大さじ1:160cc）よりやや厳密な自社実レシピの数値であり、味噌:水比率'
+          + 'は320/32=10（FAQの160/17≈9.4とほぼ一致し、マルコメ社内では整合）。DECISION: '
+          + '変更なし（現状維持） / WHY: マルコメ社内の比率（約9.4〜10）はヤマキの比率'
+          + '（400/36≈11.1）と依然として異なり、メーカー間の相違は解消しない。また豆腐量も'
+          + 'このマルコメレシピでは1/4丁/2人分（1/8丁/人）と、NUKITORU現行値（1/2丁/2人分'
+          + '＝1/4丁/人）の半分であり、わかめ等の副材あり／なしという別variantのため単純'
+          + '比較できない。CONFLICT/recipe identity mismatchの両方が追加調査でも解消しない'
+          + 'ためREVIEWを維持する / EVIDENCE TYPE: 引き続きA（メーカー間conflict）+ C'
+          + '（具材構成の相違）。',
       ],
       hasUnsupportedInference: true,
     },

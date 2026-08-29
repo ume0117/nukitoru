@@ -615,6 +615,84 @@ export type VariantEvidenceRelation =
   | 'conflicting-within-variant'
 
 // ============================================================
+// MISSION 2.14B — Recipe Coherence Review
+//
+// MISSION 2.14/2.14Aで発覚した問題: 各Critical FieldにEvidence metadataが
+// 個別に存在していても、複数sourceの異なる調理process（火加減・ふた・水・
+// 調味の有無等）を組み合わせることで、「どのEvidence Sourceにも実在しない
+// Synthetic Recipe」がVERIFIEDになり得る（sake-shioyaki・medama-yakiの
+// 2件で実際に確認）。
+//
+// Recipe Coherence Reviewは、Field Evidence（「このsourceはこの事実を
+// 支持するか」）とは別次元の問い（「支持された事実は互いに矛盾しない
+// 1つのprocessを構成するか」）に答えるための、最小限の人間管理メタデータ。
+// AI推測・自動比較は行わない。既存のField Evidence判定・Variant判定・
+// Product Decision判定を一切代替・迂回しない（Section 8/9/10参照）。
+// ============================================================
+
+/**
+ * Recipe Coherence Reviewで比較対象とする調理上の次元。意味のある不整合を
+ * 検出するために必要な最小集合のみ（authenticity/quality score/culture
+ * ranking/popularity/brand preference/sponsor情報は意図的に含めない）。
+ */
+export type ProcessDimension =
+  | 'equipment'
+  | 'fat-or-oil'
+  | 'liquid-or-water'
+  | 'lid'
+  | 'heat-sequence'
+  | 'flip-or-turn'
+  | 'rest-or-residual-heat'
+  | 'seasoning-sequence'
+  | 'major-preparation-sequence'
+
+/**
+ * 1つのEvidence Sourceが実際にどのprocessを記述しているかの、人間が読んだ
+ * 事実の要約。sourceの原文をコピーするのではなく、事実構造のみを短く記録する
+ * （Section 20: NUKITORU Recipeの文言・source本文の著作物性のある表現は
+ * ここに転記しない）。全フィールド任意（そのsourceが言及していない次元は
+ * 空のままにする＝「言及なし」を明示的な事実として偽装しない）。
+ */
+export interface SourceProcessNote {
+  sourceId: string
+  equipment?: string
+  fatOrOil?: string
+  liquidOrWater?: string
+  lid?: string
+  heatSequence?: string
+  flip?: string
+  restOrResidualHeat?: string
+  seasoningSequence?: string
+  preparationSequence?: string
+}
+
+export type RecipeCoherenceStatus =
+  /** 人間によるCoherence Reviewが未実施 */
+  | 'unreviewed'
+  /** 採用したEvidence Sourceの、このRecipeで実際に使用された事実群が、
+   *  互いに矛盾しない1つのprocessとして明示的に確認済み */
+  | 'coherent'
+  /** 既知の非互換なprocess事実が組み合わされていることが判明している */
+  | 'incoherent'
+  /** 互換性を判定するための情報が不足している */
+  | 'needs-review'
+
+/**
+ * Recipe全体としてEvidenceが1つの整合したprocessを構成するかどうかの
+ * 人間によるレビュー記録。isRecipePublishable()はstatus==='coherent'かつ
+ * 構造的に妥当な場合のみこれを満たしたとみなす（recipe-publishability.ts
+ * のisCoherenceReviewValid()参照）。空のbooleanフラグでは成立しない
+ * （Section 6: naked boolean escape hatch禁止）。
+ */
+export interface RecipeCoherenceReview {
+  status: RecipeCoherenceStatus
+  sourceProcessNotes: SourceProcessNote[]
+  reviewedDimensions: ProcessDimension[]
+  /** なぜcoherent/incoherent/needs-reviewと判断したかの人間による説明。空文字不可 */
+  rationale: string
+}
+
+// ============================================================
 // MISSION 2.11 PHASE E.1 — Global Foundation
 // Locale / Country / Units / Canonical Food Identityの最小基盤。
 // 詳細な設計方針はGLOBAL_FOUNDATION.md参照。
@@ -757,6 +835,13 @@ export interface RecipeVerification {
    * 採用理由を記録する。isRecipePublishable()のEvidence解決判定には使わない。
    */
   productDecisions?: RecipeProductDecision[]
+  /**
+   * MISSION 2.14B — Recipe Coherence Review（任意）。未設定はunreviewed相当
+   * として扱う（isRecipePublishable()参照）。既存Recipeはこのfieldを設定
+   * しないままでよく、その場合は自動的にVERIFIED条件を満たさなくなる
+   * （Section 12: 既存VERIFIED状態からの自動coherent移行は行わない）。
+   */
+  coherenceReview?: RecipeCoherenceReview
 }
 
 export interface Recipe {

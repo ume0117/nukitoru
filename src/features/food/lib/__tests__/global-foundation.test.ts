@@ -116,9 +116,9 @@ describe('Global Foundation Gate (CB〜CN)', () => {
     expect(RECIPE_CATALOG.length).toBe(44)
   })
 
-  it('CM: verified状態のRecipe件数はGlobal Foundation自体によっては変化しない（MISSION 2.12 PHASE Bで1件VERIFIED化したのはEvidence監査の結果であり、本Gateの対象であるGlobal Foundation側の変更とは無関係）', () => {
+  it('CM: verified状態のRecipe件数はGlobal Foundation自体によっては変化しない（MISSION 2.14B Recipe Coherence Correctionによりmedama-yakiもREVIEWへ差し戻され現在0件。本Gateの対象はGlobal Foundation側の変更とは無関係であることの確認）', () => {
     const verifiedCount = RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').length
-    expect(verifiedCount).toBe(1)
+    expect(verifiedCount).toBe(0)
   })
 
   it('CN: Allergy HARD EXCLUSIONはGlobal Foundation追加後も無傷（requiredIngredients+seasoningsのみ対象）', () => {
@@ -214,9 +214,9 @@ describe('Global Code Extensibility Gate (CO〜CZ)', () => {
     expect(RECIPE_CATALOG.length).toBe(44)
   })
 
-  it('CY: verified状態のRecipe件数はGlobal Code Extensibility Fix自体によっては変化しない（MISSION 2.12 PHASE BのEvidence監査による1件は本Gateの対象外）', () => {
+  it('CY: verified状態のRecipe件数はGlobal Code Extensibility Fix自体によっては変化しない（sake-shioyaki・medama-yakiともにMISSION 2.14/2.14BのCORRECTIONによりREVIEWへ差し戻され現在0件）', () => {
     const verifiedCount = RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').length
-    expect(verifiedCount).toBe(1)
+    expect(verifiedCount).toBe(0)
   })
 
   it('CZ: CANONICAL_FOOD_SAMPLE（Gate CB〜CNのfixture）は本FIXで変化していない', () => {
