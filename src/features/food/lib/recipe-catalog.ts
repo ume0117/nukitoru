@@ -139,6 +139,16 @@ export const RECIPE_CATALOG: Recipe[] = [
       ],
       reviewNotes: [
         'cookingTimeMinutesのEvidence FactはrangeであるためCritical Fieldが未解決。VERIFIEDから差し戻しREVIEWとした（PHASE D.7-B.1: Evidence Range Integrity Fix）。他のfield（食材・分量・調味料・人数・工程・器具）はdirect/derivedで解決済み。',
+        'MISSION 2.16 Batch 2 — sirogohan-siomusubi-2026 の本文を再確認した。塩は「ひとつまみ」'
+          + '表記（数値なし）でNUKITORUの現行表記と一致。握りは炊きたての温かいごはんが前提。'
+          + '調理時間は「10分 ※ご飯を炊く時間を除きます」と明記されており、専門家source自身が'
+          + '「組み立て時間」と「炊飯時間」を分けている。NUKITORUの cookingTimeMinutes=60 は炊飯を'
+          + '含めたProduct Decision（日立range中央値50分＋握り10分）であり、この分離方針と整合する。'
+          + 'From-Now-to-Table（MISSION 2.15）の household-dependent timing を Recipe Evidence に'
+          + '転用していないことも確認。塩を数値化しない方針（「ひとつまみ」のまま保持）を維持。'
+          + 'DECISION: 変更なし。Recipe factは健全だが cookingTimeMinutes が range/Product Decision '
+          + 'のため VERIFIED 不可、REVIEW維持 / EVIDENCE TYPE: 塩=direct（ひとつまみ）、'
+          + 'cookingTime=range（未解決のまま）。',
       ],
       hasUnsupportedInference: false,
     },
@@ -218,6 +228,14 @@ export const RECIPE_CATALOG: Recipe[] = [
       reviewNotes: [
         'CURRENT: のり2枚 / SOURCE A: （なし） / SOURCE B: （なし） / DECISION: 変更なし（現状維持） / WHY: 複数のnori専門店・レシピサイトを調査したが「おにぎり1個につきのり何枚」を明記した信頼できるsourceが見つからなかった（味匠七福屋のページも枚数を明記していないことを再確認済み） / EVIDENCE TYPE: NOT_FOUND。',
         'cookingTimeMinutesもEvidence FactがrangeのためCritical Field未解決（PHASE D.7-B.1）。のり2枚のNOT_FOUNDと合わせ、複数の理由でVERIFIEDにはできない。',
+        'MISSION 2.16 Batch 2 — 海苔の枚数を再調査した。海苔専門店（飯塚海苔店・深谷商店・'
+          + '伊勢屋海苔店等）の情報では、おにぎりには全形を3分割した「3切」を1枚（＝全形1/3枚）'
+          + '使うのが一般的、と分かった。ただしこれらは海苔のサイズ規格の解説であって「1合分の'
+          + 'おにぎりに全形何枚」を述べるレシピsourceではない。信頼できるレシピsourceで「のり◯枚」'
+          + 'を明示したものは今回も見つからず（enomusubi等はブログ）。DECISION: 変更なし（HOLD）。'
+          + '「のり2枚（全形）」は米1合ぶんのおにぎり3〜4個に対しやや多めだが、規格解説から'
+          + '逆算した数値を採用するのは推測にあたるため据え置く。塩「ひとつまみ」・時間の扱いは'
+          + 'shio-musubiと同じ（再確認済み） / EVIDENCE TYPE: のり枚数=NOT_FOUND（継続）。',
       ],
       hasUnsupportedInference: true,
     },
@@ -250,7 +268,7 @@ export const RECIPE_CATALOG: Recipe[] = [
     ],
     verification: {
       status: 'review',
-      sourceIds: ['kamada-maguro-zukedon-2026'],
+      sourceIds: ['kamada-maguro-zukedon-2026', 'orangepage-magurodon-2026'],
       recipeIdentity: {
         canonicalDish: 'まぐろ丼',
         variant: '漬けない・刺身をそのままのせて醤油を添える方式（漬け丼ではない）',
@@ -272,6 +290,18 @@ export const RECIPE_CATALOG: Recipe[] = [
           + 'variantに一致する専門家/メーカー/公的機関sourceを再調査したが（「刺身丼 基本」'
           + '「まぐろ丼 漬けない」等で検索）、見つかったのは引き続き漬け丼variantのみ'
           + '（クックパッド等の匿名投稿を除く）。REVIEWを維持する。',
+        'MISSION 2.16 — Verified Starter Set Evidence Resolution Batch 1。SOURCE B: '
+          + 'orangepage-magurodon-2026（オレンジページnet／浜内千波・4人分）まぐろ刺身300g・'
+          + 'たれ＝しょうゆ大さじ6＋酒大さじ2＋みりん大さじ2に7〜8mm厚に切って30分以上漬け込む。'
+          + 'キッコーマン「まぐろ series」・味の素パーク・白ごはん.com・鎌田醤油も再確認したが、'
+          + 'いずれも漬け（marinated）またはたれ和え、もしくはアボカド/長芋等の別トッピング前提で、'
+          + 'NUKITORUの「切ってのせ、しょうゆは各自が添えるだけ・漬け込まない」identityを直接'
+          + '裏付けるTier1〜3 sourceは今回も得られなかった。DECISION: 変更なし（現状維持） / '
+          + 'WHY: Section 15B「漬け／非漬けのEvidenceを混ぜない」に従い、漬け丼sourceの分量を'
+          + 'NUKITORUの非漬けvariantへ流用しない。非漬けvariantのしょうゆは「食卓で各自が使う」'
+          + '性質上exact定量が困難であり、Section 8によりseasonings=しょうゆ大さじ1という現行の'
+          + 'exact値はEvidence裏付けを欠いたまま（NOT_FOUND）。REVIEWを維持する / EVIDENCE '
+          + 'TYPE: C（recipe identity mismatch＝漬け丼群）＋ E（非漬けvariantの分量NOT_FOUND）。',
       ],
       hasUnsupportedInference: true,
     },
@@ -303,7 +333,12 @@ export const RECIPE_CATALOG: Recipe[] = [
     notes: ['ひき肉は中心まで色が変わっていることを確認してください。'],
     verification: {
       status: 'review',
-      sourceIds: ['kikkoman-torisoborodon-2026', 'sirogohan-torisoboro-2026', 'kyounoryouri-torisoboro-2026'],
+      sourceIds: [
+        'kikkoman-torisoborodon-2026',
+        'sirogohan-torisoboro-2026',
+        'kyounoryouri-torisoboro-2026',
+        'kyounoryouri-torisoborodon-oba-2026',
+      ],
       recipeIdentity: {
         canonicalDish: '鶏そぼろ丼',
         variant: 'みそ・卵を使わないシンプルな3種調味料（しょうゆ・砂糖・みりん）そぼろ',
@@ -342,6 +377,23 @@ export const RECIPE_CATALOG: Recipe[] = [
           + '（3つ目の異なる調味料構成）。数値の一致に見える偶然だけでderivationを断定'
           + 'しないため、しょうゆ・砂糖・みりんの分量は引き続きREVIEW対象のまま維持する '
           + '/ EVIDENCE TYPE: 引き続きNOT_FOUND相当（複数variantの中で確定できず）。',
+        'MISSION 2.16 Batch 2 — 最優先候補として4 sourceを再精査した。SOURCE B '
+          + '（sirogohan・作りやすい分量）醤油大3:砂糖大3〜4:酒大1、火にかける前に生肉と混ぜ'
+          + '中火でほぐしながら煮汁を飛ばす。SOURCE C（栗原はるみ・つくりやすい分量）'
+          + 'しょうゆ大3:みりん大2:砂糖大2:酒大1、調味料を先に煮立ててから肉を入れる。'
+          + 'SOURCE D: kyounoryouri-torisoborodon-oba-2026（NHKきょうの料理／大庭英子・2人分・'
+          + '茶碗2杯）鶏ひき肉200g・しょうゆ大3:酒大2:みりん大2:砂糖大1.5:水大3:しょうが小1、'
+          + '生肉と調味料を火前に混ぜ→中火→弱火で約8分（ただし炒り卵入りの二色丼）。'
+          + 'CONCLUSION: 鶏ひき肉200gは4 sourceで一致するが（＝Commander指摘どおり、これは'
+          + 'recipe-level corroborationではない）、調味料はいずれのsourceも200gあたりしょうゆ大3'
+          + '前後＋酒を使い、NUKITORU（しょうゆ大1と1/2・砂糖大1・みりん大1・酒なし）はどの'
+          + 'sourceともおおよそ半量かつ構成が違う。「なぜこの分量か」をNUKITORUは説明できない。'
+          + 'また「200g＝2人分」を明示するのは二色丼のSOURCE Dのみで、NUKITORUと同一identity'
+          + '（卵なし）のB/Cは「作りやすい分量」でservingsを述べていない。DECISION: 変更なし'
+          + '（HOLD）。sourceが互いに矛盾し、NUKITORUのidentity（酒なし・みりんのみ）に一致する'
+          + 'sourceもないため、特定sourceへ寄せる修正はidentity drift＋恣意的採用になる。'
+          + 'seasoning/seasoningAmountsは引き続きfieldVerification無し（＝未解決）のまま / '
+          + 'EVIDENCE TYPE: E（seasonings NOT_FOUND）＋ 鶏肉量のみ複数source一致。',
       ],
       hasUnsupportedInference: true,
     },
@@ -396,7 +448,7 @@ export const RECIPE_CATALOG: Recipe[] = [
     // EVIDENCE TYPE: CONFLICT（Kikkoman=direct基準値, sirogohanとの間で数値相違）。
     verification: {
       status: 'review',
-      sourceIds: ['kikkoman-gyudon-2026', 'sirogohan-gyudon-2026'],
+      sourceIds: ['kikkoman-gyudon-2026', 'sirogohan-gyudon-2026', 'orangepage-gyudon-2026'],
       recipeIdentity: {
         canonicalDish: '牛丼',
         variant: '基本の牛丼（つゆだくでない、家庭の甘辛煮）',
@@ -445,6 +497,18 @@ export const RECIPE_CATALOG: Recipe[] = [
           + '再確認された。Kikkomanの具体的な組み合わせ（だしなし・しょうゆ+みりん+砂糖+酒）'
           + 'を独立に裏付けるsourceはまだ見つからないため、CONFLICT/不十分な独立裏付けの'
           + 'ままREVIEWを維持する。',
+        'MISSION 2.16 — Verified Starter Set Evidence Resolution Batch 1。SOURCE C: '
+          + 'orangepage-gyudon-2026（オレンジページnet／上田淳子・2人分）牛こま切れ肉200g・'
+          + '玉ねぎ1個・砂糖大さじ1（牛肉にもみ込む）・煮汁＝3倍濃縮めんつゆ大さじ3＋水1/2カップ、'
+          + 'フライパン＋ふたで玉ねぎを5分煮てから牛肉を2分。だし/しょうゆ/みりん/酒は個別'
+          + '計量せず「めんつゆ」に集約。DECISION: 変更なし（現状維持） / WHY: Kikkoman'
+          + '（しょうゆ+みりん+砂糖+酒+水を個別計量）・sirogohan（別比率）・上田淳子（めんつゆ）・'
+          + 'Ajinomoto（だし入り・酒/砂糖なし）と、権威あるsourceを開くたびに調味の構成そのものが'
+          + '異なる。これは牛丼という料理が家庭・メーカーごとに正当な幅を持つことの再確認であり、'
+          + 'Section 9/15Cに従い平均化・多数決・新しいsource優先・偽variant新設はいずれも行わない。'
+          + 'NUKITORUはKikkoman単独processに整合しているが、その調味量を独立に裏付けるsourceは'
+          + '今回も得られず、同一identity内のtrue conflictとしてREVIEWを維持する / EVIDENCE '
+          + 'TYPE: 引き続きA（likely true conflict）＋ F（独立裏付け不足）。',
       ],
       hasUnsupportedInference: false,
     },
@@ -566,6 +630,19 @@ export const RECIPE_CATALOG: Recipe[] = [
           + '「Prefer REVIEW over identity drift」に従い、現状のRecipe Identity・内容は'
           + '変更せずREVIEWのまま維持する / EVIDENCE TYPE: 引き続きC（recipe identity '
           + 'mismatch、だし使用variant群）+ F（Kikkoman単独source、独立裏付け不足）。',
+        'MISSION 2.16 — Verified Starter Set Evidence Resolution Batch 1。既存SOURCE A '
+          + '（kikkoman-oyakodon-2026 = washoku/020）の本文を再度開いて確認: 2人分・鶏もも肉'
+          + '1/2枚(100〜120g)・卵3個・玉ねぎ1/2個(100g)・〈A〉水3/4カップ＋しょうゆ大さじ2＋'
+          + '本みりん大さじ3・砂糖なし・だしなし（水のみ）・約15分。NUKITORUの全fieldが今も'
+          + 'このKikkomanレシピと一致する（水150ml≒3/4カップも一致）ことを再確認した。ただし'
+          + '(1) Kikkoman本文は鶏肉に小麦粉をまぶし、玉ねぎを先に煮てから肉を加える手順で、'
+          + 'NUKITORUの「調味料・玉ねぎ・鶏肉を一度に入れて煮る」簡略手順とは調理sequenceが'
+          + '異なるためcriticalStepsは direct とは言い切れない。(2) 「だしなし・砂糖なし」'
+          + 'identityは追加調査（Ajinomoto／白ごはん.com／日の出みりん／全国味淋協会＝すべて'
+          + 'だし使用）でもKikkoman単独のまま。DECISION: 変更なし（現状維持・facts正確） / '
+          + 'WHY: 単一Tier2 sourceかつ独立裏付けなし、coherenceReview未実施のため、'
+          + 'Section 17のVERIFIED要件を満たさない。identity driftを避けREVIEWを維持する / '
+          + 'EVIDENCE TYPE: 引き続きF（単独source）＋ 手順のsupportType要再検討。',
       ],
       hasUnsupportedInference: false,
     },
@@ -648,7 +725,13 @@ export const RECIPE_CATALOG: Recipe[] = [
     // 変更しない / EVIDENCE TYPE: マヨネーズ=derived、しょうゆ=NOT_FOUND。
     verification: {
       status: 'review',
-      sourceIds: ['kewpie-tunamayo-2026', 'seikatuchiebukuro-tuna-can-size-2026'],
+      sourceIds: [
+        'kewpie-tunamayo-2026',
+        'seikatuchiebukuro-tuna-can-size-2026',
+        'orangepage-tunamayodon-2026',
+        'kurashiru-tunamayodon-2026',
+        'hoteifoods-tunamayodon-2026',
+      ],
       recipeIdentity: {
         canonicalDish: 'ツナマヨ丼',
         variant: 'しょうゆで味を引き締めるツナマヨ（めんつゆ使用ではない）',
@@ -674,6 +757,23 @@ export const RECIPE_CATALOG: Recipe[] = [
       reviewNotes: [
         'requiredIngredients/seasoningsの一部（マヨネーズ）はDIRECT/DERIVEDで解決したが、しょうゆの分量はNOT_FOUNDのまま（詳細はコード内コメント参照）。すべてのcritical fieldが解決していないためVERIFIEDにはしない。',
         '独立した第2のsourceとしてseikatuchiebukuro-tuna-can-size-2026（缶サイズ）を追加したが、キユーピー社という単一メーカーへの依存自体は解消していない。',
+        'MISSION 2.16 Batch 2 — identityを起点に4 sourceを実査した。SOURCE C: '
+          + 'orangepage-tunamayodon-2026（オレンジページnet／長谷川よし子・4人分）ツナ缶165g・'
+          + 'マヨ大3・しょうゆ大1・練りわさび小1/2、ボウルでツナ＋マヨ＋しょうゆ＋わさびを'
+          + '混ぜてごはんへ（1人分換算 ツナ約41g・マヨ約小2.25・しょうゆ約小0.75・わさび入り）。'
+          + 'SOURCE D: kurashiru-tunamayodon-2026（クラシル・1人前・監修者記載なし）ごはん150g・'
+          + 'ツナ油漬け70g（汁ごと＝油をきらない）・玉ねぎ1/4個・マヨ大2・のり適量（しょうゆなし）。'
+          + 'SOURCE E: hoteifoods-tunamayodon-2026（ホテイフーズ・1人分）分量表記なし、ツナ＋'
+          + 'めんつゆを混ぜ→マヨは格子がけ→刻み海苔＋あさつき。CONCLUSION: (1) 「ツナ70g＋'
+          + 'マヨ大さじ2」はSOURCE D（クラシル）が独立に一致し、従来の「キユーピー35g×2の比例'
+          + '(derived)」より裏付けは強まった。ただしクラシルは監修者なしのother-trustedで、'
+          + '油をきらず玉ねぎを加える別処理。(2) しょうゆ小さじ1/2は依然どのsourceとも一致せず'
+          + '（Kewpie/Hoteiはめんつゆ、クラシルはしょうゆなし、オレンジページはしょうゆ＋わさびで'
+          + '1人分換算≒小0.75）。(3) 油をきる/きらない、混ぜる/格子がけ、薬味の有無もsource間で'
+          + '不一致。DECISION: 変更なし（HOLD）。マヨ大さじ2は裏付けが増したがsingle other-trusted'
+          + 'かつ処理差があり、Decision 1（単独ソース不可・品質と独立性を要件とする）に照らして'
+          + 'seasoningsのsupportTypeはderivedのまま据え置く。しょうゆ小さじ1/2は引き続きNOT_FOUND '
+          + '/ EVIDENCE TYPE: マヨ=derived（裏付け強化）、しょうゆ=NOT_FOUND、process=source間不一致。',
       ],
       hasUnsupportedInference: true,
     },
@@ -769,12 +869,28 @@ export const RECIPE_CATALOG: Recipe[] = [
         definingIngredients: ['豚肉', 'キャベツ', '味噌'],
       },
       fieldVerifications: [
-        { field: 'requiredIngredients', sourceIds: ['delishkitchen-pork-cabbage-2026'], supportType: 'direct' },
-        { field: 'seasonings', sourceIds: ['delishkitchen-pork-cabbage-2026'], supportType: 'direct' },
+        { field: 'requiredIngredients', sourceIds: ['delishkitchen-pork-cabbage-2026'], supportType: 'variant' },
+        { field: 'seasonings', sourceIds: ['delishkitchen-pork-cabbage-2026'], supportType: 'variant' },
       ],
       reviewNotes: [
         'CURRENT: 豚肉200g・味噌大さじ1・砂糖小さじ1・酒大さじ1 / SOURCE A: delishkitchen-pork-cabbage-2026（2人分・豚肉200g・酒大さじ1・砂糖小さじ1・みそ大さじ1と1/2、Recipe Identityがほぼ同一のvariant）/ SOURCE B: marukawamiso-pork-cabbage-2026（味噌メーカー公式・4人前・だし200cc/しめじ/もやし/しょうが入りの「汁気のある」別variant）/ DECISION: 変更なし（現状維持） / WHY: SOURCE Aは豚肉・砂糖・酒が完全一致し味噌もほぼ近い（大さじ1 vs 1と1/2）ため現行値は妥当な範囲内。SOURCE Bは具材構成が異なる別Recipe Identityのためvariant supportに留め、比較対象にしない / EVIDENCE TYPE: SOURCE Aはdirect、SOURCE Bはvariant。',
         'SOURCE A（DELISH KITCHEN）は運営体制上「専門家監修」の明記がなくother-trusted相当のため、同一variantでのTier1/2 sourceによる独立裏付けにはまだ至っていない。',
+        'MISSION 2.16 Batch 2 — SOURCE A（delishkitchen-pork-cabbage-2026, URL 204011258012239082）'
+          + 'の本文を再度開いて確認したところ、現在の掲載内容が過去の記録と食い違っていた。'
+          + '現行の材料表: 豚バラ薄切り200g・キャベツ4枚・にんにく1かけ・サラダ油大さじ1・'
+          + '酒大さじ1・みりん大さじ1・砂糖小さじ1・みそ大さじ1と1/2、監修「佐藤ゆか（管理栄養士／'
+          + '食育スペシャリスト）」明記。過去のreviewNoteが記録した「酒大1・砂糖小1・みそ大1と1/2」'
+          + 'にはみりん・にんにく・油が含まれておらず、監修者なしと記載していた点も現状と異なる。'
+          + 'CONCLUSION: レシピプラットフォームのURLは内容が改訂され得る（mutable Evidence）。'
+          + '現行SOURCE Aは NUKITORU（味噌大さじ1・みりんなし・にんにくなし・油記載なし・豚肉の'
+          + '部位未指定）と、味噌量・みりん有無・にんにく有無で一致しない。DECISION: Recipe fact'
+          + 'は変更なし（HOLD、材料・分量・手順は据え置き）。ただしEvidence記録の正確性のため、'
+          + 'requiredIngredients と seasonings の fieldVerification.supportType を direct → variant '
+          + 'へ訂正した（BEFORE: direct / EVIDENCE: 現行delishkitchen本文が味噌大1.5・みりん・'
+          + 'にんにくを含みNUKITORUと不一致 / AFTER: variant / REASON: 同一料理圏だが具体的な'
+          + '調味構成が異なり「解決済み」とは言えないため）。同一identity（汁気なし・だしなし）の'
+          + 'Tier1/2独立sourceは今回も得られず、味噌大さじ1の根拠は説明できない（NOT_FOUND） / '
+          + 'EVIDENCE TYPE: E（味噌量NOT_FOUND）＋ mutable-source limitation（下記構造的知見）。',
       ],
       hasUnsupportedInference: true,
     },
@@ -1510,7 +1626,12 @@ export const RECIPE_CATALOG: Recipe[] = [
     // （製品サイズ差の可能性があり結論不能）、しょうゆ=NOT_FOUND。
     verification: {
       status: 'review',
-      sourceIds: ['ajinomoto-hiyayakko-2026', 'oishikenko-hiyayakko-2026'],
+      sourceIds: [
+        'ajinomoto-hiyayakko-2026',
+        'oishikenko-hiyayakko-2026',
+        'kubara-hiyayakko-yakumi-2026',
+        'kurashiru-hiyayakko-simple-2026',
+      ],
       recipeIdentity: {
         canonicalDish: '冷奴',
         variant: '基本の冷奴（薬味なし、しょうゆのみ）',
@@ -1555,6 +1676,20 @@ export const RECIPE_CATALOG: Recipe[] = [
           + 'NUKITORU自身の「1人前＝豆腐1/2丁」という前提に対応する、しょうゆのexact値は'
           + '依然として見つかっていない / EVIDENCE TYPE: A/E混在（exact値は存在するが'
           + '別contextのため、NUKITORUのcontextに対する値としては引き続き未確定）。',
+        'MISSION 2.16 — Verified Starter Set Evidence Resolution Batch 1。SOURCE C: '
+          + 'kubara-hiyayakko-yakumi-2026（久原本家/茅乃舎・2人分）木綿または絹ごし豆腐1丁・'
+          + '調味料[A]＝茅乃舎だし1袋＋醤油小さじ1＋ごま油大さじ1、青ねぎ/みょうが/青しそ/生姜。'
+          + 'SOURCE D: kurashiru-hiyayakko-simple-2026（クラシル・2人前）絹ごし豆腐200g・'
+          + 'しょうゆ小さじ2（本文に「しょうゆの量は、お好みで調整して」と明記）・小ねぎ5g・'
+          + 'すりおろし生姜小さじ1。DECISION: 変更なし（現状維持） / WHY: (1) SOURCE Cの'
+          + '醤油小さじ1は「だし＋ごま油＋4種薬味」という複合ドレッシングの一部であり、'
+          + 'NUKITORUの「薬味なし・しょうゆのみ」variantへ転用するとSection 10/12が禁じる'
+          + 'incompatible-variant合成になる。(2) SOURCE Dは薬味入りである上、source自身が'
+          + 'しょうゆ量を「お好みで調整」＝実質「適量」と位置づけており、Section 8により'
+          + 'exact Evidenceとして扱えない（かつ監修者記載なしのother-trusted単独source）。'
+          + '(3) 豆腐量も1丁/2人・200g/2人・1丁/4人と依然ばらつき、「1丁」の重量差により'
+          + '確定不能。再調査でもしょうゆ・豆腐量のexact Evidenceは同一identityで得られず、'
+          + 'REVIEWを維持する / EVIDENCE TYPE: 引き続きE（NOT_FOUND/under-specified）。',
       ],
       hasUnsupportedInference: true,
     },
@@ -1738,7 +1873,12 @@ export const RECIPE_CATALOG: Recipe[] = [
     // requiredIngredients(豆腐)=SOURCE Aとの関係ではVARIANT（具材が油揚げで異なる）。
     verification: {
       status: 'review',
-      sourceIds: ['yamaki-misoshiru-2026', 'marukome-misoshiru-faq-2026', 'marukome-tofu-wakame-basic-2026'],
+      sourceIds: [
+        'yamaki-misoshiru-2026',
+        'marukome-misoshiru-faq-2026',
+        'marukome-tofu-wakame-basic-2026',
+        'kobayashi-tofu-misoshiru-2026',
+      ],
       recipeIdentity: {
         canonicalDish: '味噌汁',
         variant: '豆腐のみを具とする味噌汁（油揚げ・わかめ・ねぎ等は加えない）',
@@ -1783,6 +1923,21 @@ export const RECIPE_CATALOG: Recipe[] = [
           + '比較できない。CONFLICT/recipe identity mismatchの両方が追加調査でも解消しない'
           + 'ためREVIEWを維持する / EVIDENCE TYPE: 引き続きA（メーカー間conflict）+ C'
           + '（具材構成の相違）。',
+        'MISSION 2.16 — Verified Starter Set Evidence Resolution Batch 1。SOURCE D: '
+          + 'kobayashi-tofu-misoshiru-2026（小林食品「和食の旨み」／元料理人・2人分）'
+          + '絹ごしまたは木綿豆腐1/4丁・水400ml・粉末だし大さじ1・味噌大さじ2・長ねぎ1/4本。'
+          + '手順: だしを煮立て→火を弱め味噌を溶く→豆腐を加え弱火で約1分→味噌投入後は'
+          + '沸騰させない。DECISION: 変更なし（現状維持） / WHY: (1) 水400mlは一致するが、'
+          + '味噌はSOURCE D・ヤマキ・マルコメFAQ換算がいずれも「大さじ2/400ml/2人分」付近で、'
+          + 'NUKITORU現行値（大さじ1と1/2）はどのsourceとも一致しない。ただしメーカー間の'
+          + '味噌:水比率は依然食い違い（ヤマキ約11:1 vs マルコメ約9〜10:1）、Section 8/9により'
+          + '「大さじ2」を選んで採用することは禁止される。(2) 豆腐量はSOURCE D・マルコメとも'
+          + '1/4丁/2人分で、NUKITORU現行値（1/2丁/2人分）の半分。(3) SOURCE Dは「味噌→豆腐」'
+          + 'の順で味噌投入後は沸騰させない手順であり、NUKITORUの「豆腐→煮立ったら味噌」手順'
+          + 'とはsequence・加熱管理が異なる。複数のだし系統（かつおだし/だし入り味噌/粉末だし）'
+          + 'を1つのprocessへ混成しない（Section 15E）。味噌量・豆腐量ともにdirect Evidenceで'
+          + '確定できずREVIEWを維持する / EVIDENCE TYPE: 引き続きA（メーカー間conflict）＋ '
+          + 'C（具材量・構成の相違）。なお味噌大さじ2への変更はCommander判断の候補として記録。',
       ],
       hasUnsupportedInference: true,
     },

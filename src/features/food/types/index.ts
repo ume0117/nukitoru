@@ -453,6 +453,99 @@ export interface RecipeEvidenceSource {
   sourceCountry?: CountryCode
   /** この情報源の言語/ロケール（任意）。sourceCountryと同様、単独で判定材料にしない */
   sourceLocale?: Locale
+  /**
+   * MISSION 2.17 Part A — Evidence Traceability（任意）。
+   * URLの存在は「NUKITORUが何を確認したか」の証明にならない（web内容は後日変わりうる）。
+   * 実際に本文を開いて確認した時点と、その時観測した内容の決定論的な指紋を記録する。
+   * 未設定の既存sourceは「legacy / fingerprint不明」として扱う（"unchanged"とは見なさない）。
+   */
+  observation?: EvidenceSourceObservation
+}
+
+/**
+ * MISSION 2.17 Part A — 実際に本文を確認したときの観測記録。
+ *
+ * `contentFingerprint` は「NUKITORUが依拠した事実」を要約したNUKITORU自作の
+ * 正規化文字列の **SHA-256（64桁小文字16進）** であり、**source本文の複製ではない**
+ * （source本文はハッシュも保存もしない）。同一URLで後日fingerprintが変われば
+ * 「内容が変わった」ことだけを検出できる。
+ *
+ * fingerprintは以下を一切証明しない（`evidence-traceability.ts` にも明記）:
+ * - Evidenceの品質 / 情報源の権威 / 掲載内容の真正性 / レシピの正しさ / レシピの安全性
+ * - RecipeVerificationStatus / VERIFIED適格性（fingerprintはVERIFIEDの根拠にならない）
+ *
+ * HUMAN-SUMMARY LIMITATION: 人間の観測サマリが不完全なら、記録されなかった事実の
+ * 変化はfingerprintでは検出できない。fingerprintの品質は観測の網羅性に依存する。
+ * 将来は自由記述ではなく構造化した観測へ進みうるが、本MISSIONでは実装しない。
+ */
+export interface EvidenceSourceObservation {
+  /** 観測時に依拠した事実の正規化サマリ（NUKITORU自作）のSHA-256（64桁小文字16進） */
+  contentFingerprint: string
+  /** このfingerprintを記録した日付（ISO）。source.checkedAtとは別に観測ごとに持つ */
+  observedAt: string
+  /**
+   * 任意。この観測を再確認すべき目安の日付（ISO）。
+   * 全sourceへ一律の間隔は課さない（source種別ごとに将来方針が異なりうるため、
+   * 「普遍的な再確認間隔」はこのMISSIONでは定義しない）。
+   */
+  reverifyAfter?: string
+  /** 任意。最後に再確認した日付（ISO）。未設定なら初回observationのまま */
+  lastReverifiedAt?: string
+}
+
+// ============================================================
+// MISSION 2.17 Part B — Quantity Semantics Foundation
+//
+// 食材・調味料の分量は必ずしもexact numberではない。ユーザーに見せる
+// 表示テキスト（displayText）と、Evidenceシステムがその分量について
+// 知っている意味（semantics）を明確に分離する。
+//
+// 本MISSIONは「表現できること」だけを保証する。既存44 Recipeの
+// amount文字列は移行しない（no mass migration・no regex/AI/fuzzy推論）。
+// semanticsはEvidenceを生まない（`quantity-semantics.ts` の firewall 参照）。
+// ============================================================
+
+/**
+ * ある分量についてEvidenceシステムが知っている意味。
+ * - exact:        情報源が単一の数値を明示（例: しょうゆ大さじ2）
+ * - range:        情報源が範囲を明示（midpointへ収縮させない。例: 3〜4分）
+ * - approximate:  情報源が「約」等で概数を示す（exact化しない）
+ * - to-taste:     適量・お好みで（作り手が調整する。数値化しない）
+ * - optional:     入れなくてよい（省略が許容される）
+ * - unknown:      NUKITORUが分からない（推測で埋めない）
+ * - culinary-term: 少々・ひとつまみ 等、情報源自身がその語を使っている
+ *
+ * 「ひとつまみ」は自動的に「適量」と同じではない。「少々」は自動的に
+ * 数値rangeではない。「お好みで」はユーザーの選択を表す。これらの意味は
+ * 型として区別されたまま保持される。
+ */
+export type QuantitySemantics =
+  | { kind: 'exact'; value: number; unit: string }
+  | { kind: 'range'; min: number; max: number; unit: string }
+  | { kind: 'approximate'; value: number; unit: string }
+  | { kind: 'to-taste' }
+  | { kind: 'optional' }
+  | { kind: 'unknown' }
+  | { kind: 'culinary-term'; term: string }
+
+/**
+ * ある分量についての、表示テキスト・意味論・根拠の対応（任意）。
+ * 将来 RecipeIngredient 等へ紐付ける想定だが、本MISSIONでは型のみ定義し、
+ * 既存Recipeには一切付与しない。
+ */
+export interface QuantityStatement {
+  /** ユーザーに見せる文字列（例:「塩 ひとつまみ」「しょうゆ 適量」）。常に保持する */
+  displayText: string
+  /** その分量についてEvidenceシステムが知っている意味 */
+  semantics: QuantitySemantics
+  /**
+   * このsemanticsを裏付けるsourceId（任意）。空/未設定は「意味論は記録したが
+   * Evidenceで裏付けられていない」状態を表す。semanticsがEvidenceを生まない
+   * ことの担保として、unknown→他への変更にはこのidが必須（quantity-semantics.ts）。
+   */
+  evidenceSourceIds?: string[]
+  /** このsemanticsをどう判断したかのNUKITORU自作の説明（任意） */
+  rationale?: string
 }
 
 /** Field-level evidenceの対象領域（Recipeの重要情報のうちEvidence追跡が必要なもの） */

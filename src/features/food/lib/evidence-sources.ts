@@ -254,6 +254,86 @@ export const EVIDENCE_SOURCE_CATALOG: RecipeEvidenceSource[] = [
     sourceType: 'manufacturer',
     checkedAt: '2026-08-29',
   },
+
+  // ---- MISSION 2.16（Verified Starter Set — Evidence Resolution Batch 1）で追加 ----
+  // Batch 1で本文を実際に開いて確認した情報源。いずれも既存のRecipe factを
+  // 直接支持する（＝statusを上げる）には至らず、REVIEW維持の根拠として記録する。
+  {
+    id: 'kubara-hiyayakko-yakumi-2026',
+    publisher: '久原本家（茅乃舎）',
+    title: '薬味たっぷり冷奴',
+    url: 'https://www.kubara.jp/recipe/3411/',
+    sourceType: 'manufacturer',
+    checkedAt: '2026-08-29',
+  },
+  {
+    id: 'kurashiru-hiyayakko-simple-2026',
+    publisher: 'クラシル',
+    title: 'シンプルでおいしい 冷奴',
+    url: 'https://www.kurashiru.com/recipes/4636b598-b490-4834-be40-21e5bfc17599',
+    sourceType: 'other-trusted',
+    checkedAt: '2026-08-29',
+  },
+  {
+    id: 'orangepage-magurodon-2026',
+    publisher: 'オレンジページnet（浜内千波）',
+    title: 'まぐろ丼のレシピ・作り方',
+    url: 'https://www.orangepage.net/recipes/110223',
+    sourceType: 'professional',
+    checkedAt: '2026-08-29',
+  },
+  {
+    id: 'orangepage-gyudon-2026',
+    publisher: 'オレンジページnet（上田淳子）',
+    title: '基本の牛丼のレシピ・作り方',
+    url: 'https://www.orangepage.net/recipes/302258',
+    sourceType: 'professional',
+    checkedAt: '2026-08-29',
+  },
+  {
+    id: 'kobayashi-tofu-misoshiru-2026',
+    publisher: '小林食品（和食の旨み・元料理人）',
+    title: '豆腐の味噌汁の作り方 豆腐の種類、選び方、入れるタイミングのすべて',
+    url: 'https://www.kobayashi-foods.co.jp/washoku-no-umami/miso-soup-tofu',
+    sourceType: 'professional',
+    checkedAt: '2026-08-29',
+  },
+
+  // ---- MISSION 2.16（Evidence Resolution Batch 2）で追加 ----
+  // Batch 2で本文を実際に開いて確認した情報源。いずれも既存のRecipe factを
+  // 直接支持する（＝statusを上げる）には至らず、REVIEW維持の根拠として記録する。
+  {
+    id: 'kyounoryouri-torisoborodon-oba-2026',
+    publisher: 'NHKみんなのきょうの料理（大庭英子）',
+    title: '鶏そぼろ丼',
+    url: 'https://www.kyounoryouri.jp/recipe/15642_%E9%B6%8F%E3%81%9D%E3%81%BC%E3%82%8D%E4%B8%BC.html',
+    sourceType: 'professional',
+    checkedAt: '2026-08-29',
+  },
+  {
+    id: 'orangepage-tunamayodon-2026',
+    publisher: 'オレンジページnet（長谷川よし子）',
+    title: 'ツナマヨ丼のレシピ・作り方',
+    url: 'https://www.orangepage.net/recipes/126338',
+    sourceType: 'professional',
+    checkedAt: '2026-08-29',
+  },
+  {
+    id: 'kurashiru-tunamayodon-2026',
+    publisher: 'クラシル',
+    title: 'ツナマヨ丼',
+    url: 'https://www.kurashiru.com/recipes/94668315-7387-424e-afe1-a04c4f3cdbee',
+    sourceType: 'other-trusted',
+    checkedAt: '2026-08-29',
+  },
+  {
+    id: 'hoteifoods-tunamayodon-2026',
+    publisher: 'ホテイフーズ',
+    title: 'ツナマヨ丼',
+    url: 'https://www.hoteifoods.co.jp/recipe/tuna17/',
+    sourceType: 'manufacturer',
+    checkedAt: '2026-08-29',
+  },
 ]
 
 export function getEvidenceSourceById(
