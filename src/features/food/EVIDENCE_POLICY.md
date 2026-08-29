@@ -210,3 +210,142 @@ NUKITORUの文言がsource本文の言い回しをそのままコピーする必
 - 調味のsequence（いつ・何を加えるか）
 
 これは**verbatim-copy要件ではなく、semantic equivalence（実質的等価性）要件**である。NUKITORUのstepsが、引用したsourceの実際の手順と実質的に異なる場合（simplifiedすぎる、複数sourceのhybridになっている等）、`supportType`を外し未解決として扱う（`variantRelation: 'unresolved-between-variants'`等で分類可能）。
+
+## Cooking Time Semantics Foundation（MISSION 2.15で確立）
+
+MISSION 2.14A/Bの監査で、既存の`cookingTimeMinutes`（Recipe直下、単一number）がRecipeごとに異なる意味論で使われていることが確認された（sake-shioyaki=活火+余熱・予熱除外、medama-yaki=活火の一部+独自の予熱見積もりが混在、shio-musubi/onigiri-nori=炊飯器のrange時間+非加熱の準備作業が混在）。本セクションは、この不整合を解消するための**型・意味論・Gateの基盤**を確立する（44 Recipeの実データ移行は本MISSIONの範囲外）。
+
+### Evidence Time と User Decision Time の分離
+
+- **Evidence Time**: 情報源が実際に述べる時間（例:「弱火で3〜4分」「予熱3分」「15〜30分置く」「炊飯40〜60分」）。これらはそのままsource factとして保持する。
+- **User Decision Time**:「15分以内」「30分以内」「今日は時間がない」の判定・ランキング・フィルタに使う数値。Product Decisionが複数のEvidence Timeから導出してよいが、**元のEvidence Factを書き換えてはならない**。
+
+### TimeValue（Evidence精度の保持）
+
+```ts
+type TimeValue =
+  | { kind: 'exact'; minutes: number }
+  | { kind: 'range'; minMinutes: number; maxMinutes: number }
+  | { kind: 'approximate'; minutes: number }
+  | { kind: 'unknown' }
+```
+
+`3〜4分`を`3.5分`（midpoint）にしない。`約10分`を`exact 10`にしない。不明を推測で埋めない。
+
+### Time Component（時間の構成要素）
+
+`TimeComponentKind`: `activePrepMinutes`（切る・混ぜる・味付け・成形・卵を割る等、意味のあるユーザー作業）/ `activeHeatingMinutes`（炒める・煮る・焼く等、能動的な加熱）/ `passiveCookingMinutes`（炊飯器の炊飯・オーブンでの放置焼き等、ほぼ手を動かさない加熱経過時間）/ `preheatMinutes`（予熱）/ `restingMinutes`（休ませる・漬け込む・水切り・冷ます等、非加熱の待ち時間）/ `residualHeatMinutes`（余熱による加熱）。既存データで実際に区別が必要と判明したこの6種のみ。実データが必要性を証明しない限りカテゴリを追加しない。
+
+### elapsedToReadyMinutes（ユーザー向け中核概念）
+
+「料理を始めてから、食べられる状態になるまでの実経過時間」。`15分以内`/`30分以内`/`今日は時間がない`の主判定に使う。
+
+**単純に全componentを合算しない。** オーブン予熱中に食材を準備する等、フェーズは重なり得る。`elapsedToReadyMinutes`が実際に何を根拠にどう組み合わされたかは、`ElapsedToReadyDerivation.derivation`（人間による明示的な説明、空文字不可）として必ず記録する。根拠のない重なり（overlap）を機械的に推測することは絶対にしない。重なりが立証できない場合はunresolvedのまま（`elapsedToReady`を設定しない）とし、`review`扱いを維持する。
+
+### activeWorkMinutes（手間の意味論、本MISSIONではUI非公開）
+
+「ユーザーが実際に手を動かす時間」。将来の「手間5分」「ほぼ放置」等の表示を見据えた意味論のみを本MISSIONで確立する。放置・余熱・休ませる等の受動的な待ち時間を、調理中に発生するというだけの理由で含めてはならない。
+
+### 保守的フィルタリングポリシー（Section 7）
+
+`「15分以内」`は、Evidenceの上限が15以下の場合のみ適格とする：
+
+| Evidence | 15分以内に適格？ |
+|---|---|
+| exact 12 | 適格 |
+| range 10–15 | 適格（上限=15） |
+| range 10–20 | **不適格**（上限=20 > 15） |
+| approximate 15 | **既定では不適格**（Evidenceが裏付ける保守的な上限を明示する仕組みは本MISSIONでは未実装） |
+| unknown | 不適格 |
+
+`resolvedUpperBoundMinutes()`（`recipe-time.ts`）が実装する。range代表値・中央値選択・「約」のexact化は一切行わない。
+
+### Time Verification（既存Evidence architectureの再利用）
+
+新しい巨大なフレームワークは作らない。`RecipeVerification.timeVerification?: RecipeTimeVerification`（任意）として、既存のsourceIds/derivation/variantIdという語彙をそのまま再利用する：
+
+```ts
+interface RecipeTimeVerification {
+  components?: TimeComponentFact[]           // 個々のcomponent Evidence（sourceIds/variantId付き）
+  sourceStatedTotal?: SourceStatedTotalTime   // 情報源が内訳なしで示す合計時間（gyudon/oyako-don型）
+  elapsedToReady?: ElapsedToReadyDerivation   // ユーザー向けProduct Decision（derivation必須）
+  activeWork?: ActiveWorkDerivation           // 「手間」の意味論（UI非公開）
+}
+```
+
+### Recipe Coherenceとの関係（Section 11）
+
+Time EvidenceとRecipe Coherenceは独立したgateである。あるsourceが grill timing を、別のsourceが異なる調理processを提供する場合、両方の時間が個別に正当であっても、Recipe Coherenceがそのprocessの組み合わせを認めない限り、時間を合算してはならない。`isEligibleForMaxElapsedTime()`は、`coherenceReview`が明示的に`coherent`以外と判定されている場合、その時間主張を適格にしない。
+
+### Publishability との分離（Section 18）
+
+**Recipe publishabilityとtime-filter eligibilityは別の問いである。** `isRecipePublishable()`は`timeVerification`を一切参照しない（cookingTimeMinutesの新モデルが不完全であることを理由に、既存recipeが一律publish不可になることはない）。逆に、あるRecipeが将来publishableであっても、`elapsedToReadyMinutes`が`unknown`/未設定であれば、厳密な「15分以内」結果には一切登場できない。
+
+### Legacy `cookingTimeMinutes` の扱い（Section 9/20）
+
+既存の`Recipe.cookingTimeMinutes`（単一number）は、`recipe-suggestion-engine.ts`のハードフィルタ（`maxCookingMinutes`との比較）・ソート・`RecipeDetailView.tsx`の表示・`mock-meal-provider.ts`の`estimatedMinutes`で現在も使用されている。本MISSIONではこれらを**一切変更しない**（ユーザー向け挙動の変更はCommander判断が必要）。当面は「A. legacyとして維持」する。将来的に`elapsedToReadyMinutes`が十分なRecipeで解決されれば「B. 新モデルから導出」への移行を検討できるが、それは別MISSIONの判断とする。
+
+### False Precisionの禁止（Section 17）
+
+range midpoint・任意の丸め・裏付けのない準備時間の追加・裏付けのないoverlapの差し引き・「約」のexact化・機器の予熱時間の推測・炊飯時間の推測・休ませる時間の推測、いずれも禁止。不明は不明のまま。
+
+## FROM NOW TO TABLE Foundation（MISSION 2.15 Phase B で確立）
+
+NUKITORU FOODが最終的に答える問いは「このレシピは何分？」ではなく**「今ある家庭の状態から、何分後に食べられる？」**である。本セクションはその **型・意味論・決定論的 primitive の基盤**を確立する（実 Recipe への適用・UI 公開・inventory 結合は本 MISSION の範囲外）。実装は `from-now-to-table.ts`。
+
+### 3つの時間レイヤーを混同しない
+
+- **A. Source Recipe Time**: 情報源が実際に述べる時間（`RecipeTimeVerification` / `SourceStatedTotalTime` / legacy `cookingTimeMinutes`）。
+- **B. Active Work Time**: ユーザーが実際に手を動かす時間（`ActiveWorkDerivation`）。放置・余熱・待ち時間を含めない。
+- **C. From-Now-to-Table Time**: 家庭の現状から料理全体が食べられる状態になるまでの実経過時間。**同じ Recipe でも家庭状態によって変わる。静的属性ではない。**
+
+### 最小限の Ingredient Readiness State（Section 5）
+
+`IngredientReadinessState`: `raw` / `ready` / `frozen-ready` / `packaged-ready` / `unknown` の 5 値のみ。巨大な Food State Ontology は作らない。将来 冷凍肉・解凍済み・カット済み野菜・乾物・浸水済み・下茹で済み 等へ拡張可能な設計に留め、今回は実装しない。
+
+### MealStartContext（Section 6）
+
+From-Now-to-Table は Recipe の静的属性ではなく、次の合成である：
+
+```
+Recipe Process + Meal Start Context + Ingredient State + Equipment/Process Evidence + Explicit Product Decision
+= From-Now-to-Table
+```
+
+`MealStartContext.componentStates`（構成要素キー → readiness 状態）。既存 inventory / localStorage / Stock 挙動とは結合しない・変更しない。未指定の構成要素は `unknown` 扱い（推測で埋めない）。
+
+### RICE COUNTS（Section 4/7/14）
+
+「ごはんが既に炊けている」と勝手に仮定してはならない。同じ牛丼でも、炊いたごはん / 冷凍ごはん / 生米 / 状態不明 で From-Now-to-Table は異なりうる。
+
+**禁止**: 炊飯時間を 50 分と仮定・冷凍ごはん解凍を 3 分と仮定・パックごはんを 2 分と仮定・解凍時間の仮定・予熱の仮定・parallelism の仮定・prep overlap の仮定・range の midpoint 化・approximate の exact 化。**Evidence / context がなければ UNKNOWN。**
+
+`raw rice → 炊飯 task → ready rice` / `frozen cooked rice → 再加熱 task → ready rice` / `packaged ready rice → 必要な準備 task → ready rice` / `ready cooked rice → already-ready path` / `unknown → unresolved`。ただし duration を勝手に入れない。
+
+### Task / Dependency primitive（Section 8）
+
+完全な scheduler・AI scheduling・fuzzy inference・自動最適化 engine は作らない。決定論的 primitive のみ：`PrepTask { id, component, description, duration: TimeValue, dependsOn, requiredState?, resultState, sourceIds }` と `MealPlan { mealId, requiredComponents, tasks, declaredParallelGroups? }`。duration は Phase A の `TimeValue` を再利用し Evidence 精度を保持する。
+
+### Parallelism は明示宣言のみ（Section 9/10）
+
+時間を単純加算してはいけない（炊飯 50 + 牛丼 15 = 65 とは限らない）。しかし「並行できそう」という推測も禁止。**依存で順序付けられていない task 同士の overlap は、`declaredParallelGroups` に明示列挙されている場合のみ許可する。** 宣言がなければ関係は未確定 → `unresolved`。
+
+### Critical Path derivation は Product Decision（Section 10）
+
+明示された dependency / parallelism だけを使って From-Now-to-Table を導出する。`max(50, 15)` のような計算結果は Product Decision derivation であり、Evidence Fact へ昇格させない。derivation 文字列（空文字不可）に、どの chain をどう組み合わせたかを必ず記録する。active task の duration が `unknown` / `approximate`（上限未確定）なら `unresolved`。
+
+### Complete Meal Readiness（Section 11）
+
+From-Now-to-Table は、必要な料理構成要素**すべて**が ready になった時点。牛丼なら `rice ready AND gyudon-topping ready`。片方だけ完成しても TABLE READY ではない。
+
+### Evidence Firewall（Section 16）
+
+From-Now-to-Table は Product Decision。`RecipeVerificationStatus` を上げる / `UNVERIFIED→REVIEW` / `REVIEW→VERIFIED` / Recipe Coherence 修復 / Variant conflict 解決 / Evidence Range の exact 化 / Source Silence の Evidence 化 / `isRecipePublishable()` の緩和 / Recipe Evidence source として扱う / 既存 Evidence architecture の迂回、いずれも禁止。`from-now-to-table.ts` は `recipe-publishability.ts` / `recipe-suggestion-engine.ts` / `recipe-catalog.ts` / `recipe-coherence.ts` を import しない。
+
+### Allergy Firewall / Recipe Fact Freeze（Section 17/18）
+
+Allergy HARD EXCLUSION・`allergyConfirmed`・member allergy union・Safety Gate は変更禁止。時間が短いことを理由に unsafe Recipe を候補へ戻さない。`recipe-catalog.ts` の 44 Recipe の fact（requiredIngredients / amounts / seasonings / cookingLiquids / servingsBase / cookingTimeMinutes / equipment / steps）は変更禁止。
+
+### 将来の厳密な「15分以内」意味論（Section 15）
+
+長期的には「15分以内」＝「今の家の状態から 15 分以内に食卓へ出せる」とする（単なる `sourceRecipeTime <= 15` ではない）。`qualifiesForStrictMaxFromNowToTable()` がその foundation を提供する（`unresolved` は絶対に不適格、range は上限で判定）。**本 MISSION では現行の production 15/30 quick filter・UI behavior を一切変更しない。**

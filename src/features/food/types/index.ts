@@ -813,6 +813,93 @@ export interface Quantity {
   rawText?: string
 }
 
+// ============================================================
+// MISSION 2.15 — Cooking Time Semantics Foundation
+//
+// 既存の`cookingTimeMinutes`（Recipe直下、単一number）はcandidate ranking/
+// UI表示のためのlegacy fieldとして引き続き利用する（本MISSIONでは一切
+// 変更しない）。ここで定義するのは、Evidence Fact（情報源が実際に述べる
+// 時間）とProduct/UI Decision（ユーザー向け意思決定に使う時間）を明確に
+// 分離した、新しい並行のTime Verification構造である。既存44 Recipeへの
+// 遡及的なデータ移行は本MISSIONの範囲外（recipe-time.ts参照）。
+// ============================================================
+
+/**
+ * Evidence Sourceが実際に述べる時間表現の精度をそのまま保持する。
+ * 3〜4分をmidpoint化しない・約10分をexact化しない・不明を推測で埋めない。
+ */
+export type TimeValue =
+  | { kind: 'exact'; minutes: number }
+  | { kind: 'range'; minMinutes: number; maxMinutes: number }
+  | { kind: 'approximate'; minutes: number }
+  | { kind: 'unknown' }
+
+/**
+ * 時間の構成要素。既存データで実際に区別が必要だと判明した6種のみ
+ * （それ以上のカテゴリは追加しない。Section 2）。
+ */
+export type TimeComponentKind =
+  | 'activePrepMinutes'
+  | 'activeHeatingMinutes'
+  | 'passiveCookingMinutes'
+  | 'preheatMinutes'
+  | 'restingMinutes'
+  | 'residualHeatMinutes'
+
+/** 個々のtime componentについてのEvidence Fact。RecipeFieldVerificationと同じ設計思想 */
+export interface TimeComponentFact {
+  kind: TimeComponentKind
+  value: TimeValue
+  sourceIds: string[]
+  /**
+   * このcomponentが特定のRecipeVariantIdentityに固有の場合（任意）。
+   * 異なるvariantのcomponent同士を無断で合算しないためのタグ
+   * （MISSION 2.13のvariantId概念を再利用。No cross-Variant arithmetic）。
+   */
+  variantId?: string
+}
+
+/**
+ * 情報源が内訳を示さず、レシピ全体の合計時間のみを明示している場合
+ * （例: gyudon/oyako-donの「調理時間約30分/15分」）。既知の合計・未知の
+ * 内訳、という状態をそのまま表現する（Section 16）。
+ */
+export interface SourceStatedTotalTime {
+  value: TimeValue
+  sourceIds: string[]
+}
+
+/**
+ * ユーザー向け唯一の意思決定用時間（「15分以内」等のcritical path）。
+ * Evidence componentそのものではなく、それらの人間による明示的な
+ * 組み合わせ判断（Product Decision）。derivationが必須（no hidden
+ * arithmetic・no automatic overlap guessing。Section 3/8/12）。
+ */
+export interface ElapsedToReadyDerivation {
+  value: TimeValue
+  /** どのcomponent/sourceStatedTotalを、どんな順序・重なりの根拠で組み合わせたかの説明。空文字不可 */
+  derivation: string
+  /** この導出が実際に使用したsourceIdの一覧（Coherence Review対象と揃える） */
+  contributingSourceIds: string[]
+}
+
+/**
+ * 「ユーザーが実際に手を動かす時間」の意味論（MISSION 2.15時点ではUI非公開。
+ * Section 4）。放置・余熱・休ませる等の受動的な待ち時間を含めない。
+ */
+export interface ActiveWorkDerivation {
+  value: TimeValue
+  derivation: string
+}
+
+/** RecipeVerification.timeVerification（任意）。既存Recipeは未設定のままでよい */
+export interface RecipeTimeVerification {
+  components?: TimeComponentFact[]
+  sourceStatedTotal?: SourceStatedTotalTime
+  elapsedToReady?: ElapsedToReadyDerivation
+  activeWork?: ActiveWorkDerivation
+}
+
 export interface RecipeVerification {
   status: RecipeVerificationStatus
   /** このRecipe全体で参照する情報源のid一覧（evidence-sources.tsのEVIDENCE_SOURCE_CATALOGを参照） */
@@ -842,7 +929,114 @@ export interface RecipeVerification {
    * （Section 12: 既存VERIFIED状態からの自動coherent移行は行わない）。
    */
   coherenceReview?: RecipeCoherenceReview
+  /**
+   * MISSION 2.15 — Cooking Time Semantics Foundation（任意）。既存Recipeは
+   * 未設定のままでよい。legacyの`cookingTimeMinutes`（Recipe直下）とは
+   * 独立に併存する（recipe-time.ts参照。isRecipePublishable()はこのfieldを
+   * 参照しない＝publishability要件を変更しない）。
+   */
+  timeVerification?: RecipeTimeVerification
 }
+
+// ============================================================
+// MISSION 2.15 Phase B — FROM NOW TO TABLE Foundation
+//
+// NUKITORU FOODが最終的に答える問いは「このレシピは何分？」ではなく
+// 「今ある家庭の状態から、何分後に食べられる？」である。
+//
+// 3つの時間レイヤーを絶対に混同しない:
+//   A. Source Recipe Time  … 情報源が実際に述べる時間（RecipeTimeVerification /
+//      SourceStatedTotalTime / legacy cookingTimeMinutes）。
+//   B. Active Work Time    … ユーザーが実際に手を動かす時間（ActiveWorkDerivation）。
+//   C. From-Now-to-Table Time … 家庭の現状から料理全体が食べられる状態になるまでの
+//      実経過時間（下記）。同じRecipeでも家庭状態によって変わり、静的属性ではない。
+//
+// これはProduct Decision Layerであり、Recipe Evidenceそのものではない。
+// RecipeVerificationStatusを上げる／Coherenceを修復する／Variantを解決する／
+// Evidence Rangeをexactへ潰す、いずれにも使ってはならない（from-now-to-table.ts参照）。
+// 既存inventory/localStorage/Stock挙動・production 15/30 quick filter・UIは
+// 本MISSIONでは一切変更しない。
+// ============================================================
+
+/**
+ * 食材・構成要素の最小限のreadiness状態モデル（Phase B）。
+ * 巨大なFood State Ontologyは作らない。将来 冷凍肉/解凍済み/カット済み野菜/
+ * 乾物/浸水済み/下茹で済み 等へ拡張可能な設計に留め、今回はこの5値のみ。
+ */
+export type IngredientReadinessState =
+  | 'raw' // 生米・生肉等、調理前
+  | 'ready' // そのまま食卓へ出せる/使える状態（炊けたごはん等）
+  | 'frozen-ready' // 調理済みだが冷凍（冷凍ごはん等）。解凍/再加熱が必要
+  | 'packaged-ready' // パックごはん等。開封/加熱等の準備が必要な場合がある
+  | 'unknown' // 状態不明。推測で埋めない
+
+/**
+ * 家庭の「今」の状態。From-Now-to-Table導出の起点（Section 6）。
+ * 既存inventory/localStorage/Stockとはまだ結合しない。
+ */
+export interface MealStartContext {
+  /** 構成要素キー → 現在のreadiness状態。未指定の要素は 'unknown' 扱い */
+  componentStates: Record<string, IngredientReadinessState>
+}
+
+/**
+ * 決定論的なprep task primitive（Section 8）。完全なscheduler/AI schedulingではない。
+ * durationはPhase AのTimeValueを再利用し、Evidence精度をそのまま保持する。
+ */
+export interface PrepTask {
+  id: string
+  /** この taskが寄与する必須構成要素キー（MealPlan.requiredComponents のいずれか） */
+  component: string
+  description: string
+  /** 所要時間（Evidence）。unknown/approximate は上限未確定として扱う（発明しない） */
+  duration: TimeValue
+  /** 先行task id。この taskの開始前に完了している必要がある */
+  dependsOn: string[]
+  /**
+   * この taskを開始するために構成要素が満たすべき状態（任意）。
+   * MealStartContextの開始状態、または先行taskによって満たされる。
+   */
+  requiredState?: IngredientReadinessState
+  /** この taskの完了後に構成要素が到達する状態 */
+  resultState: IngredientReadinessState
+  /** durationのEvidence source id（無根拠のdurationを許さないための痕跡） */
+  sourceIds: string[]
+}
+
+/**
+ * 1食分の決定論的なmeal plan（Section 8/11）。
+ */
+export interface MealPlan {
+  mealId: string
+  /** すべてreadyになって初めてTABLE READY（Section 11） */
+  requiredComponents: string[]
+  tasks: PrepTask[]
+  /**
+   * 明示的に同時進行可能とEvidence/レビュアーが認めたtask idグループ（Section 9/10）。
+   * ここに列挙されないtask同士のoverlapは一切推測しない。
+   */
+  declaredParallelGroups?: string[][]
+}
+
+/**
+ * From-Now-to-Table導出結果（Product Decision Layer。Evidence Factではない）。
+ * parallelismが未宣言・durationが未確定・構成要素の状態が不明なら 'unresolved'。
+ */
+export type FromNowToTableResult =
+  | {
+      kind: 'resolved'
+      /** 家庭の現状から食卓までの実経過時間（Product Decision）。rangeはrangeのまま保持 */
+      value: TimeValue
+      /** どのchainをどんな依存・並行の根拠で組み合わせたかの明示的説明（空文字不可） */
+      derivation: string
+      /** critical pathを構成するtask id列（0件 = 追加調理taskなしで即ready） */
+      criticalPath: string[]
+    }
+  | {
+      kind: 'unresolved'
+      /** なぜ導出できないか（duration不明・parallelism未宣言・構成要素の状態不明 等） */
+      reason: string
+    }
 
 export interface Recipe {
   id: string
