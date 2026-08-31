@@ -113,6 +113,14 @@ RecipeをVERIFIEDへ変更できるのは、次のすべてを満たす場合の
 
 `verification.status === 'verified'` が意味するのは Recipe Evidence の検証のみ。次のいずれも意味しない: allergen-free（該当アレルギー登録者は HARD EXCLUDE されるが「安全」を断定しない・PRODUCT CHECK ALERT は併存）・確定した調理時間・味の保証・authentic/本場・情報源との公式提携。
 
+### allergyIdentity の3状態（MISSION 2.25 / 2.30 / 2.31A）
+
+`allergyIdentity` が「評価済み（assessed）」とは、各 ingredient/seasoning の allergen-relevant identity が適用 policy の下で評価され、その判断が Evidence または policy に traceable であることを意味する。**「評価済み」＝「安全と証明された」ではない。**「不確実性が明示的に把握されている」も評価済みに含まれる。ingredient は次の3状態のいずれかに分類する（混同しない）:
+
+- **A. NO_REGULATED_RELATION** — 確定した ingredient identity が、policy が追跡する規制対象アレルゲン（特定原材料等）と関係を持たない（例: みりん・しょうが・玉ねぎ・砂糖・塩）。根拠は消費者庁／東京都の特定原材料等カテゴリ表。
+- **B. DEFAULT_GENERIC_RISK / contains** — generic ingredient が通常1つ以上の規制対象アレルゲンを伴う（例: しょうゆ→小麦・大豆、小麦粉→小麦）。`ingredient-allergens.ts` の relation として記録し、該当アレルギー登録で **HARD EXCLUDE**。
+- **C. PRODUCT_IDENTITY_UNSPECIFIED** — レシピ出典が広いカテゴリ名しか示さず、実際に選ばれる商品（種類）によってアレルギー表示が変わり得る（例: 出典が「油」としか書かず、ごま油・落花生油・大豆油 等が該当し得る）。**HARD EXCLUDE しない**（存在しないアレルゲンを推測で付与しない。UNKNOWN ≠ ALLERGEN PRESENT）。**「安全」とも表示しない**（UNKNOWN ≠ SAFE）。既存 `ingredientChecks` 機構で machine-readable に表現し（`isProductCheckTarget` = true、`ingredientAllergenRelations` = `[]`）、ユーザーには **PRODUCT CHECK ALERT**（「使用する商品の原材料・アレルギー表示を確認してください」）を出す。C 状態の ingredient があっても、その不確実性が明示的に評価・machine-readable・explainable であれば Recipe Evidence VERIFIED は成立し得る（B の HARD EXCLUDE を弱める用途には使わない）。
+
 ## Evidence Variant Foundation（MISSION 2.13で確立）
 
 MISSION 2.12 PHASE Bの実調査で繰り返し発生した問題：「複数の正当なSourceが同じ料理名について異なる数値を示す」という状況を、次の4つの異なる概念へ明確に分離する。

@@ -98,24 +98,27 @@ describe('MISSION 2.18 — Evidence Resolution Batch 3', () => {
     expect(r.verification?.timeVerification?.productTimeStatus).toBe('review')
   })
 
-  it('DB: buta-shogayaki の Recipe fact は Batch 3 で凍結', () => {
+  it('DB: buta-shogayaki の Recipe fact は MISSION 2.31 で NHK anchor に一致するよう Correction された', () => {
     const r = recipe('buta-shogayaki')
+    // 部位を canonical に保ち（豚肩ロース肉）、量は NHK の 200g（250〜300g range を採用していない）
     expect(r.requiredIngredients).toEqual([
-      { name: '豚肉', amount: '200g' },
-      { name: '玉ねぎ', amount: '1/2個' },
+      { name: '豚肩ロース肉', amount: '200g' },
+      { name: '玉ねぎ', amount: '1/2個（100g）' },
     ])
+    // NHK anchor: みりん・しょうゆ 同量、しょうが小さじ2、小麦粉、油2用途
     expect(r.seasonings).toEqual([
       { name: 'しょうゆ', amount: '大さじ1と1/2' },
-      { name: 'みりん', amount: '大さじ1' },
-      { name: 'しょうが', amount: '小さじ1' },
+      { name: 'みりん', amount: '大さじ1と1/2' },
+      { name: 'しょうが', amount: '小さじ2（すりおろし）' },
+      { name: '小麦粉', amount: '適量' },
+      { name: '油', amount: '小さじ1（玉ねぎ用）と大さじ1（豚肉用）' },
     ])
     expect(r.cookingTimeMinutes).toBe(15)
     expect(r.servingsBase).toBe(2)
-    expect(r.steps).toEqual([
-      '玉ねぎを薄切りにする',
-      'フライパンで豚肉と玉ねぎを炒める',
-      '豚肉の中心まで色が変わったら、しょうゆ、みりん、しょうがを加えてからめる',
-    ])
+    expect(r.steps).toHaveLength(5)
+    // 他 source の砂糖・酒・ケチャップ・ごま油は入れていない
+    expect(r.seasonings?.map((s) => s.name)).not.toContain('砂糖')
+    expect(r.seasonings?.map((s) => s.name)).not.toContain('酒')
   })
 
   it('DC: 下ごしらえ（常温に戻す・筋切り・漬け込み・下味）は steps に追加されていない', () => {
@@ -130,20 +133,20 @@ describe('MISSION 2.18 — Evidence Resolution Batch 3', () => {
 
   // ---- status / classification ----
 
-  it('DD: buta-shogayaki は status=review（tori-teriyaki は MISSION 2.26 で verified）', () => {
+  it('DD: buta-shogayaki は MISSION 2.31 で verified（tori-teriyaki は MISSION 2.26 で verified）', () => {
     expect(recipe('tori-teriyaki').verification?.status).toBe('verified')
-    expect(recipe('buta-shogayaki').verification?.status).toBe('review')
+    expect(recipe('buta-shogayaki').verification?.status).toBe('verified')
   })
 
-  it('DE: buta-shogayaki は hasUnsupportedInference=true・非publishable（tori-teriyaki は MISSION 2.26 で解消）', () => {
-    expect(recipe('buta-shogayaki').verification?.hasUnsupportedInference).toBe(true)
-    expect(isRecipePublishable(recipe('buta-shogayaki'))).toBe(false)
+  it('DE: buta-shogayaki は MISSION 2.31 で hasUnsupportedInference=false・publishable', () => {
+    expect(recipe('buta-shogayaki').verification?.hasUnsupportedInference).toBe(false)
+    expect(isRecipePublishable(recipe('buta-shogayaki'))).toBe(true)
     expect(recipe('tori-teriyaki').verification?.hasUnsupportedInference).toBe(false)
     expect(isRecipePublishable(recipe('tori-teriyaki'))).toBe(true)
   })
 
-  it('DF: catalog 全体の VERIFIED 数は 0 のまま', () => {
-    expect(RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)).toEqual(['tori-teriyaki']) /* MISSION 2.26: 初の VERIFIED */
+  it('DF: catalog 全体の VERIFIED は tori-teriyaki（#1）と buta-shogayaki（#2・MISSION 2.31）', () => {
+    expect(RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)).toEqual(['tori-teriyaki', 'buta-shogayaki'])
   })
 
   it('DG: RecipeIdentity が確立された（canonicalDish / coreMethod）', () => {
@@ -160,10 +163,13 @@ describe('MISSION 2.18 — Evidence Resolution Batch 3', () => {
     const processFvs = tt.filter((f) => f.field !== 'allergyIdentity')
     expect(processFvs.every((f) => f.supportType === 'direct' && f.sourceIds.length === 1 && f.sourceIds[0] === 'kyounoryouri-toriteriyaki-kawano-2026')).toBe(true)
     expect(tt.find((f) => f.field === 'allergyIdentity')?.supportType).toBe('derived')
-    // buta-shogayaki は未修正のまま variant
+    // buta-shogayaki は MISSION 2.31 で NHK anchor の direct へ Correction 済み
     const bs = recipe('buta-shogayaki').verification?.fieldVerifications ?? []
-    expect(bs.find((f) => f.field === 'seasoningAmounts')?.supportType).toBe('variant')
-    expect(bs.find((f) => f.field === 'criticalSteps')?.supportType).toBe('variant')
+    const bsProcess = bs.filter((f) => f.field !== 'allergyIdentity')
+    expect(bsProcess.every((f) => f.supportType === 'direct'
+      && f.sourceIds.length === 1
+      && f.sourceIds[0] === 'kyounoryouri-butashogayaki-kawano-2026')).toBe(true)
+    expect(bs.find((f) => f.field === 'allergyIdentity')?.supportType).toBe('derived')
   })
 
   // ---- traceability: new source observations ----
@@ -200,9 +206,11 @@ describe('MISSION 2.18 — Evidence Resolution Batch 3', () => {
     ]) {
       expect(getEvidenceSourceById(id)?.observation).toBeUndefined()
     }
-    // Batch 3 で開いた 6 件以外に observation が付いていない
+    // Batch 3 で開いた 6 件 ＋ MISSION 2.31 の NHK buta anchor 以外に observation が付いていない
     const withObs = EVIDENCE_SOURCE_CATALOG.filter((s) => s.observation).map((s) => s.id).sort()
-    expect(withObs).toEqual([...BATCH3_NEW_SOURCE_IDS].sort())
+    expect(withObs).toEqual(
+      [...BATCH3_NEW_SOURCE_IDS, 'kyounoryouri-butashogayaki-kawano-2026'].sort(),
+    )
   })
 
   it('DL: observation / fingerprint 一致は VERIFIED の根拠ではない（publishability は observation を参照しない）', () => {
@@ -214,11 +222,10 @@ describe('MISSION 2.18 — Evidence Resolution Batch 3', () => {
         computeContentFingerprint(OBSERVED['sirogohan-toriteriyaki-2026']),
       ),
     ).toBe('unchanged')
-    // buta-shogayaki は同様に observation を持つ source を使うが review・非publishable
-    expect(recipe('buta-shogayaki').verification?.status).toBe('review')
-    expect(isRecipePublishable(recipe('buta-shogayaki'))).toBe(false)
-    // tori-teriyaki が publishable なのは MISSION 2.26 の Recipe-Evidence 全field解決＋coherence であって
-    // fingerprint 一致が理由ではない
+    // buta-shogayaki が MISSION 2.31 で publishable になったのは Recipe-Evidence 全field解決＋coherence で
+    // あって、fingerprint 一致が理由ではない（fingerprint は VERIFIED の根拠にならない）
+    expect(recipe('buta-shogayaki').verification?.status).toBe('verified')
+    expect(isRecipePublishable(recipe('buta-shogayaki'))).toBe(true)
     expect(recipe('tori-teriyaki').verification?.status).toBe('verified')
   })
 
@@ -236,11 +243,14 @@ describe('MISSION 2.18 — Evidence Resolution Batch 3', () => {
 
   // ---- no cross-identity / cross-variant transfer; source silence ----
 
-  it('DN: buta-shogayaki は source silence を否定的 Evidence に使っていない（HOLD 方針を維持）', () => {
-    // buta-shogayaki は未修正のまま: reviewNotes に「HOLD」「勝手に追加しない」の方針が残る
-    const bsNotes = (recipe('buta-shogayaki').verification?.reviewNotes ?? []).join('')
-    expect(bsNotes).toContain('HOLD')
-    expect(bsNotes).toContain('勝手に追加しない')
+  it('DN: buta-shogayaki は source silence を否定的 Evidence に使っていない（MISSION 2.31 correction 後）', () => {
+    // MISSION 2.31 で verified 化: 未解決問題は無いため reviewNotes は空。
+    // 監査履歴（2.18 の HOLD、漬け込み等を勝手に追加しない方針、ふた=source silence）は provenanceNotes に保持。
+    expect(recipe('buta-shogayaki').verification?.reviewNotes).toEqual([])
+    const bsProv = (recipe('buta-shogayaki').verification?.provenanceNotes ?? []).join('')
+    expect(bsProv).toContain('HOLD')
+    expect(bsProv).toContain('source silence')
+    expect(bsProv).toContain('漬け込み')
     // tori-teriyaki（MISSION 2.26 verified）: 監査履歴・source比較は provenanceNotes に保持され、
     // source silence を否定的 Evidence にしていないことが明記される（reviewNotes は空）
     expect(recipe('tori-teriyaki').verification?.reviewNotes).toEqual([])
@@ -525,19 +535,21 @@ describe('MISSION 2.19A — tori-teriyaki observation record correction', () => 
     expect(recipe('tori-teriyaki').verification?.timeVerification?.productTimeStatus).toBe('review')
   })
 
-  it('EW: buta-shogayaki の source observation は 2.19A で不変（2026-08-29 / lastReverifiedAt無し）', () => {
+  it('EW: SOURCE A/B（キッコーマン・白ごはん.com）の observation は 2.19A / 2.31 でも不変（2026-08-29 / lastReverifiedAt無し）', () => {
+    // MISSION 2.31 は SOURCE A/B の observation を触っていない（NHK anchor を新規追加しただけ）。
     for (const id of ['kikkoman-butashogayaki-2026', 'sirogohan-butashogayaki-2026']) {
       const obs = getEvidenceSourceById(id)!.observation!
       expect(obs.observedAt).toBe('2026-08-29')
       expect(obs.lastReverifiedAt).toBeUndefined()
     }
-    expect(recipe('buta-shogayaki').verification?.status).toBe('review')
+    // buta-shogayaki は MISSION 2.31 で NHK anchor により verified 化
+    expect(recipe('buta-shogayaki').verification?.status).toBe('verified')
   })
 
-  it('EX: VERIFIED は tori-teriyaki のみ（MISSION 2.26 の初 VERIFIED）', () => {
+  it('EX: VERIFIED は tori-teriyaki（#1）と buta-shogayaki（#2・MISSION 2.31）', () => {
     expect(
       RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id),
-    ).toEqual(['tori-teriyaki'])
+    ).toEqual(['tori-teriyaki', 'buta-shogayaki'])
   })
 
   it('EY: Allergy HARD EXCLUSION は 2.19A で不変', () => {

@@ -452,6 +452,44 @@ export const EVIDENCE_SOURCE_CATALOG: RecipeEvidenceSource[] = [
     sourceType: 'manufacturer',
     checkedAt: '2026-08-31',
   },
+
+  // ---- MISSION 2.30（Pork Taxonomy & Wheat Allergen Safety Gate）で追加 ----
+  // 小麦粉 → 小麦 の contains 関係（代替表記／拡大表記）の裏付け。本文を実際に開いて
+  // 特定原材料等の区分・代替表記／拡大表記の定義を確認した（2026-08-31）。
+  {
+    id: 'tokyo-shokuhin-eisei-allergen-2026',
+    publisher: '東京都保健医療局（食品衛生の窓）',
+    title: '加工食品のアレルギー表示（特定原材料等・代替表記・拡大表記）',
+    url: 'https://www.hokeniryo1.metro.tokyo.lg.jp/shokuhin/hyouji/shokuhyouhou_kakou_allegy.html',
+    sourceType: 'government',
+    checkedAt: '2026-08-31',
+  },
+  {
+    id: 'labelbank-allergy-hyoji-2026',
+    publisher: 'ラベルバンク株式会社（食品表示ドットコム）',
+    title: 'アレルギー表示｜代替表記・拡大表記の考え方（消費者庁 別表第3の解説）',
+    url: 'https://foodog.jp/know/allergy.html',
+    sourceType: 'other-trusted',
+    checkedAt: '2026-08-31',
+  },
+
+  // ---- MISSION 2.31（Buta-Shogayaki Evidence-Backed Correction）で追加 ----
+  // buta-shogayaki の唯一の Primary Process Anchor。MISSION 2.29 で本文を確認し、
+  // MISSION 2.31（2026-08-31）に再度本文を開いて material difference が無いことを確認した。
+  // observation.contentFingerprint は NUKITORU 自作の観測サマリ（buta-shogayaki の
+  // provenanceNotes に「NHK ANCHOR 観測サマリ（2026-08-31）」として全文保持）の SHA-256。
+  {
+    id: 'kyounoryouri-butashogayaki-kawano-2026',
+    publisher: 'NHKエデュケーショナル（みんなのきょうの料理）',
+    title: '豚のしょうが焼き（講師 河野雅子）',
+    url: 'https://www.kyounoryouri.jp/recipe/31844_%E8%B1%9A%E3%81%AE%E3%81%97%E3%82%87%E3%81%86%E3%81%8C%E7%84%BC%E3%81%8D.html',
+    sourceType: 'professional',
+    checkedAt: '2026-08-31',
+    observation: {
+      contentFingerprint: '0af8dbd82b38feb993bc2b4771f7629208849d820bffb37a06216711618600c3',
+      observedAt: '2026-08-31',
+    },
+  },
 ]
 
 export function getEvidenceSourceById(

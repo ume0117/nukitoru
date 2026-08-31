@@ -14,15 +14,29 @@
 //   一切明記しない。「含みません」「安全です」等の安全断定表現も使わない。
 // - AI推測・商品固有情報の取得は行わない。あくまで「原材料表示を確認してください」
 //   という一般的な注意喚起にとどめる。
+//
+// MISSION 2.31A — PRODUCT_IDENTITY_UNSPECIFIED（generic-category ingredient）:
+// レシピ出典が「油」のように広いカテゴリ名しか示さず、実際に選ばれる商品
+// （ごま油・落花生油・大豆油 等、それ自体が特定原材料等になり得るもの）によって
+// アレルギー表示が変わり得る ingredient も PRODUCT CHECK ALERT の対象にする。
+// これは「generic ingredient が既知の allergen relation を持つ（＝ HARD EXCLUDE）」
+// しょうゆ とは別で、「具体的な商品 identity が未確定なのでユーザーが表示を
+// 確認する必要がある」ことだけを意味する。存在しない allergen を推測で
+// 付与しない（ingredient-allergens.ts に「油 → ◯◯」relation は作らない）。
+// なお「サラダ油」等の JAS で定義された具体名は canonical が別（'油' ではない）
+// ため、この対象には入らない。
 // ============================================================
 
 import { canonicalizeIngredientName } from './ingredient-normalization'
 
 /**
- * PRODUCT CHECK ALERT対象のingredient一覧（PHASE D.5時点の44 Recipe監査結果）。
- * 過剰警告を避けるため、「商品によって原材料・アレルゲンが大きく異なり得る、
- * かつ実用上確認する価値が高い」加工調味料のみに限定する。
- * 片栗粉・小麦粉（名前自体がアレルゲンを明示）・油・バター・酢・ケチャップ等、
+ * PRODUCT CHECK ALERT対象のingredient一覧（PHASE D.5監査 ＋ MISSION 2.31A）。
+ * 過剰警告を避けるため、次のいずれかに限定する:
+ *   (1) 商品によって原材料・アレルゲンが大きく異なり得る加工調味料
+ *       （しょうゆ・味噌・だしの素・カレールー・コンソメ・マヨネーズ・豆板醤）
+ *   (2) レシピ出典が広いカテゴリ名しか示さず、選ばれる商品（種類）によって
+ *       アレルギー表示が変わり得るもの（油。MISSION 2.31A）
+ * 片栗粉・小麦粉（名前自体がアレルゲンを明示）・バター・酢・ケチャップ等、
  * 商品差による実用的リスクが低いものは含めない。
  */
 export const PRODUCT_CHECK_TARGET_INGREDIENTS = [
@@ -33,6 +47,7 @@ export const PRODUCT_CHECK_TARGET_INGREDIENTS = [
   'コンソメ',
   'マヨネーズ',
   '豆板醤',
+  '油',
 ] as const
 
 const TARGET_CANONICAL_SET = new Set(PRODUCT_CHECK_TARGET_INGREDIENTS.map((t) => canonicalizeIngredientName(t)))
@@ -45,8 +60,10 @@ export function isProductCheckTarget(ingredientName: string): boolean {
 /**
  * 対象ingredientの表示文言を生成する。対象外の場合はundefinedを返す。
  * 文言はテンプレート1種類のみ（特定アレルゲン名・安全断定表現を含めない）。
+ * 「商品や種類によって」は加工調味料（しょうゆ等）と generic-category（油）の
+ * 両方を1文でカバーする（MISSION 2.31A）。
  */
 export function productCheckMessage(ingredientName: string): string | undefined {
   if (!isProductCheckTarget(ingredientName)) return undefined
-  return `使用する「${ingredientName}」は商品によって原材料が異なる場合があります。パッケージの原材料・アレルギー表示を確認してください。`
+  return `使用する「${ingredientName}」は商品や種類によって原材料・アレルギー表示が異なる場合があります。パッケージの原材料・アレルギー表示を確認してください。`
 }

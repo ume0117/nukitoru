@@ -190,7 +190,7 @@ describe('First 10 Families Beta Gate (DA〜DO)', () => {
 
   it('DO: VERIFIED件数はPHASE A（Dinner Decision UX）自体によっては変化しない（MISSION 2.14B Recipe Coherence Correctionによりmedama-yakiもREVIEWへ差し戻され、現在VERIFIEDは0件。本Gateの対象はPHASE A UX自体が件数を動かさないことの確認であり、件数目標は設定しない）', () => {
     const verifiedIds = RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)
-    expect(verifiedIds).toEqual(['tori-teriyaki']) /* MISSION 2.26: 初の VERIFIED。この Gate は当該 Foundation が件数を動かさないことの確認 */
+    expect(verifiedIds).toEqual(['tori-teriyaki', 'buta-shogayaki']) /* MISSION 2.26: 初の VERIFIED。この Gate は当該 Foundation が件数を動かさないことの確認 */
     expect(RECIPE_CATALOG.length).toBe(44)
   })
 

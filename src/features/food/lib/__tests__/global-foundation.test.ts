@@ -118,7 +118,7 @@ describe('Global Foundation Gate (CB〜CN)', () => {
 
   it('CM: verified状態のRecipe件数はGlobal Foundation自体によっては変化しない（MISSION 2.14B Recipe Coherence Correctionによりmedama-yakiもREVIEWへ差し戻され現在0件。本Gateの対象はGlobal Foundation側の変更とは無関係であることの確認）', () => {
     const verifiedIds = RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)
-    expect(verifiedIds).toEqual(['tori-teriyaki']) /* MISSION 2.26: 初の VERIFIED。この Gate は当該 Foundation が件数を動かさないことの確認 */
+    expect(verifiedIds).toEqual(['tori-teriyaki', 'buta-shogayaki']) /* MISSION 2.26: 初の VERIFIED。この Gate は当該 Foundation が件数を動かさないことの確認 */
   })
 
   it('CN: Allergy HARD EXCLUSIONはGlobal Foundation追加後も無傷（requiredIngredients+seasoningsのみ対象）', () => {
@@ -216,7 +216,7 @@ describe('Global Code Extensibility Gate (CO〜CZ)', () => {
 
   it('CY: verified状態のRecipe件数はGlobal Code Extensibility Fix自体によっては変化しない（sake-shioyaki・medama-yakiともにMISSION 2.14/2.14BのCORRECTIONによりREVIEWへ差し戻され現在0件）', () => {
     const verifiedIds = RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)
-    expect(verifiedIds).toEqual(['tori-teriyaki']) /* MISSION 2.26: 初の VERIFIED。この Gate は当該 Foundation が件数を動かさないことの確認 */
+    expect(verifiedIds).toEqual(['tori-teriyaki', 'buta-shogayaki']) /* MISSION 2.26: 初の VERIFIED。この Gate は当該 Foundation が件数を動かさないことの確認 */
   })
 
   it('CZ: CANONICAL_FOOD_SAMPLE（Gate CB〜CNのfixture）は本FIXで変化していない', () => {

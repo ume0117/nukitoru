@@ -34,12 +34,20 @@ import { canonicalizeIngredientName } from './ingredient-normalization'
  * scope: MISSION 2.19E-RESUME blocker の解消に必要な鶏系 + 形状がまったく同一の
  * 既存 latent allergy gap（豚ひき肉）だけ。大量 taxonomy は作らない。
  * 追加は「同じ明確な broader/narrower 関係があり、安全に追加できる」ものに限る。
+ *
+ * MISSION 2.30 で追加: 豚肩ロース肉・豚ロース肉 → 豚肉。
+ * いずれも「豚肉」の部位名（cut）であり、鶏もも肉 → 鶏肉 と同型の明確な broader 関係。
+ * 「豚肉」アレルギー → これらの部位を使う recipe を HARD EXCLUDE する（fail-safe）。
+ * STOCK マッチングには効かない（部位在庫 ≠ 別部位 recipe、generic 豚肉在庫 ≠ 部位 recipe。
+ * stockSatisfiesRecipeIngredient は完全一致のみ）。
  */
 const INGREDIENT_BROADER_RELATIONS: Record<string, readonly string[]> = {
   鶏もも肉: ['鶏肉'],
   鶏むね肉: ['鶏肉'],
   鶏ひき肉: ['鶏肉'],
   豚ひき肉: ['豚肉'],
+  豚肩ロース肉: ['豚肉'],
+  豚ロース肉: ['豚肉'],
 }
 
 /**

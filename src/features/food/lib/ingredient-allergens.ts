@@ -47,8 +47,16 @@ import { canonicalizeIngredientName } from './ingredient-normalization'
  *   NUKITORU は fail-safe にこの allergen 関連として HARD EXCLUDE する（Section 8）。
  *   「すべての◯◯がこの allergen を含む」という主張ではなく、fail-safe な
  *   PRODUCT POLICY である。
+ *
+ * - 'contains'（MISSION 2.30）:
+ *   食材の identity 自体がこの regulated allergen 関係を確立する。
+ *   同名でアレルゲン不使用の variant が実在しない（別物なら別名になる）。
+ *   例: 「小麦粉」は小麦を挽いた粉であり、小麦不使用の「小麦粉」は存在しない
+ *   （米粉・そば粉・大豆粉等は別名称）。消費者庁 食品表示基準 別表第3 は
+ *   「小麦粉」を「小麦」の拡大表記として扱う（原材料名に含めれば小麦使用が表示上明らか）。
+ *   product-specific override の余地はない。default-generic-risk より強い。
  */
-export type AllergenRelationType = 'default-generic-risk'
+export type AllergenRelationType = 'default-generic-risk' | 'contains'
 
 export interface IngredientAllergenRelation {
   /** canonical ingredient name（canonicalizeIngredientName 適用後） */
@@ -102,6 +110,26 @@ const INGREDIENT_ALLERGEN_RELATIONS: readonly IngredientAllergenRelation[] = [
       + 'アレルギー物質として「大豆」を表示する（大豆は特定原材料に準ずるもの・推奨表示）。'
       + '大豆不使用のしょうゆ風調味料（米由来等）も実在するが、Recipe が verified に'
       + 'それを明示しない限り、fail-safe に大豆関連として HARD EXCLUDE する。',
+  },
+  {
+    ingredientName: '小麦粉',
+    allergenName: '小麦',
+    relationType: 'contains',
+    sourceIds: [
+      'caa-food-allergy-labeling-2026',
+      'tokyo-shokuhin-eisei-allergen-2026',
+      'labelbank-allergy-hyoji-2026',
+    ],
+    policyReason:
+      '「小麦粉」は小麦を挽いた粉であり、小麦不使用の「小麦粉」という製品は存在しない'
+      + '（米粉・そば粉・大豆粉・コーンスターチ等はいずれも別名称）。'
+      + '消費者庁 食品表示基準 別表第3 は「小麦粉」を「小麦」の拡大表記として例示しており'
+      + '（原材料名に「小麦粉」と記載すれば小麦を使用していることが表示上明らか）、'
+      + 'これは product-specific なリスク（default-generic-risk）ではなく食材 identity 自体が'
+      + '確立する関係のため relationType を contains とする。'
+      + '小麦は特定原材料（義務表示・9品目）。'
+      + 'この関係は しょうゆ の default-generic-risk 関係とは独立に、'
+      + '小麦アレルギー × 小麦粉を使う recipe を HARD EXCLUDE する。',
   },
 ]
 

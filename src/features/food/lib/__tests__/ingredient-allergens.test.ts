@@ -188,10 +188,21 @@ describe('MISSION 2.25 — non-weakening / firewall', () => {
   })
 })
 
-describe('MISSION 2.25 — future product-specific override does not become impossible', () => {
-  it('JP: relationType が default-generic-risk（= override 余地あり）で、絶対的 contains ではない', () => {
+describe('MISSION 2.25 / 2.30 — relationType semantics', () => {
+  it('JP: しょうゆ の関係は default-generic-risk（= 将来の product-specific override 余地あり）', () => {
     for (const r of allIngredientAllergenRelations()) {
-      expect(r.relationType).toBe('default-generic-risk')
+      if (r.ingredientName === 'しょうゆ') {
+        expect(r.relationType).toBe('default-generic-risk')
+      }
+    }
+  })
+
+  it('JP2: contains 関係は「食材 identity 自体が確立する」ものだけ（MISSION 2.30 で 小麦粉→小麦 のみ）', () => {
+    const contains = allIngredientAllergenRelations().filter((r) => r.relationType === 'contains')
+    expect(contains.map((r) => `${r.ingredientName}→${r.allergenName}`)).toEqual(['小麦粉→小麦'])
+    for (const r of contains) {
+      expect(r.sourceIds.length).toBeGreaterThan(0)
+      expect(r.policyReason.trim().length).toBeGreaterThan(0)
     }
   })
 })

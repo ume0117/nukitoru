@@ -235,7 +235,7 @@ describe('MISSION 2.19E-RESUME-2 — Evidence traceability / coherence / status'
     expect(tt.verification?.status).toBe('verified')
     expect(isRecipePublishable(tt)).toBe(true)
     expect(tt.verification?.timeVerification?.productTimeStatus).toBe('review')
-    expect(RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)).toEqual(['tori-teriyaki'])
+    expect(RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)).toEqual(['tori-teriyaki', 'buta-shogayaki'])
   })
 
   it('HX: 監査履歴（BEFORE→ANCHOR→CORROBORATION→AFTER / no-import / provenance）は provenanceNotes に保持', () => {

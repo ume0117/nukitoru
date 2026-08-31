@@ -630,7 +630,7 @@ describe('FROM NOW TO TABLE Foundation Gate (FA〜)', () => {
     const sakeShioyaki = RECIPE_CATALOG.find((r) => r.id === 'sake-shioyaki')!
     expect(medamaYaki.verification?.coherenceReview?.status).toBe('incoherent')
     expect(sakeShioyaki.verification?.coherenceReview?.status).toBe('incoherent')
-    expect(RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)).toEqual(['tori-teriyaki']) /* MISSION 2.26: 初の VERIFIED */
+    expect(RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)).toEqual(['tori-teriyaki', 'buta-shogayaki']) /* MISSION 2.26: 初の VERIFIED */
   })
 
   it('GH (35): Source Silence 原則（EVIDENCE_POLICY.md）は Phase B 追加後も無傷', async () => {

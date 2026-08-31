@@ -579,7 +579,7 @@ describe('Recipe Coherence Gate Foundation (GA〜)', () => {
 
   it('HG: coherenceReview.status==="coherent"は tori-teriyaki のみ。自動 coherent 移行はしていない', () => {
     const coherent = RECIPE_CATALOG.filter((r) => r.verification?.coherenceReview?.status === 'coherent')
-    expect(coherent.map((r) => r.id)).toEqual(['tori-teriyaki'])
+    expect(coherent.map((r) => r.id)).toEqual(['tori-teriyaki', 'buta-shogayaki'])
     // MISSION 2.26: tori-teriyaki は明示的な Evidence 解決＋human sign-off で verified になった
     // （naked boolean や自動移行ではなく、isCoherenceReviewValid が構造的に true）
     for (const r of coherent) {
@@ -591,7 +591,7 @@ describe('Recipe Coherence Gate Foundation (GA〜)', () => {
 
   it('HH: catalog の VERIFIED は tori-teriyaki のみ（MISSION 2.26 の初 VERIFIED。件数目標は設定しない）', () => {
     const verified = RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified')
-    expect(verified.map((r) => r.id)).toEqual(['tori-teriyaki'])
+    expect(verified.map((r) => r.id)).toEqual(['tori-teriyaki', 'buta-shogayaki'])
   })
 
   it('HI: MISSION 2.14B Correction後、Beta Publishable Starter Setは空である', () => {

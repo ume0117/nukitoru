@@ -60,10 +60,11 @@ describe('MISSION 2.20 — Product Time status (BLOCKER B)', () => {
     expect(productCookingTimeMinutes(r)).toBe(12)
   })
 
-  it('FB: catalog Recipe は tori-teriyaki 以外すべて legacy（productTimeStatus 未設定）＝挙動不変', () => {
+  it('FB: catalog Recipe は VERIFIED（tori-teriyaki / buta-shogayaki）以外すべて legacy（productTimeStatus 未設定）＝挙動不変', () => {
+    // MISSION 2.19E-RESUME-2 / MISSION 2.31: NHK anchor 修正で productTimeStatus='review'（Decision B）
+    const reviewTimeIds = new Set(['tori-teriyaki', 'buta-shogayaki'])
     for (const r of RECIPE_CATALOG) {
-      if (r.id === 'tori-teriyaki') {
-        // MISSION 2.19E-RESUME-2: NHK anchor 修正で productTimeStatus='review'（唯一の非 legacy）
+      if (reviewTimeIds.has(r.id)) {
         expect(productTimeStatusOf(r)).toBe('review')
         expect(productCookingTimeMinutes(r)).toBeNull()
         continue
@@ -322,9 +323,10 @@ describe('MISSION 2.20 — Recipe preparation model (BLOCKER A)', () => {
   it('FQ: preparation を持たない Recipe は applicableFieldsFor が従来どおり（"preparation" 非対象）', () => {
     const noPrep = makeRecipe({ id: 'fq1', requiredIngredients: [{ name: 'a', amount: '1' }] })
     expect(applicableFieldsFor(noPrep)).not.toContain('preparation')
-    // catalog は tori-teriyaki（2.19E-RESUME-2 で preparation 追加）以外は非対象
+    // catalog は tori-teriyaki（2.19E-RESUME-2）と buta-shogayaki（MISSION 2.31）で preparation 追加、他は非対象
+    const withPrepIds = new Set(['tori-teriyaki', 'buta-shogayaki'])
     for (const r of RECIPE_CATALOG) {
-      if (r.id === 'tori-teriyaki') {
+      if (withPrepIds.has(r.id)) {
         expect(applicableFieldsFor(r)).toContain('preparation')
         continue
       }

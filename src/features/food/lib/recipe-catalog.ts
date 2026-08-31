@@ -1210,109 +1210,287 @@ export const RECIPE_CATALOG: Recipe[] = [
     type: 'main',
     cuisine: 'japanese',
     requiredIngredients: [
-      { name: '豚肉', amount: '200g' },
-      { name: '玉ねぎ', amount: '1/2個' },
+      { name: '豚肩ロース肉', amount: '200g' },
+      { name: '玉ねぎ', amount: '1/2個（100g）' },
     ],
     seasonings: [
       { name: 'しょうゆ', amount: '大さじ1と1/2' },
-      { name: 'みりん', amount: '大さじ1' },
-      { name: 'しょうが', amount: '小さじ1' },
+      { name: 'みりん', amount: '大さじ1と1/2' },
+      { name: 'しょうが', amount: '小さじ2（すりおろし）' },
+      { name: '小麦粉', amount: '適量' },
+      { name: '油', amount: '小さじ1（玉ねぎ用）と大さじ1（豚肉用）' },
     ],
-    ingredientChecks: [{ ingredientName: 'しょうゆ' }],
+    // MISSION 2.31A — しょうゆ（加工調味料の商品差）＋ 油（NHK 出典が種類を特定しない
+    // generic-category。ごま油・落花生油等それ自体がアレルゲンになり得る）。
+    // どちらも PRODUCT CHECK ALERT であって HARD EXCLUDE ではない。
+    ingredientChecks: [{ ingredientName: 'しょうゆ' }, { ingredientName: '油' }],
     cookingTimeMinutes: 15,
     servingsBase: 2,
     tags: ['焼き物'],
-    equipment: ['包丁', 'まな板', 'フライパン'],
-    steps: [
-      '玉ねぎを薄切りにする',
-      'フライパンで豚肉と玉ねぎを炒める',
-      '豚肉の中心まで色が変わったら、しょうゆ、みりん、しょうがを加えてからめる',
+    equipment: ['フライパン', '茶こし'],
+    preparation: [
+      { text: '豚肩ロース薄切り肉をバットに広げ、小麦粉を茶こしに入れて全体に薄くふる' },
+      { text: '玉ねぎを1cm幅のくし形に切る' },
+      { text: 'みりん・しょうゆ・すりおろししょうがを混ぜ合わせてたれを作っておく' },
     ],
-    notes: ['豚肉は中心まで色が変わっていることを確認してください。'],
+    steps: [
+      'フライパンに油小さじ1を入れて中火で熱し、玉ねぎを約1分炒めてから火を止め、取り出す',
+      '同じフライパンに油大さじ1を足して中火で熱し、豚肩ロース肉を重ならないように並べる',
+      '豚肉をほぐしながら炒め、全体に火を通す',
+      '肉の色が変わったら玉ねぎを戻し入れ、サッと炒め合わせる',
+      '混ぜ合わせておいたたれを回し入れ、強めの中火で全体にからめる',
+    ],
+    notes: ['豚肉は中心まで火が通っていることを確認してください。'],
     verification: {
-      status: 'review',
-      sourceIds: ['kikkoman-butashogayaki-2026', 'sirogohan-butashogayaki-2026'],
+      // MISSION 2.31 — NUKITORU FOOD Recipe Evidence VERIFIED #2。
+      // NHK きょうの料理・河野雅子「豚のしょうが焼き」を唯一の Primary Process Anchor として
+      // legacy Recipe を Evidence へ合わせて Correction した。Recipe body（食材・分量・人数・
+      // 調味・下ごしらえ・工程・器具・アレルゲン識別・process整合）が Evidence 要件を満たす。
+      // Product Time は Decision B により別 dimension（productTimeStatus='review'）。
+      status: 'verified',
+      sourceIds: [
+        'kyounoryouri-butashogayaki-kawano-2026',
+        // allergyIdentity（derived）が使う allergen / 食品表示制度 Evidence（MISSION 2.25 / 2.30）
+        'caa-food-allergy-labeling-2026',
+        'kikkoman-shoyu-allergen-2026',
+        'sanj-glutenfree-shoyu-2026',
+        'tokyo-shokuhin-eisei-allergen-2026',
+        'labelbank-allergy-hyoji-2026',
+      ],
       recipeIdentity: {
         canonicalDish: '豚の生姜焼き',
         variant:
-          '玉ねぎを一緒に炒める、漬け込みなしの生姜焼き（豚肉と玉ねぎを炒めてから、しょうゆ・みりん・しょうがのたれをからめる。砂糖・酒は使わない）',
+          '豚肩ロース薄切り肉に小麦粉を薄くまぶし、くし形に切った玉ねぎを別に約1分炒めて取り出してから、'
+          + '同じフライパンで豚肉を炒め、玉ねぎを戻し、最後にみりん・しょうゆ・すりおろししょうがを'
+          + '事前に混ぜたたれを回し入れて強めの中火でからめる、漬け込みをしないフライパン調理。'
+          + '砂糖・酒はたれに使わない。',
         servingsBasis: 2,
-        intendedTasteProfile: '家庭的なしょうがの効いた甘辛味',
-        coreMethod: '豚肉と玉ねぎをフライパンで炒め、火が通ってからしょうゆ・みりん・しょうがのたれをからめる（下味の漬け込みはしない）',
-        definingIngredients: ['豚肉', '玉ねぎ'],
+        // Section 5: 評価語を使わず、たれの構成を事実として記述する
+        intendedTasteProfile: 'みりん・しょうゆを同量、すりおろししょうがを用い、砂糖・酒を加えないたれで仕上げる',
+        coreMethod:
+          '玉ねぎを先に炒めて取り出し、小麦粉をまぶした豚肉を炒めてから玉ねぎを戻し、'
+          + '事前に合わせたみりん・しょうゆ・しょうがのたれを最後に加えて強めの中火でからめる（下味の漬け込みはしない）',
+        definingIngredients: ['豚肩ロース肉', '玉ねぎ'],
       },
       fieldVerifications: [
+        { field: 'requiredIngredients', sourceIds: ['kyounoryouri-butashogayaki-kawano-2026'], supportType: 'direct' },
+        { field: 'ingredientAmounts', sourceIds: ['kyounoryouri-butashogayaki-kawano-2026'], supportType: 'direct' },
+        { field: 'servingsBase', sourceIds: ['kyounoryouri-butashogayaki-kawano-2026'], supportType: 'direct' },
+        { field: 'seasonings', sourceIds: ['kyounoryouri-butashogayaki-kawano-2026'], supportType: 'direct' },
+        { field: 'seasoningAmounts', sourceIds: ['kyounoryouri-butashogayaki-kawano-2026'], supportType: 'direct' },
+        { field: 'criticalSteps', sourceIds: ['kyounoryouri-butashogayaki-kawano-2026'], supportType: 'direct' },
+        { field: 'equipment', sourceIds: ['kyounoryouri-butashogayaki-kawano-2026'], supportType: 'direct' },
+        { field: 'preparation', sourceIds: ['kyounoryouri-butashogayaki-kawano-2026'], supportType: 'direct' },
         {
-          field: 'ingredientAmounts',
-          sourceIds: ['sirogohan-butashogayaki-2026'],
-          supportType: 'direct',
-        },
-        { field: 'servingsBase', sourceIds: ['kikkoman-butashogayaki-2026', 'sirogohan-butashogayaki-2026'], supportType: 'direct' },
-        { field: 'equipment', sourceIds: ['sirogohan-butashogayaki-2026'], supportType: 'direct' },
-        {
-          field: 'requiredIngredients',
-          sourceIds: ['sirogohan-butashogayaki-2026'],
-          supportType: 'variant',
-        },
-        {
-          field: 'seasoningAmounts',
-          sourceIds: ['sirogohan-butashogayaki-2026'],
-          supportType: 'variant',
-          variantRelation: 'conflicting-within-variant',
-        },
-        {
-          field: 'criticalSteps',
-          sourceIds: ['sirogohan-butashogayaki-2026'],
-          supportType: 'variant',
+          // MISSION 2.31 — allergyIdentity は「Recipe source が食材を証明」＋「日本の食品表示制度・
+          // 製造者アレルギー表示・NUKITORU の relation policy が ingredient→allergen 関係を証明」の
+          // 組み合わせ＝derived。NHK は allergen 分類を確立しないため direct[NHK] にはしない。
+          field: 'allergyIdentity',
+          sourceIds: [
+            'caa-food-allergy-labeling-2026',
+            'kikkoman-shoyu-allergen-2026',
+            'sanj-glutenfree-shoyu-2026',
+            'tokyo-shokuhin-eisei-allergen-2026',
+            'labelbank-allergy-hyoji-2026',
+          ],
+          supportType: 'derived',
+          derivation:
+            'Recipe の食材同定（豚肩ロース肉・玉ねぎ・しょうゆ・みりん・しょうが・小麦粉・油）は NHK source が直接確立。'
+            + '各食材の allergen-relevant identity を、日本の食品表示制度（消費者庁 食物アレルギー表示情報／'
+            + '東京都保健医療局「食品衛生の窓」の特定原材料等29品目リスト・代替表記／拡大表記の定義）と'
+            + '製造者公式アレルギー表示、NUKITORU の relation policy（ingredient-allergens.ts / ingredient-taxonomy.ts）で評価した: '
+            + '(a) 豚肩ロース肉 = 豚肉（特定原材料に準ずるもの／推奨）の部位。ingredient-taxonomy.ts の '
+            + '「豚肩ロース肉 → 豚肉」broader 関係（MISSION 2.30）により「豚肉」アレルギーで HARD EXCLUDE。'
+            + '(b) しょうゆ → 小麦・大豆 = default-generic-risk（標準的市販こいくちしょうゆが小麦・大豆を'
+            + 'アレルギー物質として表示。小麦不使用のグルテンフリーしょうゆも実在するため generic は fail-safe に'
+            + '小麦・大豆関連として HARD EXCLUDE）。'
+            + '(c) 小麦粉 → 小麦 = contains（MISSION 2.30。消費者庁 食品表示基準 別表第3 が「小麦粉」を「小麦」の'
+            + '拡大表記として例示。小麦不使用の「小麦粉」製品は存在しない。しょうゆの関係とは独立に、'
+            + '「小麦」アレルギーで HARD EXCLUDE）。小麦は特定原材料（義務表示）。'
+            + '(d) みりん・(e) しょうが・(f) 玉ねぎ = 消費者庁／東京都の特定原材料等29品目カテゴリのいずれにも'
+            + '該当しない（NO_REGULATED_RELATION。標準的な本みりん／みりん風調味料はアレルギー特定原材料等の表示なし）。'
+            + '(g) 油 = PRODUCT_IDENTITY_UNSPECIFIED（MISSION 2.31A）。NHK 出典は油の種類を特定していない（「油」表記）。'
+            + '「油」という語のカテゴリ自体は特定原材料等29品目に非該当だが、実際に選ばれる商品（ごま油=ごま／'
+            + '落花生油=落花生 等、それ自体が特定原材料等になり得るもの）によってアレルギー表示は変わり得る。'
+            + 'NUKITORU は generic「油」から特定の油種を推測しない（UNKNOWN ≠ ALLERGEN PRESENT。存在しない'
+            + 'アレルゲンを ingredient-allergens.ts に「油 → ◯◯」として追加しない）。同時に「油だから安全」とも'
+            + '扱わない（UNKNOWN ≠ SAFE）。この不確実性は machine-readable に表現する: '
+            + 'ingredientChecks に { ingredientName: "油" } を持ち、isProductCheckTarget("油") = true、'
+            + 'かつ ingredientAllergenRelations("油") = []（HARD EXCLUDE 関係なし）。'
+            + 'ユーザー向けには「使用する油の原材料・アレルギー表示を確認してください」という PRODUCT CHECK ALERT を出す。'
+            + 'なお大豆油の場合でも大豆は上記(b)しょうゆ経由で既に HARD EXCLUDE 対象。'
+            + '結論: 全7食材の allergen-relevant identity は「評価済み」。うち油は「不確実性が明示的に評価され、'
+            + 'PRODUCT CHECK 必須」の状態（＝ proven safe ではなく assessed-uncertain）であり、'
+            + 'その判断根拠（出典が油種未指定・カテゴリ非該当・油種を推測しない方針・product check の要否）は'
+            + '上記 source と policy と ingredientChecks に traceable。'
+            + '「豚肉」「小麦」「大豆」アレルギーで HARD EXCLUDE される。generic「油」由来の false HARD EXCLUDE は無い。',
         },
       ],
-      reviewNotes: [
+      coherenceReview: {
+        status: 'coherent',
+        sourceProcessNotes: [
+          {
+            sourceId: 'kyounoryouri-butashogayaki-kawano-2026',
+            equipment: 'フライパン（＋小麦粉を薄くふるための茶こし）',
+            fatOrOil: '油 小さじ1（玉ねぎを炒める用）と 油 大さじ1（豚肉を炒める用）を、同じフライパンで順に使う',
+            heatSequence:
+              '中火で玉ねぎを約1分炒めて取り出す→油を足して中火で豚肉を並べる→ほぐしながら炒めて'
+              + '全体に火を通す→玉ねぎを戻してサッと炒め合わせる→たれを回し入れて強めの中火でからめる',
+            flip: '豚肉は重ならないように並べ、ほぐしながら炒める（明示的な「1回返す」表現はない）',
+            seasoningSequence:
+              'みりん・しょうゆ・すりおろししょうがを事前に混ぜ合わせておき（たれA）、'
+              + '豚肉と玉ねぎに火が通ったあと最後に回し入れて強めの中火でからめる',
+            preparationSequence:
+              '豚肩ロース薄切り肉に小麦粉を茶こしで薄くふる→玉ねぎを1cm幅のくし形に切る→たれ（A）を混ぜ合わせる',
+          },
+        ],
+        reviewedDimensions: [
+          'equipment',
+          'fat-or-oil',
+          'heat-sequence',
+          'flip-or-turn',
+          'seasoning-sequence',
+          'major-preparation-sequence',
+        ],
+        rationale:
+          'Recipe body は NHKきょうの料理・河野雅子「豚のしょうが焼き」という単一sourceの単一processだけで'
+          + '構成され、複数sourceのprocess事実を混成していないためcoherent。corroborating source'
+          + '（キッコーマン・白ごはん.com・味の素KK）は MISSION 2.29 で比較にのみ用い、いずれも漬け込み・'
+          + 'たれ構成・玉ねぎの有無が異なる別variantのため Recipe fact は輸入していない。'
+          + 'ふた（lid）は NHK source が言及しないため reviewedDimensions に含めず、「ふたなし」という'
+          + '事実も捏造していない（source silence）。coherent はVERIFIED・安全・美味・authentic・publishable を'
+          + '意味しない。',
+      },
+      timeVerification: {
+        sourceStatedTotal: {
+          value: { kind: 'exact', minutes: 15 },
+          sourceIds: ['kyounoryouri-butashogayaki-kawano-2026'],
+          // NHK buta は「調理時間15分」のみ。tori-teriyaki と違い除外時間の注記が無い
+          // （下味・常温戻し・漬け込みが無いため）。excludes は設定しない。
+        },
+        // Decision B: Product elapsed time は未確定。source displayed time（15分）や legacy
+        // cookingTimeMinutes を確定値として表示・filter・ranking に使わない（productCookingTimeMinutes=null）。
+        productTimeStatus: 'review',
+      },
+      reviewNotes: [],
+      provenanceNotes: [
         'MISSION 2.18 Batch 3 — 初回のEvidence Resolution（この recipe には従来 verification ブロックが無かった）。'
           + 'Tier2/3 sourceを2件開いて確認（ニチレイフーズのページはHTTP 403で本文を取得できず不採用）。'
-          + '2 source間で「玉ねぎの有無」「みりんの有無」「漬け込みの有無」「たれの構成」がいずれも異なり、'
-          + 'NUKITORUのたれ（しょうゆ大さじ1と1/2・みりん大さじ1・しょうが小さじ1・砂糖なし・酒なし）は'
-          + 'どちらのsourceとも一致しない。',
+          + '2 source（キッコーマン／白ごはん.com）間で「玉ねぎの有無」「みりんの有無」「漬け込みの有無」'
+          + '「たれの構成」がいずれも異なり、当時の legacy たれ（しょうゆ大さじ1と1/2・みりん大さじ1・'
+          + 'しょうが小さじ1・砂糖なし・酒なし）はどちらのsourceとも一致しなかった。2.18時点では Recipe fact を'
+          + 'すべて HOLD（Commander判断事項）とした。',
         'SOURCE A: kikkoman-butashogayaki-2026（基本の和食）観測サマリ（fingerprint入力・'
           + 'SHA-256=a89b66f661a2ae210e8879131c1a25adab1103b368fa658850614541b9ed91b3）: '
           + '「2人分|豚肩ロース肉しょうが焼き用250〜300g|玉ねぎなし|しょうが3かけ分すりおろしで1かけA下味と'
           + '2かけBたれ|しょうゆ大さじ2|砂糖大さじ1|酒=小さじ2Aと大さじ1B|みりんなし|油大さじ1/2|小麦粉なし|'
           + '下ごしらえ=ペーパーで余分な水気をふく+Aのしょうがと酒を絡めて5分置く|筋切りの記載なし|'
           + '工程=中火で2〜3分動かさず焼く→返して30秒〜1分→Bのたれを中央に加える→火を強めて煮立ててから'
-          + '絡める→フライパンの底が見えるまで煮つめる|ふたなし|調理時間約20分|監修記載なし」。',
+          + '絡める→フライパンの底が見えるまで煮つめる|ふたなし|調理時間約20分|監修記載なし」。'
+          + '→ 下味あり・玉ねぎなし・砂糖あり・みりんなし の別variant。Recipe fact は輸入しない。',
         'SOURCE B: sirogohan-butashogayaki-2026（白ごはん.com/冨田ただすけ、professional）観測サマリ'
           + '（SHA-256=f20f0246cc13aa31ee186c90977ed679c0c1e22792cb10a638b1261eb70d1fce）: '
           + '「2人分|豚ロース肉生姜焼き用200gで4〜6枚|玉ねぎ1/4個2mm薄切り|たれ=しょうゆ大さじ2+みりん大さじ1+'
           + '酒大さじ1+砂糖小さじ2+しょうがすりおろしとしぼり汁20〜30g+ケチャップ小さじ1+ごま油小さじ1/2+'
           + 'こしょう少々|油小さじ1|小麦粉なし|下ごしらえ=1cm間隔で筋切り+しょうがとにんにくをすりおろす+'
           + 'みりんと酒としぼり汁で10分漬け込む2〜3回返す|工程=油を熱し玉ねぎを先に炒める→豚肉を加える→'
-          + '両面を焼く→たれを加えて約2分からめる|ふたなし|著者冨田ただすけ」。',
-        'FIELD-BY-FIELD: (1) ingredientAmounts=豚肉200g → SOURCE B（200g・同一の玉ねぎ入りidentity）が'
-          + '直接一致（direct、ただし単独source）。SOURCE A は肩ロース250〜300gで別。(2) servingsBase=2 → '
-          + '両source2人分（direct）。(3) equipment=フライパン → 両source（direct）。(4) requiredIngredients'
-          + '（豚肉＋玉ねぎ）→ 玉ねぎ入りは SOURCE B が支持するが SOURCE A は玉ねぎなし。玉ねぎ量も'
-          + 'NUKITORU 1/2個 vs SOURCE B 1/4個 で2倍差 → variant。(5) seasoningAmounts → みりん大さじ1は'
-          + 'SOURCE B と一致するが、しょうゆ（大さじ1と1/2 vs 大さじ2）・砂糖（なし vs 小さじ2）・酒（なし vs '
-          + '大さじ1）・しょうが（小さじ1 vs すりおろし20〜30g）が不一致、かつSOURCE Bはケチャップ/ごま油も'
-          + '使う → variant / conflicting-within-variant。(6) criticalSteps → NUKITORUは漬け込みなし・豚肉と'
-          + '玉ねぎを一緒に炒める。SOURCE B は10分漬け込み＋玉ねぎを先に炒めてから豚肉、と順序も前処理も'
-          + '異なる → variant。',
-        'PREPARATION AUDIT: SOURCE A は「水気をふく＋しょうがと酒で5分下味」、SOURCE B は「1cm間隔の筋切り＋'
-          + 'すりおろし＋10分漬け込み」。いずれもNUKITORUには無い。Section 9に従い、Evidence支持のある下ごしらえ'
-          + '（筋切り・漬け込み・下味）を勝手に追加しない（HOLD）。「漬け込み時間」を現行schemaで'
-          + 'cookingTimeMinutesや stepsと分けて表現できない点は構造的制約として記録（新モデルは作らない）。',
-        'PROCESS COHERENCE: 2 source は互いに別process（漬け込みの有無・玉ねぎの有無・調味構成）。'
-          + '混成しない。NUKITORUの「漬け込みなし・玉ねぎと一緒に炒める」coreMethodは SOURCE B の'
-          + '「玉ねぎ入り」という点だけ共有し、他は不一致。coherenceReviewは未実施。',
-        'DECISION: Recipe fact は全て変更なし（HOLD）。CANDIDATE CHANGES（未実施・Commander判断）: '
-          + '(a) requiredIngredients「豚肉」→「豚ロース肉」（SOURCE B）／部位名変更はSection 17 freezeの'
-          + '候補ロジックへ影響し得るため保留。(b) 玉ねぎ 1/2個 → 1/4個（SOURCE B）は単独source・かつ'
-          + 'SOURCE Bのたれ全体が別構成のため寄せない。(c) たれ（しょうゆ大1.5/みりん大1/しょうが小1）は'
-          + 'どのsourceとも一致せず、SOURCE B へ寄せると砂糖・酒・ケチャップ・ごま油の追加＝別レシピ化に'
-          + 'なるため行わない。 / EVIDENCE TYPE: seasoningAmounts=A（source間conflict）＋E（NOT_FOUND）、'
-          + 'requiredIngredients=B/C（玉ねぎ有無のvariant＋部位未確定）、F（同一identityの独立裏付けは'
-          + 'SOURCE B 単独）。',
+          + '両面を焼く→たれを加えて約2分からめる|ふたなし|著者冨田ただすけ」。'
+          + '→ 10分漬け込み・豚ロース肉・ケチャップ／ごま油入りの別variant。Recipe fact は輸入しない。',
+        'MISSION 2.29（Primary Process Anchor 決定）— 「豚の生姜焼き」の Primary Process Anchor を '
+          + 'NHK きょうの料理・河野雅子「豚のしょうが焼き」（kyounoryouri-butashogayaki-kawano-2026）に決定。'
+          + 'tori-teriyaki VERIFIED #1 と同じ講師（河野雅子）。理由: (1) 名前のついた講師＋放送メディアの説明責任、'
+          + '(2) 玉ねぎ入り・漬け込みなし・小麦粉あり・砂糖/酒なしのたれ、という legacy の identity 方向と最も整合、'
+          + '(3) corroborator（味の素KK 706344）が process-family として部分的に裏付ける。'
+          + 'SOURCE A（キッコーマン）・SOURCE B（白ごはん.com）・味の素KK は comparison / corroboration only。'
+          + 'NO hybrid。多数決・平均・midpoint による fact 確立はしない。'
+          + 'MISSION 2.29 時点では PARTIAL CORRECTION CANDIDATE ONLY とし、豚肉部位 taxonomy（豚肩ロース肉→豚肉）'
+          + 'と 小麦粉→小麦 allergen 関係が未整備のため VERIFIED を保留した。',
+        'MISSION 2.30（Pork Taxonomy & Wheat Allergen Safety Gate）— buta VERIFIED #2 の安全性ブロッカーを'
+          + 'Evidence ベースで解消: (1) ingredient-taxonomy.ts に「豚肩ロース肉 → 豚肉」「豚ロース肉 → 豚肉」'
+          + 'broader 関係を追加（鶏もも肉→鶏肉 と同型。「豚肉」アレルギーで部位 recipe を HARD EXCLUDE。'
+          + 'STOCK マッチングは変えない＝部位在庫≠別部位 recipe、generic 豚肉在庫≠部位 recipe）。'
+          + '(2) ingredient-allergens.ts に AllergenRelationType「contains」を追加し「小麦粉 → 小麦」を contains として登録'
+          + '（消費者庁 別表第3 の拡大表記。small-mugi 不使用の「小麦粉」は存在しない。default-generic-risk ではない）。'
+          + '(3) evidence-sources.ts に 東京都保健医療局・ラベルバンク の2 source を追加（拡大表記／特定原材料等リストの裏付け）。'
+          + 'buta は本 MISSION では status:review のまま据え置き、Safety Gate は一切弱めていない。',
+        'MISSION 2.31（Evidence-Backed Correction & VERIFIED #2）— NHK anchor の本文を再度開いて '
+          + 'MISSION 2.29 report と material difference が無いことを確認（2026-08-31）。'
+          + 'legacy Recipe body を NHK anchor の単一 process へ Correction:'
+          + ' (1) requiredIngredients「豚肉 200g」→「豚肩ロース肉 200g（薄切り）」（NHK direct）。'
+          + '部位名を canonical に保ち（豚肩ロース肉）、「薄切り」は amount 表記と preparation / recipeIdentity で保持。'
+          + ' (2) 玉ねぎ「1/2個」→「1/2個（100g）」（NHK direct。数量は不変で g 併記のみ）。'
+          + ' (3) seasonings: しょうゆ 大さじ1と1/2（不変・NHK と一致）、みりん 大さじ1 →「大さじ1と1/2」（NHK direct）、'
+          + 'しょうが 小さじ1 →「小さじ2（すりおろし）」（NHK direct）、小麦粉「適量」を追加（NHK direct。'
+          + '「小麦粉なし」用の架空 ingredient は作らない）、油「小さじ1（玉ねぎ用）と大さじ1（豚肉用）」を追加'
+          + '（NHK が2つの別用途で別分量を明示。小さじ1+大さじ1 を大さじ4 等へ算術合算していない。'
+          + '同一食材2回使用を seasonings の canonical 重複制約内で表すため、両方の exact 分量と用途を1エントリの'
+          + 'amount 文字列に保持した）。砂糖・酒・ケチャップ・ごま油・にんにくは他 source の要素であり入れていない。'
+          + ' (4) equipment「包丁・まな板・フライパン」→「フライパン・茶こし」（NHK direct。'
+          + '茶こしは小麦粉を薄くふる工程で明示。tori-teriyaki と同じく ordinary utensil は列挙しない）。'
+          + ' (5) preparation（旧: 無し）→ NHK anchor の3工程を追加（小麦粉を茶こしで薄くふる／玉ねぎを1cm幅くし形／'
+          + 'たれを事前に混ぜる）。漬け込み・常温戻し・筋切り・塩こしょうは NHK anchor に無いため追加しない。'
+          + 'preparation に Evidence にない所要時間は付けていない。'
+          + ' (6) steps 旧3工程（簡略化）→ NHK anchor の5工程へ置換（玉ねぎを先に約1分炒めて取り出す→油を足して豚肉→'
+          + 'ほぐしながら全体に火を通す→玉ねぎを戻す→事前に混ぜたたれを最後に回し入れて強めの中火でからめる）。'
+          + '玉ねぎの「約1分」以外に Evidence にない所要時間（豚肉◯分・たれ◯秒）は付けていない。'
+          + 'ふた（lid）は NHK が言及しないため steps にも coherence にも入れていない（source silence。'
+          + '「ふたなし」という事実も捏造しない）。',
+        'NHK ANCHOR 観測サマリ（2026-08-31。NUKITORU 自作。source 本文の複製ではない。'
+          + 'evidence-sources.ts の kyounoryouri-butashogayaki-kawano-2026.observation.contentFingerprint は'
+          + 'この文字列の正規化 SHA-256 = 0af8dbd82b38feb993bc2b4771f7629208849d820bffb37a06216711618600c3）: '
+          + '「2人分|豚肩ロース肉(薄切り)200g|たまねぎ1/2コ(100g)|キャベツ1枚(50g)はつけ合わせ|'
+          + '小麦粉適量(茶こしで全体に薄くふる。たれがからみやすく仕上がりが柔らかくなる)|'
+          + '油=玉ねぎ用小さじ1+豚肉用大さじ1|合わせだれA=みりん大さじ1と1/2+しょうゆ大さじ1と1/2+しょうが(すりおろし)小さじ2|'
+          + '砂糖なし|酒なし|下ごしらえ=豚肉をバットに広げ小麦粉を茶こしで薄くふる+たまねぎを1cm幅くし形+キャベツをせん切り+Aを混ぜ合わせる|'
+          + '漬け込みなし|工程=フライパンに油小さじ1中火→たまねぎ約1分炒めて取り出す→同じフライパンに油大さじ1を足す中火→'
+          + '豚肉を重ならないように並べる→ほぐしながら炒めて全体に火を通す→色が変わったらたまねぎを戻しサッと炒め合わせる→'
+          + 'Aを回し入れ強めの中火で全体にからめる→器にキャベツとともに盛る|ふたの記載なし|加熱=中火→強めの中火|'
+          + '調理時間15分(除外時間の注記なし)|エネルギー390kcal(1人分)|講師河野雅子|出版NHKエデュケーショナル みんなのきょうの料理」。',
+        'CABBAGE（つけ合わせ）省略の判断: NHK source は「キャベツ 1枚（50g）」をせん切りにして'
+          + '豚肉とともに器に盛る、と記載しているが、これは主菜「豚の生姜焼き」の core Recipe Identity では'
+          + 'なく side garnish（付け合わせ）である（MISSION 2.29 判定）。tori-teriyaki の「スナップえんどう100g」を'
+          + 'requiredIngredients に入れなかったのと同じ扱いで、キャベツも requiredIngredients / preparation に入れない。'
+          + 'この省略は豚肉の調理 process を一切変えない（キャベツは加熱に関与しない）。',
+        'PRODUCT TIME（Decision B / MISSION 2.20 firewall）: verification.timeVerification.productTimeStatus = "review"。'
+          + 'NHK の掲載時間「15分」は sourceStatedTotal.value = exact 15分（sourceIds=NHK）として保存するが、'
+          + 'productCookingTimeMinutes(buta-shogayaki) は null を返し、strict max-time フィルタ・ranking・'
+          + 'estimatedMinutes・「約15分」表示のいずれでも確定値として使わない（Recipe Detail は「調理時間の目安：確認中」）。'
+          + 'legacy cookingTimeMinutes=15 はデータ上残すが Product Elapsed Time ではない。'
+          + '15 を 20/17 等へ推測変更していない。tori-teriyaki と違い NHK buta には除外時間の注記が無いため '
+          + 'sourceStatedTotal.excludes は設定しない。activeWork / elapsedToReady / FNTT の導出（算術）は一切していない。',
+        'hasUnsupportedInference = false。Recipe body の食材・分量・調味・下ごしらえ・工程・器具・identity は'
+          + 'すべて NHK anchor による direct 支持（allergyIdentity のみ食品表示制度＋policy による derived）であり、'
+          + '「AIが発明した値」は残っていない。Product Time が未確定であること（productTimeStatus=review）は'
+          + 'hasUnsupportedInference の対象外（Decision B / 型定義のとおり）。',
+        'PROCESS COHERENCE: coherenceReview.status = "coherent"。Recipe body は NHK 単一 source の単一 process のみで'
+          + '構成され、器具・油（2回使用）・加熱順・返し方・調味順・下ごしらえ順のいずれも同一 process 内で整合する。'
+          + 'corroborator（キッコーマン・白ごはん.com・味の素KK）から Recipe fact を輸入していない。'
+          + 'coherent は VERIFIED / 安全 / 美味 / authentic / publishable を意味しない。',
+        'PRACTICAL_COOK_VALIDATION: NOT YET PERFORMED（tori-teriyaki VERIFIED #1 と同じ。現行 policy では '
+          + 'Recipe Evidence VERIFIED を block しないが、将来の Beta Quality Gate では Commander 判断まで block すべき）。'
+          + 'VERIFIED が意味するのは Recipe Evidence の検証のみ。allergen-free / 確定した調理時間 / 味の保証 / '
+          + 'authentic / NHK 公式提携 のいずれも意味しない。',
+        'FUTURE_SECOND_VARIANT_CANDIDATE = YES: 白ごはん.com（漬け込み・ケチャップ／ごま油入り）や '
+          + 'キッコーマン（下味あり・玉ねぎなし・砂糖あり）は独立 Evidence のある別 variant。本 MISSION では実装しない。',
+        'MISSION 2.31A（Generic Oil Allergy Identity Resolution）— MISSION 2.31 で残った唯一の Safety ambiguity'
+          + '（NHK 出典の ingredient「油」に油種の指定がない）を解決。「油」を「NO_REGULATED_RELATION（＝カテゴリが'
+          + '規制対象でない）」とだけ扱うのは不正確（選ばれる商品次第でごま・落花生等になり得る）と判断し、'
+          + '3状態を分離した: A=NO_REGULATED_RELATION（確定した identity が規制関係を持たない。みりん・しょうが・玉ねぎ）、'
+          + 'B=DEFAULT_GENERIC_RISK（generic に既知の allergen relation。しょうゆ→小麦・大豆。HARD EXCLUDE）、'
+          + 'C=PRODUCT_IDENTITY_UNSPECIFIED（出典が広いカテゴリ名しか示さず、選ばれる商品でアレルギー表示が変わり得る。'
+          + '「油」）。C の解決は既存 ingredientChecks 機構を再利用（新 architecture は作らない）: '
+          + 'product-check-messages.ts の PRODUCT_CHECK_TARGET_INGREDIENTS に「油」を追加し、'
+          + 'buta-shogayaki（および generic「油」を使う既存 catalog Recipe: tori-karaage / medama-yaki / tamagoyaki / '
+          + 'ninjin-shirishiri / napolitan）の ingredientChecks に { ingredientName: "油" } を追加。'
+          + 'これは HARD EXCLUDE ではなく PRODUCT CHECK ALERT（「使用する油の原材料・アレルギー表示を確認してください」）。'
+          + 'ingredient-allergens.ts には「油 → ◯◯」relation を追加していない（存在しないアレルゲンを推測で付与しない。'
+          + 'UNKNOWN ≠ ALLERGEN PRESENT）。同時に「油だから安全」とも表示しない（UNKNOWN ≠ SAFE）。'
+          + 'allergyIdentity は引き続き derived / VERIFIED: 「油」は proven-safe ではなく「不確実性が明示的に評価され '
+          + 'PRODUCT CHECK 必須」の assessed 状態で、machine-readable（ingredientChecks + isProductCheckTarget）'
+          + 'かつ explainable。Recipe process / NHK anchor / 他食材 Evidence / Product Time は一切変更していない。'
+          + 'tori-teriyaki は「サラダ油」（canonical が別・JAS 定義の具体名）のため対象外・無変更。',
       ],
-      hasUnsupportedInference: true,
+      hasUnsupportedInference: false,
     },
   },
   {
@@ -1391,7 +1569,8 @@ export const RECIPE_CATALOG: Recipe[] = [
       { name: 'しょうが', amount: '小さじ1' },
       { name: '油', amount: '適量（揚げ油）' },
     ],
-    ingredientChecks: [{ ingredientName: 'しょうゆ' }],
+    // MISSION 2.31A — 油は種類が特定されない generic-category（PRODUCT CHECK ALERT）
+    ingredientChecks: [{ ingredientName: 'しょうゆ' }, { ingredientName: '油' }],
     cookingTimeMinutes: 25,
     servingsBase: 2,
     tags: ['揚げ物', '子ども向け'],
@@ -1750,6 +1929,8 @@ export const RECIPE_CATALOG: Recipe[] = [
     cuisine: 'japanese',
     requiredIngredients: [{ name: '卵', amount: '1個' }],
     seasonings: [{ name: '油', amount: '小さじ1と1/2' }],
+    // MISSION 2.31A — 油は種類が特定されない generic-category（PRODUCT CHECK ALERT）
+    ingredientChecks: [{ ingredientName: '油' }],
     cookingTimeMinutes: 5,
     servingsBase: 1,
     tags: ['朝食', '時短', '子ども向け'],
@@ -1928,7 +2109,8 @@ export const RECIPE_CATALOG: Recipe[] = [
       { name: 'しょうゆ', amount: '小さじ1' },
       { name: '油', amount: '適量' },
     ],
-    ingredientChecks: [{ ingredientName: 'しょうゆ' }],
+    // MISSION 2.31A — 油は種類が特定されない generic-category（PRODUCT CHECK ALERT）
+    ingredientChecks: [{ ingredientName: 'しょうゆ' }, { ingredientName: '油' }],
     cookingTimeMinutes: 10,
     servingsBase: 2,
     tags: ['朝食', '子ども向け'],
@@ -2102,7 +2284,8 @@ export const RECIPE_CATALOG: Recipe[] = [
       { name: '油', amount: '小さじ1' },
       { name: 'しょうゆ', amount: '小さじ1' },
     ],
-    ingredientChecks: [{ ingredientName: 'しょうゆ' }],
+    // MISSION 2.31A — 油は種類が特定されない generic-category（PRODUCT CHECK ALERT）
+    ingredientChecks: [{ ingredientName: 'しょうゆ' }, { ingredientName: '油' }],
     cookingTimeMinutes: 10,
     servingsBase: 2,
     tags: ['副菜', '時短'],
@@ -2479,6 +2662,8 @@ export const RECIPE_CATALOG: Recipe[] = [
       { name: 'ケチャップ', amount: '大さじ4' },
       { name: '油', amount: '大さじ1' },
     ],
+    // MISSION 2.31A — 油は種類が特定されない generic-category（PRODUCT CHECK ALERT）
+    ingredientChecks: [{ ingredientName: '油' }],
     cookingTimeMinutes: 20,
     servingsBase: 2,
     tags: ['麺', '子ども向け'],

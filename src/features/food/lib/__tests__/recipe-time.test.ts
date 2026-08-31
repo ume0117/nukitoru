@@ -553,7 +553,7 @@ describe('Cooking Time Semantics Foundation Gate (TA〜)', () => {
     expect(medamaYaki.verification?.coherenceReview?.status).toBe('incoherent')
     expect(sakeShioyaki.verification?.coherenceReview?.status).toBe('incoherent')
     // MISSION 2.26: VERIFIED は tori-teriyaki のみ（Cooking Time Semantics Foundation とは無関係）
-    expect(RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)).toEqual(['tori-teriyaki'])
+    expect(RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)).toEqual(['tori-teriyaki', 'buta-shogayaki'])
   })
 
   it('UK: Source Silence原則（EVIDENCE_POLICY.md）はCooking Time Semantics Foundation追加後も無傷', async () => {

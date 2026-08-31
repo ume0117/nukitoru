@@ -415,7 +415,7 @@ describe('MISSION 2.17 — Evidence Traceability & Quantity Semantics Foundation
   it('R32: Recipe Coherence Gate 無傷', () => {
     expect(recipe('medama-yaki').verification?.coherenceReview?.status).toBe('incoherent')
     expect(recipe('sake-shioyaki').verification?.coherenceReview?.status).toBe('incoherent')
-    expect(RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)).toEqual(['tori-teriyaki']) /* MISSION 2.26: 初の VERIFIED */
+    expect(RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)).toEqual(['tori-teriyaki', 'buta-shogayaki']) /* MISSION 2.26: 初の VERIFIED */
   })
 
   it('R33: Source Silence 原則（EVIDENCE_POLICY.md）無傷', async () => {

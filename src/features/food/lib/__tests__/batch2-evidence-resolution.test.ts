@@ -153,7 +153,7 @@ describe('MISSION 2.16 — Evidence Resolution Batch 2', () => {
   })
 
   it('CI: catalog 全体の VERIFIED 数は 0 のまま', () => {
-    expect(RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)).toEqual(['tori-teriyaki']) /* MISSION 2.26: 初の VERIFIED */
+    expect(RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)).toEqual(['tori-teriyaki', 'buta-shogayaki']) /* MISSION 2.26: 初の VERIFIED */
   })
 
   // ---- pork-cabbage: Evidence記録の訂正（direct → variant） ----

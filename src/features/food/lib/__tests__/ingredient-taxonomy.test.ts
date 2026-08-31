@@ -193,14 +193,14 @@ describe('MISSION 2.21 — allergy coverage is broader-aware (safe direction onl
 // ---- LEGACY FIREWALL ----
 
 describe('MISSION 2.21 — legacy firewall', () => {
-  it('GS: カタログの ingredient 名で broader を持つのは 鶏もも肉（2.19E-RESUME-2）/ 鶏ひき肉 / 豚ひき肉 のみ', () => {
+  it('GS: カタログの ingredient 名で broader を持つのは 鶏もも肉 / 鶏ひき肉 / 豚ひき肉 / 豚肩ロース肉（MISSION 2.31 buta correction）', () => {
     const withBroader = new Set<string>()
     for (const r of RECIPE_CATALOG) {
       for (const ing of [...r.requiredIngredients, ...(r.seasonings ?? [])]) {
         if (broaderIngredientNames(ing.name).length > 0) withBroader.add(ing.name)
       }
     }
-    expect([...withBroader].sort()).toEqual(['豚ひき肉', '鶏ひき肉', '鶏もも肉'])
+    expect([...withBroader].sort()).toEqual(['豚ひき肉', '豚肩ロース肉', '鶏ひき肉', '鶏もも肉'])
   })
 
   it('GT: アレルギー登録が無ければ、taxonomy 追加でカタログの候補結果は変わらない', () => {
