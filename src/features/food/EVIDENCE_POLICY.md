@@ -105,9 +105,18 @@ RecipeをVERIFIEDへ変更できるのは、次のすべてを満たす場合の
 
 **件数目標を設定しない。** 無理な昇格よりも、正しく`review`/`blocked`に留めることの方が高い品質である。
 
-### PRACTICAL_COOK_VALIDATION
+### PRACTICAL_COOK_VALIDATION（LAYER B。MISSION 2.33 で machine-readable 化）
 
-現行 policy では **実際に作って再現性を確認する工程は Recipe Evidence VERIFIED の要件ではない**（8 rules は Evidence 構造のみ）。ただし将来の **Beta Quality Gate** では、Commander が別途判断するまで、実地調理検証が済んでいない Recipe の Beta 公開を block すべき。「実際に作って確認済み」と主張してよいのは、それが実際に行われた後だけ。
+**Recipe Evidence（LAYER A）と実地調理検証（LAYER B）は別レイヤー。** LAYER A は「この Recipe fact は Evidence で説明できるか」（`RecipeVerification` / `isRecipePublishable`）。LAYER B は「Evidence-backed Recipe を実際に人間が作ったとき、その通り実行でき、工程が理解でき、重大な矛盾がなかったか」。
+
+- 型: `PracticalCookValidationStatus = 'not-tested' | 'passed' | 'passed-with-observations' | 're-review-required' | 'safety-stop'`（`Recipe.practicalCookValidation`。未設定＝実効的に `not-tested`。`practicalCookValidationStatusOf()` 参照）。**`'verified'` という語は LAYER B で使わない**（Evidence VERIFIED との混同防止）。
+- `isRecipePublishable()` は LAYER B を**一切参照しない**。実地検証が未実施でも Recipe Evidence VERIFIED は成立する（意図的な分離）。
+- **Evidence firewall**: 実地観察（observation）は Recipe fact（材料・分量・調味・下ごしらえ・工程・器具・RecipeIdentity・fieldVerifications・EvidenceSource・coherenceReview・allergyIdentity・`verification.status`）へ自動昇格しない。矛盾があれば practical status を立て、**将来の Evidence Resolution mission** で人間が再確認する。
+- **Product Time firewall**: 実測時間（`startedAt` / `readyAt` / `actualElapsedMinutes`）は observation。単一の実測が `productTimeStatus` / `productCookingTimeMinutes` / `sourceStatedTotal` / `activeWork` / `elapsedToReady` を確定しない。
+- **味**は主観。`tasteVerified` 等の事実フラグを作らない。「おいしかった」「家族が気に入った」「また作りたい」は observation にのみ入る（Recipe Evidence ではない）。
+- `'safety-stop'`: 食品安全上の懸念に遭遇。Evidence が自動的に false になるわけではないが、解決まで Beta 公開不可。温度・時間・工程 fact を推測で書き換えない。
+- **Beta Quality Gate**: `isPracticallyValidatedForBeta()`（`passed` / `passed-with-observations` のみ true）と `isRecipeBetaQualityReady()`（= `isRecipePublishable() && isPracticallyValidatedForBeta()`）は将来の Beta gating 用の再利用可能ヘルパー。**これだけで Recipe が Beta-ready にはならない**（Starter Set membership・Safety・その他 product 要件が別途必要）。本 foundation は Starter Set / Beta 挙動を変更しない。
+- 現状: `tori-teriyaki`（VERIFIED #1）/ `buta-shogayaki`（VERIFIED #2）とも machine-readable status = `not-tested`（fake な `passed` レコードは作らない）。provenanceNotes の「PRACTICAL_COOK_VALIDATION: NOT YET PERFORMED」は監査履歴として残るが、machine-readable status が authoritative。
 
 ### Recipe VERIFIED が意味しないこと
 

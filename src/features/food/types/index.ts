@@ -1211,6 +1211,116 @@ export interface RecipePreparationStep {
   duration?: TimeValue
 }
 
+// ============================================================
+// MISSION 2.33 — Practical Cook Validation Foundation
+//
+// 「Recipe Evidence として確認された」（LAYER A: RecipeVerification）と
+// 「実際に人間がそのレシピを作って再現性・分かりやすさを確認した」（LAYER B）を
+// 完全に分離して machine-readable に記録する最小構造。
+//
+// 絶対ルール:
+// - practicalCookValidation は Recipe Evidence ではない。observation を
+//   Recipe fact（requiredIngredients / amounts / seasonings / preparation /
+//   steps / equipment / RecipeIdentity / fieldVerifications / EvidenceSource /
+//   coherenceReview / allergyIdentity / verification.status）へ自動昇格させない。
+// - isRecipePublishable() はこの構造を一切参照しない（Recipe Evidence
+//   publishability は LAYER A のみで決まる。Recipe.verification 側に置かず
+//   Recipe 直下に置くのはこの分離を構造で示すため）。
+// - Product Time（productTimeStatus / productCookingTimeMinutes /
+//   sourceStatedTotal / activeWork / elapsedToReady）を変えない。
+//   実測時間は observation であって Product Time を確定しない。
+// - 味は主観。tasteVerified 等の事実フラグを作らない。「おいしかった」は
+//   observation にのみ入る。
+// - 'verified' という語を practical 側で使わない（Evidence VERIFIED との混同防止）。
+// - tester の氏名・メール・住所・正確な位置・家族の氏名・端末識別子を要求しない。
+// ============================================================
+
+/**
+ * 実地調理検証（LAYER B）の状態。Evidence VERIFIED とは別概念。
+ * - 'not-tested': まだ誰も実際に作って確認していない（既定）。
+ * - 'passed': 重大な Evidence/Safety 矛盾なく作れた。
+ * - 'passed-with-observations': 作れたが実務上のメモが残る（UX 改善候補）。
+ * - 're-review-required': 実地観察が Evidence-backed process と実質的に矛盾する、
+ *   または重要な再現性問題を示す → 将来の Evidence Resolution mission が必要。
+ * - 'safety-stop': 食品安全上の懸念に遭遇した → Beta 公開不可。Evidence が
+ *   自動的に false になるわけではないが、人間判断まで解決扱いにしない。
+ */
+export type PracticalCookValidationStatus =
+  | 'not-tested'
+  | 'passed'
+  | 'passed-with-observations'
+  | 're-review-required'
+  | 'safety-stop'
+
+/** 個々の実地テストの結果（'not-tested' はテスト未実施の状態でありテスト結果にはならない） */
+export type PracticalCookTestResult =
+  | 'passed'
+  | 'passed-with-observations'
+  | 're-review-required'
+  | 'safety-stop'
+
+/**
+ * 実地観察のカテゴリ。observation は Recipe fact ではない
+ * （例:「IH では玉ねぎ1分でしんなりしなかった」は observation であって
+ *  steps を「玉ねぎ2分」へ書き換える根拠にはならない）。
+ */
+export type PracticalCookObservationCategory =
+  | 'clarity'
+  | 'preparation'
+  | 'cooking-process'
+  | 'equipment'
+  | 'timing'
+  | 'food-safety'
+  | 'taste-texture'
+  | 'household-usability'
+  | 'environment-variance'
+
+export interface PracticalCookObservation {
+  category: PracticalCookObservationCategory
+  /** 実地で気づいたことの記述。Recipe fact へ自動反映しない。空文字不可 */
+  note: string
+}
+
+/** 再現性の文脈（任意・プライバシー最小）。個人・家族の識別情報は持たない */
+export interface PracticalCookEnvironment {
+  heatSource?: 'gas' | 'ih' | 'other' | 'unknown'
+  panType?: string
+  panSizeCm?: number
+  ingredientStartingState?: string
+  thermometerUsed?: boolean
+}
+
+/**
+ * 1回の実地テスト記録。
+ * startedAt / readyAt / actualElapsedMinutes は observation であり、
+ * 単一の実測値が Product Time を確定することは絶対にない（Section 12）。
+ */
+export interface PracticalCookTest {
+  id: string
+  /** ISO 日付/時刻。いつ実地テストしたか */
+  testedAt: string
+  /** テスト対象の Recipe バージョン識別（任意。将来 Recipe が版管理される場合） */
+  recipeVersion?: string
+  result: PracticalCookTestResult
+  observations: PracticalCookObservation[]
+  environment?: PracticalCookEnvironment
+  /** 実測の開始時刻（ISO・任意）。observation。Product Time を確定しない */
+  startedAt?: string
+  /** 実測の完成時刻（ISO・任意）。observation。Product Time を確定しない */
+  readyAt?: string
+  /** 実測の経過分（任意）。observation。productCookingTimeMinutes を確定しない */
+  actualElapsedMinutes?: number
+}
+
+/**
+ * Recipe 直下の任意フィールド。未設定は実効的に 'not-tested'
+ * （practicalCookValidationStatusOf 参照）。
+ */
+export interface PracticalCookValidation {
+  status: PracticalCookValidationStatus
+  tests?: PracticalCookTest[]
+}
+
 export interface Recipe {
   id: string
   name: string
@@ -1252,4 +1362,11 @@ export interface Recipe {
    * 既存44 RecipeはこのPHASEで一切書き換えない＝全件が実効的にunverified。
    */
   verification?: RecipeVerification
+
+  /**
+   * MISSION 2.33 — 実地調理検証（LAYER B）。Recipe Evidence（verification / LAYER A）
+   * とは別レイヤー。未設定は実効的に status='not-tested'
+   * （practicalCookValidationStatusOf 参照）。isRecipePublishable() はこれを参照しない。
+   */
+  practicalCookValidation?: PracticalCookValidation
 }
