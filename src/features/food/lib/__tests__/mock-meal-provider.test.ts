@@ -346,8 +346,10 @@ describe('mockMealProvider.suggest — PHASE C.1（英語食材入力対応）',
   })
 
   it('C21: "chicken" → 鶏肉Recipeにmatchする', async () => {
+    // tori-teriyaki は MISSION 2.19E-RESUME-2 で 鶏もも肉 に修正されたため、
+    // generic な "chicken"（→鶏肉）は 鶏もも肉 を満たさない。generic 鶏肉 の recipe（唐揚げ）で検証する。
     const result = await mockMealProvider.suggest(request({ ingredients: [ing('chicken')] }))
-    expect(result.suggestions.map((s) => s.title)).toContain('鶏の照り焼き')
+    expect(result.suggestions.map((s) => s.title)).toContain('鶏の唐揚げ')
   })
 
   it('C22: "rice" → 米Recipeにmatchする', async () => {

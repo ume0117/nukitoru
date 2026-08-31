@@ -547,13 +547,13 @@ describe('Cooking Time Semantics Foundation Gate (TA〜)', () => {
     expect(result.some((c) => c.recipe.id === 'ui-long')).toBe(false)
   })
 
-  it('UJ: Recipe Coherence Gateの既存挙動（medama-yaki/sake-shioyaki=incoherent, VERIFIED=0）はCooking Time Semantics Foundation追加後も無傷', () => {
+  it('UJ: Recipe Coherence Gateの既存挙動（medama-yaki/sake-shioyaki=incoherent）はCooking Time Semantics Foundation追加後も無傷', () => {
     const medamaYaki = RECIPE_CATALOG.find((r) => r.id === 'medama-yaki')!
     const sakeShioyaki = RECIPE_CATALOG.find((r) => r.id === 'sake-shioyaki')!
     expect(medamaYaki.verification?.coherenceReview?.status).toBe('incoherent')
     expect(sakeShioyaki.verification?.coherenceReview?.status).toBe('incoherent')
-    const verifiedCount = RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').length
-    expect(verifiedCount).toBe(0)
+    // MISSION 2.26: VERIFIED は tori-teriyaki のみ（Cooking Time Semantics Foundation とは無関係）
+    expect(RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)).toEqual(['tori-teriyaki'])
   })
 
   it('UK: Source Silence原則（EVIDENCE_POLICY.md）はCooking Time Semantics Foundation追加後も無傷', async () => {

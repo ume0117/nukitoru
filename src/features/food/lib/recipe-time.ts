@@ -19,11 +19,48 @@
 //   （QuickConditionSelector.tsx）には一切触れない・参照しない。
 // ============================================================
 
-import type { Recipe, TimeComponentFact, TimeValue } from '@/features/food/types'
+import type { ProductTimeStatus, Recipe, TimeComponentFact, TimeValue } from '@/features/food/types'
 
 /** kind==='unknown'以外、すなわち何らかのEvidence Timeが存在するかどうか */
 export function isKnownTimeValue(value: TimeValue): boolean {
   return value.kind !== 'unknown'
+}
+
+// ============================================================
+// MISSION 2.20 — legacy cookingTimeMinutes の Product Decision 利用可否
+//
+// BLOCKER B の最小・additive・opt-in な解消。既存の legacy `cookingTimeMinutes`
+// フィールド自体は削除も一括変更もしない。`verification.timeVerification.
+// productTimeStatus` が明示的に 'review'/'unknown' の Recipe についてのみ、
+// filter / ranking / estimatedMinutes / 「約○分」UI が確定値として扱わない
+// ようにするための純粋な判定を提供する。
+// ============================================================
+
+/** productTimeStatus 未設定は 'legacy'（従来どおり数値を使う）として返す */
+export function productTimeStatusOf(recipe: Recipe): ProductTimeStatus | 'legacy' {
+  return recipe.verification?.timeVerification?.productTimeStatus ?? 'legacy'
+}
+
+/**
+ * legacy `recipe.cookingTimeMinutes` を Product 経過時間（max-timeフィルタ / ranking /
+ * estimatedMinutes / 「約○分」表示）として確定値扱いしてよいか。
+ * - 未設定（legacy）: true（既存44 Recipe＝挙動不変）
+ * - 'established': true（明示的に確認済み）
+ * - 'review' / 'unknown': false
+ */
+export function isProductCookingTimeEstablished(recipe: Recipe): boolean {
+  const status = productTimeStatusOf(recipe)
+  return status === 'legacy' || status === 'established'
+}
+
+/**
+ * Product Decision で使える調理時間（分）。確定していなければ null。
+ * 確定した数値を要求する consumer（estimatedMinutes・max-timeフィルタ・ranking）は
+ * この関数を通す。null は「確定した経過時間ではない」ことを表し、確定値として
+ * 比較・表示してはならない。
+ */
+export function productCookingTimeMinutes(recipe: Recipe): number | null {
+  return isProductCookingTimeEstablished(recipe) ? recipe.cookingTimeMinutes : null
 }
 
 /**

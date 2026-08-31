@@ -560,6 +560,9 @@ export type RecipeVerifiableField =
   | 'criticalSteps'
   | 'equipment'
   | 'allergyIdentity'
+  // MISSION 2.20 — Recipe.preparation（調理開始前の下ごしらえ・待機）を持つRecipeでのみ
+  // applicableになる（applicableFieldsFor参照）。既存44 Recipeはpreparation未設定＝対象外。
+  | 'preparation'
 
 /**
  * MISSION 2.11 PHASE D.7-B / D.7-B.1 — Evidence Resolution Protocol。
@@ -960,6 +963,13 @@ export interface TimeComponentFact {
 export interface SourceStatedTotalTime {
   value: TimeValue
   sourceIds: string[]
+  /**
+   * MISSION 2.26 — 情報源が「表示時間から明示的に除外している」と述べている時間
+   * （任意）。例: NHK「調理時間15分 ※鶏肉を常温に戻す時間（約30分）は除く」。
+   * これは machine-readable な scope 記録であって、value と足し算してはならない
+   * （15 + 30 = 45 のような arithmetic・elapsedToReady 導出・FNTT は一切しない）。
+   */
+  excludes?: TimeComponentFact[]
 }
 
 /**
@@ -985,12 +995,38 @@ export interface ActiveWorkDerivation {
   derivation: string
 }
 
+/**
+ * MISSION 2.20 — legacy `Recipe.cookingTimeMinutes`（Recipe直下の単一number）を
+ * Product Decision（max-timeフィルタ / ranking / estimatedMinutes / 「約○分」UI）で
+ * 「確定した経過時間」として扱ってよいかの状態。
+ *
+ * - 未設定（'legacy'相当）: 従来どおり `cookingTimeMinutes` の数値をそのまま使う。
+ *   既存44 Recipeは全件このケース＝挙動は一切変わらない。
+ * - 'established': Evidence解決の結果、`cookingTimeMinutes` を Product 経過時間として
+ *   使ってよいと明示的に確認済み（挙動は 'legacy' と同じ＝数値を使う）。
+ * - 'review' / 'unknown': `cookingTimeMinutes` はまだ確定した経過時間ではない。
+ *   max-timeフィルタ・ranking・estimatedMinutes・「約○分」表示で確定値として
+ *   使ってはならない（recipe-time.ts の productCookingTimeMinutes 参照）。
+ *
+ * 注意: これは Source Displayed Time（例: NHKの「15分（常温に戻す時間を除く）」）でも
+ * Preparation/Lead Time（例: 約30分の常温戻し）でもなく、NUKITORUがユーザーに
+ * 「今の状態から何分後に食べられるか」として提示できる Product Elapsed Time の
+ * 利用可否ステータスである（Section 2/3）。
+ */
+export type ProductTimeStatus = 'established' | 'review' | 'unknown'
+
 /** RecipeVerification.timeVerification（任意）。既存Recipeは未設定のままでよい */
 export interface RecipeTimeVerification {
   components?: TimeComponentFact[]
   sourceStatedTotal?: SourceStatedTotalTime
   elapsedToReady?: ElapsedToReadyDerivation
   activeWork?: ActiveWorkDerivation
+  /**
+   * MISSION 2.20 — legacy `cookingTimeMinutes` の Product Decision 利用可否。
+   * 未設定は 'legacy' 相当（従来どおり数値を使う）。'review'/'unknown' は確定値
+   * としての利用を禁止する（BLOCKER B の最小・additive・opt-in な解消）。
+   */
+  productTimeStatus?: ProductTimeStatus
 }
 
 export interface RecipeVerification {
@@ -999,12 +1035,26 @@ export interface RecipeVerification {
   sourceIds: string[]
   /** どのsourceがどのfieldを裏付けるかの追跡（将来Recipe Factoryが利用） */
   fieldVerifications?: RecipeFieldVerification[]
-  /** review状態で残っている未解決事項。verifiedの場合はここが空でなければならない */
+  /**
+   * review状態で残っている「未解決の Recipe-Evidence 問題」のみ。verifiedの場合はここが
+   * 空でなければならない（isRecipePublishable が空でない reviewNotes をブロッカー扱いする）。
+   * MISSION 2.26 — 解決済みの監査履歴・source比較・provenance・explainability は
+   * provenanceNotes へ移す（それらは未解決問題ではないため VERIFIED をブロックしない）。
+   * Decision B のもと、未解決の Product Time は Recipe-Evidence 問題ではない。
+   */
   reviewNotes?: string[]
   /**
-   * true = このRecipeにはまだ未置換のAI/人間推測値が残っている。
-   * PHASE D.7のEvidence Audit中の中間状態を明示するための逃げ道フラグ。
-   * trueの場合、他の条件に関わらずisRecipePublishable()は必ずfalseになる。
+   * MISSION 2.26 — 解決済みの Evidence 監査履歴 / source比較 / provenance / explainability
+   * ノート（任意）。Evidence の説明可能性・追跡可能性のために保持するが、未解決問題ではない。
+   * isRecipePublishable() はこの field を一切参照しない（VERIFIED をブロックしない）。
+   * Evidence 履歴を「ゲートを通すため」に削除しない（Section 6）。
+   */
+  provenanceNotes?: string[]
+  /**
+   * MISSION 2.26 — true = Recipe body / Recipe-Evidence fact の中に、未支持の推測値が残っている。
+   * Product Time が未確定であること（productTimeStatus='review'/'unknown'）はこれには含めない
+   * （Product Time の不確実性は productTimeStatus が表現する。Section 7）。
+   * true の場合、他の条件に関わらず isRecipePublishable() は必ず false になる。
    */
   hasUnsupportedInference?: boolean
   /** MISSION 2.11 PHASE D.7-B — VERIFIEDに必須のRecipe Identity（Gate BU） */
@@ -1131,6 +1181,36 @@ export type FromNowToTableResult =
       reason: string
     }
 
+/**
+ * MISSION 2.20 — 調理開始前に必要な「下ごしらえ・待機」1手順。
+ *
+ * BLOCKER A の最小・非破壊な解消: `Recipe.steps`（＝加熱調理の手順）と
+ * 明確に区別して、Evidenceで確認できた準備工程を「嘘をつかずに」保持する。
+ * 巨大な task graph は作らない（household依存の FNTT / PrepTask とは別概念。
+ * これは universal な Recipe fact）。
+ *
+ * 絶対ルール:
+ * - allergy判定 / candidate matching / A・B分類 / ranking / stock matching には
+ *   一切使わない（RecipeCookingLiquid と同じ非機能メタデータ扱い）。
+ * - 所要時間（duration）・受動待機（passiveWait）は Evidence が明示する場合のみ設定。
+ *   常温戻し / 解凍 / 浸水 / 予熱 / 炊飯の時間を推測で埋めない。
+ */
+export interface RecipePreparationStep {
+  /** 表示文（1手順ぶんの下ごしらえ）。空文字不可 */
+  text: string
+  /**
+   * 受動的な待ち時間か（常温に戻す・浸水・解凍・粗熱をとる等、ユーザーが手を動かさない）。
+   * true=passive wait / false・未設定=active preparation。
+   * 将来 From-Now-to-Table / ActiveWorkDerivation がこの区別を利用できる余地を残す。
+   */
+  passiveWait?: boolean
+  /**
+   * この準備工程に Evidence が明示する所要時間（任意）。発明しない。
+   * MISSION 2.15 の TimeValue をそのまま再利用（rangeをmidpoint化しない）。
+   */
+  duration?: TimeValue
+}
+
 export interface Recipe {
   id: string
   name: string
@@ -1155,6 +1235,12 @@ export interface Recipe {
   tags?: string[]
   /** 準備するもの（調理器具・食器等、消費しない物のみ。食材はここに含めない） */
   equipment?: string[]
+  /**
+   * MISSION 2.20 — 調理開始前の下ごしらえ・待機（順序つき）。`steps`（加熱調理の手順）
+   * とは別枠。未設定の Recipe は従来どおり（表示も挙動も一切変わらない）。
+   * allergy / matching / ranking / A・B分類には使わない。
+   */
+  preparation?: RecipePreparationStep[]
   steps?: string[]
 
   arrangements?: RecipeArrangement[]

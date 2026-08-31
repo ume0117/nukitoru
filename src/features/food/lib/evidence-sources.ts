@@ -334,6 +334,124 @@ export const EVIDENCE_SOURCE_CATALOG: RecipeEvidenceSource[] = [
     sourceType: 'manufacturer',
     checkedAt: '2026-08-29',
   },
+
+  // ---- MISSION 2.18（Recipe Resolution Batch 3 — tori-teriyaki / buta-shogayaki）で追加 ----
+  // Batch 3で本文を実際に開いて確認した情報源。MISSION 2.17の EvidenceSourceObservation を
+  // 初めて実運用する（observedAt + contentFingerprint）。contentFingerprint は該当 recipe の
+  // reviewNotes に記録した「観測サマリ（fingerprint入力）」の SHA-256。source本文は保存しない。
+  //
+  // ---- MISSION 2.19A（tori-teriyaki の4 source観測レコードの訂正）----
+  // MISSION 2.19 の再検証で、4ページとも掲載レシピに実質的な変化（source drift）は無いが、
+  // Batch 3 の観測サマリ自体に転記漏れ・過剰記述があると判明した（NHKの未記載の「骨なし」、
+  // 白ごはん/職人醤油のふた・時間注記の不足、キッコーマンの脂の拭き取り量など）。
+  // 2026-08-30 に4ページを開き直し、観測サマリを忠実に書き直して observedAt / lastReverifiedAt
+  // を 2026-08-30 に更新、contentFingerprint を訂正後サマリから再計算した。
+  // fingerprint が変わったのは「観測レコードの訂正」であって source drift ではない。
+  // （キッコーマンの皮目4〜5分は Batch 3 が正しく、これは 2.19 再検証側の誤りだった。）
+  {
+    id: 'kikkoman-toriteriyaki-2026',
+    publisher: 'キッコーマン',
+    title: '鶏の照り焼き（基本の和食、おうちの和ごはん）',
+    url: 'https://www.kikkoman.co.jp/homecook/washoku/001/',
+    sourceType: 'manufacturer',
+    checkedAt: '2026-08-30',
+    observation: {
+      contentFingerprint: 'b4954ed9e6600cb63e015959e0e86fded1a55f1a27fb4af64186f3b674b0d22d',
+      observedAt: '2026-08-30',
+      lastReverifiedAt: '2026-08-30',
+    },
+  },
+  {
+    id: 'sshoyu-toriteriyaki-2026',
+    publisher: '職人醤油',
+    title: '鶏肉の照り焼き',
+    url: 'https://www.s-shoyu.com/cook/022',
+    sourceType: 'other-trusted',
+    checkedAt: '2026-08-30',
+    observation: {
+      contentFingerprint: '54a3b65dde243c941448820282277e3c3800318cdc423a1c3d3fa398d97c5e31',
+      observedAt: '2026-08-30',
+      lastReverifiedAt: '2026-08-30',
+    },
+  },
+  {
+    id: 'sirogohan-toriteriyaki-2026',
+    publisher: '白ごはん.com（冨田ただすけ）',
+    title: '鶏の照り焼き（照り焼きチキン）のレシピ/作り方',
+    url: 'https://www.sirogohan.com/recipe/teriyaki/',
+    sourceType: 'professional',
+    checkedAt: '2026-08-30',
+    observation: {
+      contentFingerprint: '973d8cd746e5222d7b06f5e097b722e2dd965b93e9666bab986edaa3a4f95df9',
+      observedAt: '2026-08-30',
+      lastReverifiedAt: '2026-08-30',
+    },
+  },
+  {
+    id: 'kyounoryouri-toriteriyaki-kawano-2026',
+    publisher: 'NHKみんなのきょうの料理（河野雅子）',
+    title: '鶏の照り焼き',
+    url: 'https://www.kyounoryouri.jp/recipe/31561_%E9%B6%8F%E3%81%AE%E7%85%A7%E3%82%8A%E7%84%BC%E3%81%8D.html',
+    sourceType: 'professional',
+    checkedAt: '2026-08-30',
+    observation: {
+      contentFingerprint: '9fdc33d901d00ac75b3fd9cf867e9a56a0fe9caea8dc137e0eb006e2d3b63401',
+      observedAt: '2026-08-30',
+      lastReverifiedAt: '2026-08-30',
+    },
+  },
+  {
+    id: 'kikkoman-butashogayaki-2026',
+    publisher: 'キッコーマン',
+    title: '豚肉のしょうが焼きのレシピ・つくり方（基本の和食）',
+    url: 'https://www.kikkoman.co.jp/homecook/washoku/011/',
+    sourceType: 'manufacturer',
+    checkedAt: '2026-08-29',
+    observation: {
+      contentFingerprint: 'a89b66f661a2ae210e8879131c1a25adab1103b368fa658850614541b9ed91b3',
+      observedAt: '2026-08-29',
+    },
+  },
+  {
+    id: 'sirogohan-butashogayaki-2026',
+    publisher: '白ごはん.com（冨田ただすけ）',
+    title: '豚の生姜焼きのレシピ/作り方',
+    url: 'https://www.sirogohan.com/recipe/shougayaki/',
+    sourceType: 'professional',
+    checkedAt: '2026-08-29',
+    observation: {
+      contentFingerprint: 'f20f0246cc13aa31ee186c90977ed679c0c1e22792cb10a638b1261eb70d1fce',
+      observedAt: '2026-08-29',
+    },
+  },
+
+  // ---- MISSION 2.25（Japan Allergen Evidence）で追加 ----
+  // ingredient-allergens.ts の relation table・tori-teriyaki の allergyIdentity 派生根拠が参照する。
+  // いずれも本文を実際に開いて原材料・アレルギー表示を確認した（2026-08-31）。
+  {
+    id: 'caa-food-allergy-labeling-2026',
+    publisher: '消費者庁',
+    title: '食物アレルギー表示に関する情報',
+    url: 'https://www.caa.go.jp/policies/policy/food_labeling/food_sanitation/allergy/',
+    sourceType: 'government',
+    checkedAt: '2026-08-31',
+  },
+  {
+    id: 'kikkoman-shoyu-allergen-2026',
+    publisher: 'キッコーマン',
+    title: 'キッコーマン しょうゆ（商品情報・原材料・アレルギー物質）',
+    url: 'https://www.kikkoman.co.jp/products/K05/detail/K050505.html',
+    sourceType: 'manufacturer',
+    checkedAt: '2026-08-31',
+  },
+  {
+    id: 'sanj-glutenfree-shoyu-2026',
+    publisher: 'サンジルシ醸造',
+    title: 'グルテンフリーしょうゆ 200ml（商品情報・原材料・アレルゲン）',
+    url: 'https://www.san-j.co.jp/product/100',
+    sourceType: 'manufacturer',
+    checkedAt: '2026-08-31',
+  },
 ]
 
 export function getEvidenceSourceById(

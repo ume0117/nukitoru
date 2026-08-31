@@ -84,11 +84,18 @@ export function applicableFieldsFor(recipe: Recipe): RecipeVerifiableField[] {
   const fields: RecipeVerifiableField[] = [
     'requiredIngredients',
     'ingredientAmounts',
-    'cookingTimeMinutes',
     'servingsBase',
     'criticalSteps',
     'allergyIdentity',
   ]
+  // MISSION 2.26 — Decision B: cookingTimeMinutes は「Product Time が established の
+  // Recipe」でのみ VERIFIED の Critical Field。productTimeStatus が review/unknown の
+  // Recipe は Recipe-Evidence VERIFIED になれる（Product Time は別 dimension）。
+  // 未設定（legacy）の Recipe は従来どおり cookingTimeMinutes を必須にする＝挙動不変。
+  if (recipe.verification?.timeVerification?.productTimeStatus !== 'review' &&
+      recipe.verification?.timeVerification?.productTimeStatus !== 'unknown') {
+    fields.push('cookingTimeMinutes')
+  }
   if (recipe.seasonings && recipe.seasonings.length > 0) {
     fields.push('seasonings', 'seasoningAmounts')
   }
@@ -98,8 +105,25 @@ export function applicableFieldsFor(recipe: Recipe): RecipeVerifiableField[] {
   if (recipe.equipment && recipe.equipment.length > 0) {
     fields.push('equipment')
   }
+  // MISSION 2.20 — preparation を持つ Recipe は、その準備工程も Evidence 追跡対象にする
+  // （steps と同じく Recipe fact）。未設定の Recipe は対象外＝publishability 挙動は不変。
+  if (recipe.preparation && recipe.preparation.length > 0) {
+    fields.push('preparation')
+  }
   return fields
 }
+
+/**
+ * MISSION 2.26 — process coherence の対象にしない「非プロセス系」Critical Field。
+ * これらの field だけを支持する Evidence Source は「Recipe process を記述する source」
+ * ではないため、coherenceReview.sourceProcessNotes への記載を要求しない。
+ * - allergyIdentity: 食品表示制度・製造者アレルギー表示に基づく安全分類の derived Evidence
+ *   （ingredient-allergens.ts）。加熱手順・火加減・ふた等の process fact は支持しない。
+ * cookingTimeMinutes は conditional applicability（applicableFieldsFor）で扱うためここには入れない。
+ */
+const NON_PROCESS_COHERENCE_FIELDS: ReadonlySet<RecipeVerifiableField> = new Set<RecipeVerifiableField>([
+  'allergyIdentity',
+])
 
 /**
  * MISSION 2.14B — Recipe Coherence Review。
@@ -107,11 +131,15 @@ export function applicableFieldsFor(recipe: Recipe): RecipeVerifiableField[] {
  * このRecipeの、direct/derivedで「解決済み」として扱われているapplicable
  * fieldが実際に参照しているsourceIdの集合を返す（range/variant/未設定の
  * fieldは対象外＝Coherence Reviewの対象にする必要がない）。
+ * MISSION 2.26: NON_PROCESS_COHERENCE_FIELDS（allergyIdentity 等）「のみ」を支持する
+ * source は process-coherence contributor にしない。process field も支持する source は
+ * 引き続き contributor（＝ここで process field 側から拾われる）。
  */
 function coherenceContributingSourceIds(recipe: Recipe, v: RecipeVerification): Set<string> {
   const ids = new Set<string>()
   const fieldVerificationMap = new Map((v.fieldVerifications ?? []).map((fv) => [fv.field, fv]))
   for (const field of applicableFieldsFor(recipe)) {
+    if (NON_PROCESS_COHERENCE_FIELDS.has(field)) continue
     const fv = fieldVerificationMap.get(field)
     if (!fv) continue
     if (fv.supportType !== 'direct' && fv.supportType !== 'derived') continue
@@ -233,6 +261,15 @@ export function isRecipePublishable(
   if (!v) return false
   if (!isValidVerificationStatus(v.status)) return false
   if (v.status !== 'verified') return false
+
+  // MISSION 2.26 — Decision B（Commander 承認）: Recipe Evidence VERIFIED ≠ Product Time VERIFIED。
+  // productTimeStatus が review/unknown でも Recipe-Evidence VERIFIED は可能。
+  // （MISSION 2.20 でここに入れていた productTimeStatus ブロックは削除。EVIDENCE_POLICY.md §
+  //  「Publishability との分離」の元設計に戻す。）
+  // 未確定 Product Time が「確定した時間」として表示・filter・ranking されないことは、
+  // applicableFieldsFor（cookingTimeMinutes を非該当にする）と recipe-time.ts の
+  // productCookingTimeMinutes()＝null／strict max-time／ranking +Infinity／UI「確認中」で
+  // 引き続き担保される（これらは一切弱めていない）。
 
   // VERIFIEDには最低1件以上のsourceが必要
   if (v.sourceIds.length === 0) return false

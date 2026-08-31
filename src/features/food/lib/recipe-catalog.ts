@@ -900,23 +900,309 @@ export const RECIPE_CATALOG: Recipe[] = [
     name: '鶏の照り焼き',
     type: 'main',
     cuisine: 'japanese',
-    requiredIngredients: [{ name: '鶏肉', amount: '300g' }],
+    requiredIngredients: [{ name: '鶏もも肉', amount: '300g' }],
     seasonings: [
-      { name: 'しょうゆ', amount: '大さじ1と1/2' },
-      { name: 'みりん', amount: '大さじ1と1/2' },
-      { name: '砂糖', amount: '大さじ1' },
+      { name: 'しょうゆ', amount: '大さじ1' },
+      { name: 'みりん', amount: '大さじ1' },
+      { name: '酒', amount: '大さじ1' },
+      { name: '砂糖', amount: '小さじ1' },
+      { name: '塩', amount: '少々' },
+      { name: 'サラダ油', amount: '小さじ1' },
     ],
     ingredientChecks: [{ ingredientName: 'しょうゆ' }],
     cookingTimeMinutes: 15,
     servingsBase: 2,
     tags: ['焼き物', '子ども向け'],
-    equipment: ['フライパン', '菜箸'],
-    steps: [
-      'フライパンで鶏肉の皮目から焼く',
-      '両面に焼き色がつき、中心まで火が通ったら余分な油をふき取る',
-      'しょうゆ、みりん、砂糖を加えて煮からめる',
+    equipment: ['フライパン'],
+    preparation: [
+      {
+        text: '調理の約30分前に鶏もも肉を冷蔵庫から出し、室温に戻す',
+        passiveWait: true,
+        duration: { kind: 'approximate', minutes: 30 },
+      },
+      { text: '鶏もも肉の余分な脂肪を除く' },
+      { text: '筋の多いところや厚いところに切り目を入れる' },
+      { text: '縦半分に切り、1切れを3等分にする（計6切れ）' },
+      { text: 'しょうゆ・みりん・酒・砂糖・塩を混ぜ合わせて、たれを作っておく' },
     ],
-    notes: ['鶏肉は中心まで火が通っていることを確認してください。'],
+    steps: [
+      'フライパンにサラダ油小さじ1を入れ、鶏もも肉を皮目を下にして並べ、中火で2〜3分焼く',
+      '焼き色がついたら返し、ふたをして弱めの中火で3〜4分蒸し焼きにする',
+      'ふたを取り、ペーパータオルで溶け出た脂を拭く',
+      'あらかじめ混ぜ合わせたたれを回し入れる',
+      '強めの中火で煮詰めながら、照りが出るまでからめる',
+    ],
+    notes: ['鶏もも肉は中心まで火が通っていることを確認してください。'],
+    verification: {
+      // MISSION 2.26 — NUKITORU FOOD 初の Recipe Evidence VERIFIED。
+      // Recipe body（食材・分量・人数・調味・下ごしらえ・工程・器具・アレルゲン識別・process整合）が
+      // Evidence 要件を満たす。Product Time は Decision B により別 dimension（productTimeStatus='review'）。
+      status: 'verified',
+      sourceIds: [
+        'kikkoman-toriteriyaki-2026',
+        'sshoyu-toriteriyaki-2026',
+        'sirogohan-toriteriyaki-2026',
+        'kyounoryouri-toriteriyaki-kawano-2026',
+        // allergyIdentity（derived）が使う allergen Evidence（MISSION 2.25）
+        'caa-food-allergy-labeling-2026',
+        'kikkoman-shoyu-allergen-2026',
+        'sanj-glutenfree-shoyu-2026',
+      ],
+      recipeIdentity: {
+        canonicalDish: '鶏の照り焼き',
+        variant:
+          '小麦粉をまぶさず、サラダ油少量で鶏もも肉を皮目から焼き、返してふたをして弱めの中火で3〜4分蒸し焼きにし、溶け出た脂を拭いてから、しょうゆ・みりん・酒を同量ずつ＋砂糖少々＋塩少々の合わせだれ（事前に混ぜる）を加えて、強めの中火で照りが出るまで煮からめるフライパン調理の照り焼き。焼く前に鶏肉を切り分ける。',
+        servingsBasis: 2,
+        // MISSION 2.22: taste 推論を避け、合わせだれの構成を事実として記述するに留める（「効かせ」「ごく少量」「家庭的」は除去）
+        intendedTasteProfile: 'しょうゆ・みりん・酒を同量ずつ、砂糖と塩は少量の合わせだれで仕上げる照り焼き',
+        coreMethod:
+          '皮目から焼いて返し、ふたをして蒸し焼きにし、溶け出た脂を拭いてから、事前に合わせたたれを加えて照りが出るまで煮からめる',
+        definingIngredients: ['鶏もも肉'],
+      },
+      fieldVerifications: [
+        { field: 'requiredIngredients', sourceIds: ['kyounoryouri-toriteriyaki-kawano-2026'], supportType: 'direct' },
+        { field: 'ingredientAmounts', sourceIds: ['kyounoryouri-toriteriyaki-kawano-2026'], supportType: 'direct' },
+        { field: 'servingsBase', sourceIds: ['kyounoryouri-toriteriyaki-kawano-2026'], supportType: 'direct' },
+        { field: 'seasonings', sourceIds: ['kyounoryouri-toriteriyaki-kawano-2026'], supportType: 'direct' },
+        { field: 'seasoningAmounts', sourceIds: ['kyounoryouri-toriteriyaki-kawano-2026'], supportType: 'direct' },
+        { field: 'criticalSteps', sourceIds: ['kyounoryouri-toriteriyaki-kawano-2026'], supportType: 'direct' },
+        { field: 'equipment', sourceIds: ['kyounoryouri-toriteriyaki-kawano-2026'], supportType: 'direct' },
+        { field: 'preparation', sourceIds: ['kyounoryouri-toriteriyaki-kawano-2026'], supportType: 'direct' },
+        {
+          // MISSION 2.26 — allergyIdentity は「Recipe source が食材を証明」＋「日本の食品表示制度と
+          // 製造者アレルギー表示、NUKITORU の default-generic-risk policy が ingredient→allergen 関係を証明」
+          // の組み合わせ＝derived。NHK は allergen 分類を確立しないため direct[NHK] にはしない。
+          field: 'allergyIdentity',
+          sourceIds: [
+            'caa-food-allergy-labeling-2026',
+            'kikkoman-shoyu-allergen-2026',
+            'sanj-glutenfree-shoyu-2026',
+          ],
+          supportType: 'derived',
+          derivation:
+            'Recipe の食材同定（鶏もも肉・しょうゆ・みりん・酒・砂糖・塩・サラダ油）は NHK source が直接確立。'
+            + '各食材の allergen-relevant identity を、日本の食品表示制度（消費者庁: 小麦=特定原材料/義務、'
+            + '大豆・鶏肉=特定原材料に準ずるもの/推奨）と製造者公式アレルギー表示、NUKITORU の '
+            + 'default-generic-risk policy（ingredient-allergens.ts）で評価した: '
+            + '(a) しょうゆ → 小麦・大豆 = default-generic-risk（標準的市販こいくちしょうゆが小麦・大豆を'
+            + 'アレルギー物質として表示。小麦不使用のグルテンフリーしょうゆも実在するため generic は fail-safe に'
+            + '小麦・大豆関連として HARD EXCLUDE）。'
+            + '(b) みりん（本みりん・みりん風とも）・(c) 酒（料理の清酒）= 製造者公式でアレルギー特定原材料等の表示なし。'
+            + '(d) 砂糖・(e) 塩 = 特定原材料等に非該当。'
+            + '(f) サラダ油 = 精製油脂で残存タンパクが検出限界以下 → 大豆アレルゲン表示不要（公式ルール）→ 除外対象にしない。'
+            + '(g) 鶏もも肉 = 鶏肉（準ずる）。ingredient-taxonomy.ts が「鶏肉」アレルギーを鶏もも肉へ HARD EXCLUDE 済み。'
+            + '結論: 全7食材の allergen-relevant identity は評価済みで、判断根拠は上記 source と policy に traceable。',
+        },
+      ],
+      coherenceReview: {
+        status: 'coherent',
+        sourceProcessNotes: [
+          {
+            sourceId: 'kyounoryouri-toriteriyaki-kawano-2026',
+            equipment: 'フライパン',
+            fatOrOil: 'サラダ油小さじ1',
+            lid: '皮目に焼き色がついて返したあと、片面だけふたをして弱めの中火で3〜4分蒸し焼き',
+            heatSequence: '中火で皮目2〜3分→返してふたをして弱めの中火3〜4分→ふたを取り強めの中火で照りが出るまで煮からめ',
+            flip: '皮目に焼き色がついたら1回返す',
+            seasoningSequence: 'しょうゆ・みりん・酒・砂糖・塩を事前に混ぜ、溶け出た脂を拭いたあとに回し入れる',
+            preparationSequence: '約30分前に室温に戻す→余分な脂肪を除く→筋の多い/厚いところに切り目→縦半分から3等分→たれを混ぜる',
+          },
+        ],
+        reviewedDimensions: [
+          'equipment',
+          'fat-or-oil',
+          'lid',
+          'heat-sequence',
+          'flip-or-turn',
+          'seasoning-sequence',
+          'major-preparation-sequence',
+        ],
+        rationale:
+          'Recipe body は NHKきょうの料理・河野雅子「鶏の照り焼き」という単一sourceの単一processだけで構成され、複数sourceのprocess事実を混成していないためcoherent。corroborating source（味の素KK・日本ハム・DELISH KITCHEN・白ごはん.com）は独立裏付けの比較にのみ使い、Recipe factは輸入していない。coherent はVERIFIED・安全・美味・authentic・publishable を意味しない（status は review のまま）。',
+      },
+      timeVerification: {
+        sourceStatedTotal: {
+          value: { kind: 'exact', minutes: 15 },
+          sourceIds: ['kyounoryouri-toriteriyaki-kawano-2026'],
+          // MISSION 2.26 — NHK は「調理時間15分 ※鶏肉を常温に戻す時間は除く」と明記。
+          // 除外スコープ（約30分の restingMinutes）を machine-readable に保持する。
+          // これは value と足さない（15+30=45 のような arithmetic は一切しない。Decision B / Section 5）。
+          excludes: [
+            {
+              kind: 'restingMinutes',
+              value: { kind: 'approximate', minutes: 30 },
+              sourceIds: ['kyounoryouri-toriteriyaki-kawano-2026'],
+            },
+          ],
+        },
+        // Decision B: Product elapsed time は未確定。source displayed time（15分）や legacy
+        // cookingTimeMinutes を確定値として表示・filter・ranking に使わない（productCookingTimeMinutes=null）。
+        productTimeStatus: 'review',
+      },
+      // MISSION 2.26 — 未解決の Recipe-Evidence 問題は残っていない（Decision B のもと、未確定 Product Time は
+      // Recipe-Evidence 問題ではない）。監査履歴・source比較・provenance・explainability は provenanceNotes へ。
+      reviewNotes: [],
+      provenanceNotes: [
+        'MISSION 2.18 Batch 3 — 初回のEvidence Resolution（この recipe には従来 verification ブロックが無かった）。'
+          + '5件のTier2/3 sourceを実際に開いて確認。RecipeIdentityは全source一致で「鶏もも肉・皮つき」。'
+          + '2.18時点では requiredIngredients「鶏肉」やたれ等の unsupported legacy fact を HOLD（Commander判断事項）'
+          + 'としていたが、MISSION 2.20（Preparation/Time foundation）・MISSION 2.21（Ingredient taxonomy foundation）'
+          + '完成後の MISSION 2.19E-RESUME-2 で、NHK（河野雅子）を primary process anchor として実際に修正した。'
+          + '下記の SOURCE A〜D 観測サマリ（2.19A訂正版）は Evidence 記録としてそのまま保持する。',
+        'MISSION 2.19A — 上記4 sourceの観測サマリを2026-08-30に開き直して訂正（Evidence metadata訂正のみ・'
+          + 'Recipe factは一切不変）。掲載レシピ自体に実質的変化（source drift）は無い。訂正した Batch 3 の'
+          + '観測欠陥は: (SOURCE A) 「返して脂をふく」→実際は「余分な脂を半分程度拭き取る」、断定「ふたなし」→'
+          + '実際はふたの記載なし（source silence）。(SOURCE B) 工程から「火をとめて油をふく→醤油とみりんを'
+          + '加える→すぐに火をつけて煮絡める」「最後に2cm幅に切る」が欠落、断定「ふたなし」→記載なし、運営'
+          + '記述が不正確。(SOURCE C) 断定「ふたなし」→実際は火通り不足時のみ条件付きで蓋をして蒸し焼き、'
+          + '「調理時間20分」に「※常温に戻す時間を除く」の注記が欠落。(SOURCE D) 未記載の「骨なし」を記載して'
+          + 'いた→骨の有無は記載なし、総調理時間「15分（※鶏肉を常温に戻す時間を除く）」が欠落。'
+          + 'いずれも fingerprint が変わるが、これは「観測レコードの訂正」であって source drift ではない。'
+          + 'fingerprint不一致は A=掲載内容の変化 か B=観測表現の訂正 のどちらでも起こり得る（今回はB）。',
+        'MISSION 2.19A 監査履歴の訂正: Batch 3 の「皮目を下に4〜5分」はキッコーマン原文どおりで欠陥ではない。'
+          + 'キッコーマンは2つの別工程時間を持つ: 皮目の焼き=4〜5分／たれの煮からめ=3〜4分。'
+          + 'MISSION 2.19 の再検証で「4〜5分は転記ミス（5mm由来）」とした解釈自体が誤りであり、'
+          + 'ここで撤回する。2工程の時間は別個の process fact として保持する。'
+          + 'Commanderの事実指示（3〜4分へ）よりも実際に開いた source（4〜5分）を優先した。',
+        'SOURCE A: kikkoman-toriteriyaki-2026（監修:小田真規子）観測サマリ 訂正版（2026-08-30再観測・'
+          + 'fingerprint入力・SHA-256=b4954ed9e6600cb63e015959e0e86fded1a55f1a27fb4af64186f3b674b0d22d）: '
+          + '「2人分|鶏もも肉大1枚250g(皮の明記なし・皮目を下に焼く)|小麦粉大さじ1|サラダ油小さじ2|ピーマン2個|'
+          + '合わせだれ=生しょうゆ大さじ1と1/2+本みりん大さじ2|砂糖の記載なし|酒の記載なし|'
+          + '下ごしらえ=余分な脂肪を除く+筋を切る+厚みを均一+4等分+ペーパータオルで余分な水分を取る+'
+          + '下処理の20分ほどで室温に戻す|工程=小麦粉をまぶす→油を中火で2分ほど熱す→皮目を下に中火で4〜5分→'
+          + 'ピーマンは焼き色後に取り出す→肉を返して余分な脂を半分程度拭き取る→中央をあけて合わせだれを注ぐ→'
+          + '3〜4分たれが大さじ2〜3残るまで煮からめる|ふたの記載なし|調理時間約20分|監修小田真規子」。',
+        'SOURCE B: sshoyu-toriteriyaki-2026（職人醤油＝other-trusted）観測サマリ 訂正版（2026-08-30再観測・'
+          + 'SHA-256=54a3b65dde243c941448820282277e3c3800318cdc423a1c3d3fa398d97c5e31）: '
+          + '「2人分|鶏もも肉2枚(皮の明記なし・皮目を下に焼く)|醤油(濃口/溜)大さじ2+みりん大さじ2(1対1)|'
+          + '砂糖の記載なし|サラダ油少々|酒適量|小麦粉なし|下ごしらえ=余分な脂を除く+厚いところに切り目を入れる+'
+          + '酒をふっておく|工程=油を中火で熱す→皮目を下に焼き色→裏返して同様→火をとめて余分な油をふきとる→'
+          + 'よく混ぜた醤油とみりんを加える→すぐに火をつけてたれに肉を煮絡める→鶏肉を2cm幅に切って盛る|'
+          + 'ふたの記載なし|たれは焼き色後に投入・事前によく混ぜる|'
+          + '運営=職人醤油(醤油の知識・レシピ・生産者紹介の教育メディアと通販を兼ねるサイト)」。',
+        'SOURCE C: sirogohan-toriteriyaki-2026（白ごはん.com/冨田ただすけ、professional）観測サマリ 訂正版'
+          + '（2026-08-30再観測・SHA-256=973d8cd746e5222d7b06f5e097b722e2dd965b93e9666bab986edaa3a4f95df9）: '
+          + '「1〜2人分|鶏もも肉1枚約300g|たれ=砂糖大さじ1/2+醤油大さじ1と1/2+みりん大さじ1と1/2+'
+          + '酒大さじ1と1/2|油をひかない|塩をしない|小麦粉なし|下ごしらえ=できれば20〜30分常温に戻す+'
+          + '余分な脂や皮を切り落とす+皮目をフォークや包丁の切っ先で何度かつく+たれを事前に合わせる|'
+          + '工程=油をひかず皮目から焼き始める→3〜4分かけてじっくり皮目を焼く→裏返して2〜3分→'
+          + '合わせたたれを加えて煮つめる→たれを皮に何度もかけるのを繰り返す|'
+          + 'ふたは基本使わないが火通りが不十分な場合のみ裏返して火を弱め蓋をして蒸し焼き|'
+          + '調理時間20分※常温に戻す時間を除く|サイト=白ごはん.com」。',
+        'SOURCE D: kyounoryouri-toriteriyaki-kawano-2026（NHKきょうの料理/河野雅子、professional）観測サマリ'
+          + ' 訂正版（2026-08-30再観測・SHA-256=9fdc33d901d00ac75b3fd9cf867e9a56a0fe9caea8dc137e0eb006e2d3b63401）: '
+          + '「2人分|鶏もも肉(大)1枚300g(骨の有無の記載なし・皮を下にして焼く)|スナップえんどう100g|'
+          + '合わせだれA=しょうゆ大さじ1+酒大さじ1+みりん大さじ1+砂糖小さじ1+塩少々|サラダ油小さじ1|小麦粉なし|'
+          + '下ごしらえ=調理する約30分前に常温に戻す+余分な脂肪を除く+筋の多いところや厚いところに切り目+'
+          + '縦半分に切り1切れを3等分|工程=サラダ油小さじ1を中火で熱す→鶏肉を皮を下に2〜3分→'
+          + '焼き色がついたら返してふたをして弱めの中火で3〜4分→ペーパータオルで溶け出た脂を拭く→'
+          + '混ぜておいたAを回し入れる→強めの中火で煮詰めながら照りが出るまでからめる|ふたあり(返した後・片面のみ)|'
+          + '調理時間15分※鶏肉を常温に戻す時間は除く|講師河野雅子」。',
+        'MISSION 2.19E-RESUME-2 — NHK（SOURCE D / kyounoryouri-toriteriyaki-kawano-2026 / 講師 河野雅子）を '
+          + 'PRIMARY PROCESS ANCHOR として Recipe body を修正。Recipe body の全 critical fact は NHK 1 source の '
+          + '1 process だけから取り、corroborating source（味の素KK・日本ハム・DELISH KITCHEN・白ごはん.com）は '
+          + '独立裏付けの比較にのみ用いた（多数決・平均・midpoint・serving scaling による fact 確立・cross-source '
+          + '合成はしていない。corroborator を全て取り除いても NHK Recipe として成立する）。',
+        'BEFORE → ANCHOR → CORROBORATION → AFTER: '
+          + '(1) requiredIngredients 鶏肉300g → NHK「鶏もも肉（大）1枚300g」→ 白ごはん.com が独立に「約300g・もも1枚」'
+          + '（direct corroboration）→ AFTER 鶏もも肉300g（MISSION 2.21 taxonomy: 鶏もも肉在庫=MATCH / 鶏むね肉=NO MATCH / '
+          + '鶏肉generic=NOT exact match / 鶏肉アレルギー=HARD EXCLUDE）。 '
+          + '(2) servingsBase 2 → NHK 2人分 → 味の素KK/職人醤油/キッコーマンも2人分（compatible）→ AFTER 2（不変）。 '
+          + '(3) seasonings しょうゆ大さじ1と1/2・みりん大さじ1と1/2・砂糖大さじ1・酒なし・塩なし → '
+          + 'NHK 合わせだれA「しょうゆ大さじ1＋みりん大さじ1＋酒大さじ1＋砂糖小さじ1＋塩少々」→ AFTER そのまま採用。 '
+          + 'soy:mirin:sake=1:1:1 は5 source（NHK/味の素KK/日本ハム/DELISH/白ごはん.com）が ratio で一致、'
+          + '絶対量 大さじ1 は 味の素KK が independent exact corroboration。砂糖 小さじ1 は NHK exact anchor で、'
+          + '独立 source は「少量の砂糖が入る」ことのみ compatible-range 支持（白ごはん.com 大さじ1/2、味の素KK 大さじ2/3）'
+          + '＝ independent exact corroboration ではない。塩 少々 は NHK-SPECIFIC（たれに塩を入れる独立裏付けは無い。'
+          + '味の素KK/DELISH は肉に下味の塩、白ごはん.com は明示的に塩なし）。 '
+          + '(4) cooking oil: 既存schemaに合わせ seasonings に「サラダ油 小さじ1」を保存（オリーブオイル/バターと同じ扱い）。'
+          + 'NHK exact anchor。味の素KK も同 process で小さじ1（independent exact）。白ごはん.com の zero-oil は別 variant で輸入しない。 '
+          + '(5) 小麦粉: NHK/職人醤油/白ごはん.com/味の素KK/日本ハム すべて小麦粉なし（キッコーマンのみ flour variant で別）。'
+          + '「小麦粉なし」を表すための架空 ingredient は追加していない。 '
+          + '(6) equipment 「フライパン・菜箸」→ NHK/全 source フライパン（direct）。菜箸はどの source も明示しない '
+          + 'unsupported legacy inference のため除去 → AFTER 「フライパン」。 '
+          + '(7) preparation（旧: 無し）→ NHK anchor の5工程を Recipe.preparation として追加（下記）。 '
+          + '(8) steps 旧3工程（簡略化）→ NHK anchor の5工程へ置換（皮目→返してふた蒸し焼き→脂を拭く→たれ→照り煮からめ）。',
+        'PREPARATION（MISSION 2.20 Recipe.preparation・cooking steps と別枠）: '
+          + '(1)「調理の約30分前に室温に戻す」passiveWait=true・duration=approximate 30分（TimeValue の approximate で '
+          + '「約30分」を忠実に保持。exact化しない）。NHK anchor。白ごはん.com が「できれば20〜30分」で compatible '
+          + '（independent exact ではない）。味の素KK/日本ハム/DELISH は言及なし（source silence であって否定的 Evidence ではない）。 '
+          + '(2) 余分な脂肪を除く（NHK。職人醤油/白ごはん.com/キッコーマンも実施）。 '
+          + '(3) 筋の多いところ・厚いところに切り目（NHK。キッコーマン/職人醤油も切り目/筋を切る）。 '
+          + '(4) 縦半分→1切れ3等分（NHK-SPECIFIC の焼く前カット。味の素KK/DELISH/職人醤油は焼いた後に切る）。 '
+          + '(5) たれを事前に混ぜる（NHK。味の素KK/DELISH/白ごはん.com も事前混合）。 '
+          + '工程2〜5に Evidence にない所要時間は付けていない。',
+        'CRITICAL STEP FACTS: 皮目を下に中火で2〜3分（NHK anchor。白ごはん.com 3〜4分・キッコーマン4〜5分・DELISH 4〜5分 '
+          + 'は compatible range であって universal exact ではない）。返してふたをして弱めの中火で3〜4分蒸し焼き '
+          + '（NHK anchor。DELISH が弱火3分で近接・味の素KK は7分。process-family としては味の素KK/日本ハム/DELISH が '
+          + '「返したあとふたをして蒸し焼き」で corroborate、正確な分数は compatible range）。溶け出た脂を拭いてから '
+          + 'たれを回し入れる（全 source が脂を拭く・4 source がたれを後入れ）。最後の照り煮からめ工程に Evidence にない '
+          + '所要時間は付けていない（NHK は分数を示していない）。',
+        'ABSOLUTE NO-IMPORT: ほんだし（味の素KK）・蜂蜜/水（日本ハム）・小麦粉/片栗粉（キッコーマン）・zero-oil や '
+          + 'spoon-basting や conditional lid（白ごはん.com）・他 source の調理時間・他 source の付け合わせ野菜、いずれも '
+          + 'Recipe へ入れていない。NHK の「スナップえんどう100g」は別ゆでの付け合わせ（source-side accompaniment）であり '
+          + 'core chicken-teriyaki Recipe Identity の一部ではないため requiredIngredients に加えない（MISSION 2.19D 判定どおり）。',
+        'PRODUCT TIME（MISSION 2.20 firewall）: verification.timeVerification.productTimeStatus = "review"。'
+          + 'legacy cookingTimeMinutes=15 はデータ上残すが、productCookingTimeMinutes(tori-teriyaki) は null を返し、'
+          + 'strict max-time フィルタ・ranking・estimatedMinutes・「約15分」表示のいずれでも確定値として使わない '
+          + '（Recipe Detail は「調理時間の目安：確認中」）。15 を 20/45/17 等へ推測変更していない。',
+        'SOURCE_TIME_SCOPE_LIMITATION = YES: NHK の掲載時間は「15分」で、かつ「※鶏肉を常温に戻す時間（約30分）は除く」と '
+          + '明記されている。現行 SourceStatedTotalTime schema には exclusion-scope フィールドが無いため、'
+          + 'sourceStatedTotal.value = exact 15分（sourceIds=NHK）として保存しつつ、除外スコープはこの reviewNote に記録する: '
+          + '"NHK displayed time is 15 minutes and explicitly excludes approximately 30 minutes for returning the chicken to room temperature."。'
+          + 'bare 15 を完全な Product elapsed time として扱わない（productTimeStatus=review のためこの limitation は Correction を block しない）。',
+        'hasUnsupportedInference = true のまま維持。UNSUPPORTED_INFERENCE_SEMANTICS_LIMITATION = YES: '
+          + 'Recipe body の食材・分量・調味・工程・下ごしらえ・器具は全て NHK anchor による direct 支持であり '
+          + '「AIが発明した値」は残っていない。それでも true を維持する理由は、cookingTimeMinutes の Product elapsed '
+          + 'time としての scope が未確定（productTimeStatus=review）で、確定した critical time fact が無いため。'
+          + '現行 boolean は「独立 corroboration 不足」と「Evidence なしの推測」を区別できないが、'
+          + '本 MISSION では global semantics を変えず、現行の文書化された意味（未解決の critical fact が残る＝true）に従う。',
+        'PROCESS COHERENCE: coherenceReview.status = "coherent"。Recipe body は NHK 単一 source の単一 process のみで '
+          + '構成され、器具・油・ふた/蒸し焼き・加熱順・返し・調味順・下ごしらえ順のいずれも同一 process 内で整合する。'
+          + 'corroborator から Recipe fact を輸入していない。coherent は VERIFIED / 安全 / 美味 / authentic / publishable を '
+          + '意味しない（status は review、hasUnsupportedInference=true、isRecipePublishable=false）。',
+        'STATUS: verification.status = "review" を維持。isRecipePublishable(tori-teriyaki) = false（status≠verified・'
+          + 'hasUnsupportedInference=true・productTimeStatus=review・cookingTimeMinutes の fieldVerification 無し、の複数の gate で false）。'
+          + 'VERIFIED 化はしていない。VERIFIED 適格性の評価は別の Commander 承認 MISSION。',
+        'FUTURE_SECOND_VARIANT_CANDIDATE = YES: 職人醤油（SOURCE B）＋ 白扇酒造 の「しょうゆ:みりん≒1:1・砂糖なし・'
+          + 'たれに酒を入れず酒は下味のみ・ふたなし」variant は独立 Evidence のある別 variant。本 MISSION では実装しない '
+          + '（新 Recipe / 新 architecture を作らない）。',
+        'MISSION 2.22（VERIFIED Eligibility Gap Audit）— metadata wording のみ整理（culinary fact は不変）: '
+          + '(a) recipeIdentity.variant から provenance 文「NHKきょうの料理・河野雅子の製法をprimary process anchorとする」を除去 '
+          + '（provenance は sourceIds / fieldVerifications / coherenceReview.rationale / この reviewNotes が担う。variant は '
+          + 'culinary process identity のみを記述する）。(b) intendedTasteProfile から taste 推論（「効かせ」「ごく少量」「家庭的」）を '
+          + '除去し、合わせだれの構成を事実として記述するに留めた。Recipe の分量・工程・下ごしらえ・source anchor・status は一切不変。',
+        'MISSION 2.25（Japan Allergen Evidence）— 全7 ingredient の allergen identity を、日本の食品表示制度と '
+          + '製造者公式アレルギー表示を実際に開いて評価（推測なし）。'
+          + '(1) しょうゆ → 小麦・大豆: 標準的な市販こいくちしょうゆ（キッコーマン「しょうゆ」K050505）が原材料・'
+          + 'アレルギー物質に小麦・大豆を明示。小麦不使用のグルテンフリーしょうゆ（サンジルシ醸造）も実在するため '
+          + 'ingredient-allergens.ts に default-generic-risk として記録し、「小麦」「大豆」アレルギー登録で fail-safe に '
+          + 'HARD EXCLUDE（小麦=特定原材料/義務、大豆=特定原材料に準ずるもの/推奨。出典: 消費者庁 食物アレルギー表示情報）。'
+          + '(2) みりん: 本みりん（マンジョウ K100505）・みりん風調味料（キッコーマンこってりん G511505）とも '
+          + 'アレルギー特定原材料等の表示なし。(3) 酒（料理の清酒 マンジョウ K102005）: 表示なし（米・米こうじ・醸造アルコール）。'
+          + '(4) 砂糖・(5) 塩: 特定原材料等に非該当。(6) サラダ油: 大豆油を含むが精製油脂で残存タンパクが検出限界以下のため '
+          + '大豆アレルゲン表示不要（公式ルール。日本マーガリン工業会/消費者庁の数ppm閾値）→ HARD EXCLUDE 対象にしない。'
+          + '(7) 鶏もも肉: 鶏肉（特定原材料に準ずるもの/推奨）。MISSION 2.21 taxonomy が「鶏肉」アレルギーを既に HARD EXCLUDE。',
+        'MISSION 2.26（First VERIFIED Finalization）— status review → verified。'
+          + '(a) Decision B（Commander承認）: Recipe Evidence VERIFIED ≠ Product Time VERIFIED。'
+          + 'isRecipePublishable から productTimeStatus ブロックを削除し、applicableFieldsFor は '
+          + 'productTimeStatus=review/unknown の Recipe で cookingTimeMinutes を非該当にした（legacy 44 Recipe は挙動不変）。'
+          + '(b) allergyIdentity を derived fieldVerification として追加（MISSION 2.25 の全7食材評価が根拠）。'
+          + 'allergen Evidence source は非プロセス系のため coherenceReview.sourceProcessNotes への記載を要求しない '
+          + '（NON_PROCESS_COHERENCE_FIELDS）。process field の source（NHK）は引き続き coherence 対象。'
+          + '(c) sourceStatedTotal.excludes に NHK の「約30分 常温戻しを除く」を machine-readable に記録（15+30 の計算はしない）。'
+          + '(d) 解決済みの監査履歴・source比較・provenance を reviewNotes → provenanceNotes へ移動。reviewNotes=[]。'
+          + '(e) hasUnsupportedInference: true → false。Recipe body（食材・分量・調味・下ごしらえ・工程・器具・identity）に '
+          + '未支持の推測値は残っていない（全て NHK direct または NHK+allergen policy derived）。'
+          + 'Product Time が未確定であることは hasUnsupportedInference の対象外（productTimeStatus が表現する）。'
+          + '(f) PRACTICAL_COOK_VALIDATION: NOT YET PERFORMED（現行 policy では Recipe Evidence VERIFIED を block しない。'
+          + '将来の Beta Quality Gate では Commander 判断まで block すべき）。'
+          + '(g) FUTURE_SECOND_VARIANT_CANDIDATE = YES（職人醤油＋白扇酒造。本 MISSION でも未実装）。'
+          + 'VERIFIED が意味するのは Recipe Evidence の検証のみ。allergen-free / time verified / taste guaranteed / '
+          + 'NHK 公式提携 のいずれも意味しない。',
+      ],
+      hasUnsupportedInference: false,
+    },
   },
   {
     id: 'buta-shogayaki',
@@ -943,6 +1229,91 @@ export const RECIPE_CATALOG: Recipe[] = [
       '豚肉の中心まで色が変わったら、しょうゆ、みりん、しょうがを加えてからめる',
     ],
     notes: ['豚肉は中心まで色が変わっていることを確認してください。'],
+    verification: {
+      status: 'review',
+      sourceIds: ['kikkoman-butashogayaki-2026', 'sirogohan-butashogayaki-2026'],
+      recipeIdentity: {
+        canonicalDish: '豚の生姜焼き',
+        variant:
+          '玉ねぎを一緒に炒める、漬け込みなしの生姜焼き（豚肉と玉ねぎを炒めてから、しょうゆ・みりん・しょうがのたれをからめる。砂糖・酒は使わない）',
+        servingsBasis: 2,
+        intendedTasteProfile: '家庭的なしょうがの効いた甘辛味',
+        coreMethod: '豚肉と玉ねぎをフライパンで炒め、火が通ってからしょうゆ・みりん・しょうがのたれをからめる（下味の漬け込みはしない）',
+        definingIngredients: ['豚肉', '玉ねぎ'],
+      },
+      fieldVerifications: [
+        {
+          field: 'ingredientAmounts',
+          sourceIds: ['sirogohan-butashogayaki-2026'],
+          supportType: 'direct',
+        },
+        { field: 'servingsBase', sourceIds: ['kikkoman-butashogayaki-2026', 'sirogohan-butashogayaki-2026'], supportType: 'direct' },
+        { field: 'equipment', sourceIds: ['sirogohan-butashogayaki-2026'], supportType: 'direct' },
+        {
+          field: 'requiredIngredients',
+          sourceIds: ['sirogohan-butashogayaki-2026'],
+          supportType: 'variant',
+        },
+        {
+          field: 'seasoningAmounts',
+          sourceIds: ['sirogohan-butashogayaki-2026'],
+          supportType: 'variant',
+          variantRelation: 'conflicting-within-variant',
+        },
+        {
+          field: 'criticalSteps',
+          sourceIds: ['sirogohan-butashogayaki-2026'],
+          supportType: 'variant',
+        },
+      ],
+      reviewNotes: [
+        'MISSION 2.18 Batch 3 — 初回のEvidence Resolution（この recipe には従来 verification ブロックが無かった）。'
+          + 'Tier2/3 sourceを2件開いて確認（ニチレイフーズのページはHTTP 403で本文を取得できず不採用）。'
+          + '2 source間で「玉ねぎの有無」「みりんの有無」「漬け込みの有無」「たれの構成」がいずれも異なり、'
+          + 'NUKITORUのたれ（しょうゆ大さじ1と1/2・みりん大さじ1・しょうが小さじ1・砂糖なし・酒なし）は'
+          + 'どちらのsourceとも一致しない。',
+        'SOURCE A: kikkoman-butashogayaki-2026（基本の和食）観測サマリ（fingerprint入力・'
+          + 'SHA-256=a89b66f661a2ae210e8879131c1a25adab1103b368fa658850614541b9ed91b3）: '
+          + '「2人分|豚肩ロース肉しょうが焼き用250〜300g|玉ねぎなし|しょうが3かけ分すりおろしで1かけA下味と'
+          + '2かけBたれ|しょうゆ大さじ2|砂糖大さじ1|酒=小さじ2Aと大さじ1B|みりんなし|油大さじ1/2|小麦粉なし|'
+          + '下ごしらえ=ペーパーで余分な水気をふく+Aのしょうがと酒を絡めて5分置く|筋切りの記載なし|'
+          + '工程=中火で2〜3分動かさず焼く→返して30秒〜1分→Bのたれを中央に加える→火を強めて煮立ててから'
+          + '絡める→フライパンの底が見えるまで煮つめる|ふたなし|調理時間約20分|監修記載なし」。',
+        'SOURCE B: sirogohan-butashogayaki-2026（白ごはん.com/冨田ただすけ、professional）観測サマリ'
+          + '（SHA-256=f20f0246cc13aa31ee186c90977ed679c0c1e22792cb10a638b1261eb70d1fce）: '
+          + '「2人分|豚ロース肉生姜焼き用200gで4〜6枚|玉ねぎ1/4個2mm薄切り|たれ=しょうゆ大さじ2+みりん大さじ1+'
+          + '酒大さじ1+砂糖小さじ2+しょうがすりおろしとしぼり汁20〜30g+ケチャップ小さじ1+ごま油小さじ1/2+'
+          + 'こしょう少々|油小さじ1|小麦粉なし|下ごしらえ=1cm間隔で筋切り+しょうがとにんにくをすりおろす+'
+          + 'みりんと酒としぼり汁で10分漬け込む2〜3回返す|工程=油を熱し玉ねぎを先に炒める→豚肉を加える→'
+          + '両面を焼く→たれを加えて約2分からめる|ふたなし|著者冨田ただすけ」。',
+        'FIELD-BY-FIELD: (1) ingredientAmounts=豚肉200g → SOURCE B（200g・同一の玉ねぎ入りidentity）が'
+          + '直接一致（direct、ただし単独source）。SOURCE A は肩ロース250〜300gで別。(2) servingsBase=2 → '
+          + '両source2人分（direct）。(3) equipment=フライパン → 両source（direct）。(4) requiredIngredients'
+          + '（豚肉＋玉ねぎ）→ 玉ねぎ入りは SOURCE B が支持するが SOURCE A は玉ねぎなし。玉ねぎ量も'
+          + 'NUKITORU 1/2個 vs SOURCE B 1/4個 で2倍差 → variant。(5) seasoningAmounts → みりん大さじ1は'
+          + 'SOURCE B と一致するが、しょうゆ（大さじ1と1/2 vs 大さじ2）・砂糖（なし vs 小さじ2）・酒（なし vs '
+          + '大さじ1）・しょうが（小さじ1 vs すりおろし20〜30g）が不一致、かつSOURCE Bはケチャップ/ごま油も'
+          + '使う → variant / conflicting-within-variant。(6) criticalSteps → NUKITORUは漬け込みなし・豚肉と'
+          + '玉ねぎを一緒に炒める。SOURCE B は10分漬け込み＋玉ねぎを先に炒めてから豚肉、と順序も前処理も'
+          + '異なる → variant。',
+        'PREPARATION AUDIT: SOURCE A は「水気をふく＋しょうがと酒で5分下味」、SOURCE B は「1cm間隔の筋切り＋'
+          + 'すりおろし＋10分漬け込み」。いずれもNUKITORUには無い。Section 9に従い、Evidence支持のある下ごしらえ'
+          + '（筋切り・漬け込み・下味）を勝手に追加しない（HOLD）。「漬け込み時間」を現行schemaで'
+          + 'cookingTimeMinutesや stepsと分けて表現できない点は構造的制約として記録（新モデルは作らない）。',
+        'PROCESS COHERENCE: 2 source は互いに別process（漬け込みの有無・玉ねぎの有無・調味構成）。'
+          + '混成しない。NUKITORUの「漬け込みなし・玉ねぎと一緒に炒める」coreMethodは SOURCE B の'
+          + '「玉ねぎ入り」という点だけ共有し、他は不一致。coherenceReviewは未実施。',
+        'DECISION: Recipe fact は全て変更なし（HOLD）。CANDIDATE CHANGES（未実施・Commander判断）: '
+          + '(a) requiredIngredients「豚肉」→「豚ロース肉」（SOURCE B）／部位名変更はSection 17 freezeの'
+          + '候補ロジックへ影響し得るため保留。(b) 玉ねぎ 1/2個 → 1/4個（SOURCE B）は単独source・かつ'
+          + 'SOURCE Bのたれ全体が別構成のため寄せない。(c) たれ（しょうゆ大1.5/みりん大1/しょうが小1）は'
+          + 'どのsourceとも一致せず、SOURCE B へ寄せると砂糖・酒・ケチャップ・ごま油の追加＝別レシピ化に'
+          + 'なるため行わない。 / EVIDENCE TYPE: seasoningAmounts=A（source間conflict）＋E（NOT_FOUND）、'
+          + 'requiredIngredients=B/C（玉ねぎ有無のvariant＋部位未確定）、F（同一identityの独立裏付けは'
+          + 'SOURCE B 単独）。',
+      ],
+      hasUnsupportedInference: true,
+    },
   },
   {
     id: 'nikujaga',

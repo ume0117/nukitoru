@@ -699,7 +699,15 @@ const AUDITED_RECIPE_IDS_D7A = [
 // 新たにverification（review/verified）が設定されたRecipe。
 const AUDITED_RECIPE_IDS_PHASE_B = ['medama-yaki', 'hiyayakko', 'sake-shioyaki', 'tofu-miso-soup']
 
-const ALL_AUDITED_RECIPE_IDS = [...AUDITED_RECIPE_IDS_D7A, ...AUDITED_RECIPE_IDS_PHASE_B]
+// MISSION 2.18 Batch 3 — Evidence Resolutionで初めてverification（review）が
+// 設定されたRecipe。いずれもstatus=review（VERIFIEDではない）。
+const AUDITED_RECIPE_IDS_BATCH3 = ['tori-teriyaki', 'buta-shogayaki']
+
+const ALL_AUDITED_RECIPE_IDS = [
+  ...AUDITED_RECIPE_IDS_D7A,
+  ...AUDITED_RECIPE_IDS_PHASE_B,
+  ...AUDITED_RECIPE_IDS_BATCH3,
+]
 
 describe('recipe-catalog.ts — Evidence Audit Gate (BG〜BP, PHASE D.7-A)', () => {
   it('BG: EVIDENCE_SOURCE_CATALOGのsource URLが実データ用placeholderでない', () => {

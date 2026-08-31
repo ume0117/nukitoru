@@ -4,6 +4,7 @@ import type { DishType, MealSuggestion, Recipe } from '@/features/food/types'
 import { cuisineLabel } from '@/features/food/lib/recipe-labels'
 import { filterSafeArrangements } from '@/features/food/lib/recipe-safety'
 import { splitRequiredIngredients } from '@/features/food/lib/recipe-suggestion-engine'
+import { isProductCookingTimeEstablished } from '@/features/food/lib/recipe-time'
 import { productCheckMessage } from '@/features/food/lib/product-check-messages'
 import { RecipeFeedback } from './RecipeFeedback'
 
@@ -30,7 +31,12 @@ const DISH_TYPE_LABELS: Record<DishType, string> = {
  * MISSION 2.11 PHASE D — 候補一覧から選択された1レシピの詳細画面。
  * 表示順序: 料理名 → cuisine/type → 今日の人数 → 調理時間 → 使う食材 →
  * 調味料 → 調理に使う水・湯 → アレルギー・原材料確認 → 準備するもの →
- * 作り方 → ちょいアレンジ → 注意事項 → 作った！
+ * 調理前の準備（MISSION 2.20・存在時のみ）→ 作り方 → ちょいアレンジ →
+ * 注意事項 → 作った！
+ *
+ * MISSION 2.20: 調理時間の Product Time が review/unknown の Recipe は
+ * 確定値「約○分」を表示せず「確認中」と表示する。preparation（調理前の準備）は
+ * steps（作り方）とは別セクションで表示し、未設定の Recipe は従来どおり非表示。
  *
  * 安全上の絶対ルール:
  * - arrangementsはfilterSafeArrangements()で、その日のアレルギーと
@@ -78,7 +84,12 @@ export function RecipeDetailView({
       <div className="text-[12px] text-gray-600 dark:text-gray-400 space-y-0.5">
         <p>今日の人数：{todayMemberCount}人</p>
         {recipe.servingsBase > 0 && <p>レシピの基本目安：{recipe.servingsBase}人分</p>}
-        <p>調理時間の目安：約{recipe.cookingTimeMinutes}分</p>
+        {/* MISSION 2.20: Product Time が未確定（review/unknown）なら確定値「約○分」を出さない */}
+        {isProductCookingTimeEstablished(recipe) ? (
+          <p>調理時間の目安：約{recipe.cookingTimeMinutes}分</p>
+        ) : (
+          <p>調理時間の目安：確認中</p>
+        )}
         <p className="text-[11px] text-gray-400 dark:text-gray-600">材料の分量は基本目安の人数分です。</p>
       </div>
 
@@ -175,6 +186,19 @@ export function RecipeDetailView({
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {recipe.preparation && recipe.preparation.length > 0 && (
+        <section className="space-y-1">
+          <p className="text-[9px] tracking-[0.2em] text-gray-400 dark:text-gray-600 uppercase">調理前の準備</p>
+          <ol className="space-y-1 list-decimal list-inside">
+            {recipe.preparation.map((prep, i) => (
+              <li key={i} className="text-sm text-gray-700 dark:text-gray-300">
+                {prep.text}
+              </li>
+            ))}
+          </ol>
         </section>
       )}
 

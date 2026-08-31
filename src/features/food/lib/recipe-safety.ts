@@ -15,7 +15,8 @@
 // ============================================================
 
 import type { Recipe, RecipeArrangement } from '@/features/food/types'
-import { canonicalizeIngredientName } from './ingredient-normalization'
+import { allergyExcludesIngredient } from './ingredient-taxonomy'
+import { recipeIngredientsHitAllergenRisk } from './ingredient-allergens'
 
 /**
  * 基本Recipeのハード除外判定に使う食材名集合（requiredIngredients + seasonings）。
@@ -40,11 +41,19 @@ export function arrangementRelevantIngredients(arrangement: RecipeArrangement): 
  * 場合は、そのアレンジだけを非表示にする（基本Recipe自体は影響を受けない）。
  * canonicalizeIngredientNameを経由するため、"卵"/"egg"/"たまご"等の
  * 表記ゆれがあっても正しく除外される。
+ * MISSION 2.21 — 完全一致に加え、アレルギー名がaddIngredientの broader（上位）で
+ * ある場合も非表示にする（allergyExcludesIngredient。基本Recipeの HARD EXCLUSION と
+ * 同じ安全側の扱い）。
+ * MISSION 2.25 — さらに ingredient → allergen relation（例: 「小麦」→ generic
+ * 「しょうゆ」）でも非表示にする（recipeIngredientsHitAllergenRisk。fail-safe）。
  */
 export function filterSafeArrangements(recipe: Recipe, allergyNames: string[]): RecipeArrangement[] {
-  const allergyCanonical = new Set(allergyNames.map(canonicalizeIngredientName))
   return (recipe.arrangements ?? []).filter((arrangement) => {
     const relevant = arrangementRelevantIngredients(arrangement)
-    return !relevant.some((ingredient) => allergyCanonical.has(canonicalizeIngredientName(ingredient)))
+    const hitTaxonomy = relevant.some((ingredient) =>
+      allergyNames.some((allergy) => allergyExcludesIngredient(allergy, ingredient)),
+    )
+    const hitAllergen = recipeIngredientsHitAllergenRisk(relevant, allergyNames)
+    return !hitTaxonomy && !hitAllergen
   })
 }

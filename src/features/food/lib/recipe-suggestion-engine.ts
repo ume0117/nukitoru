@@ -18,6 +18,9 @@
 import type { Recipe, RecipeIngredient } from '@/features/food/types'
 import { canonicalizeIngredientName } from './ingredient-normalization'
 import { allergyRelevantIngredients } from './recipe-safety'
+import { recipeIngredientsHitAllergy } from './ingredient-taxonomy'
+import { recipeIngredientsHitAllergenRisk } from './ingredient-allergens'
+import { productCookingTimeMinutes } from './recipe-time'
 
 export type MatchCategory = 'A' | 'B'
 
@@ -72,21 +75,34 @@ export function rankRecipes(catalog: Recipe[], params: RankRecipesParams): Recip
 
   const maxResults = params.maxResults ?? DEFAULT_MAX_RESULTS
   const availableCanonical = canonicalSet(params.availableIngredientNames)
-  const allergyCanonical = canonicalSet(params.allergyNames)
   const dislikeCanonical = canonicalSet(params.dislikeNames)
 
   const candidates: RecipeCandidate[] = []
 
   for (const recipe of catalog) {
     // 1. アレルギーHARD EXCLUSION（最優先。候補へ入る前に完全除外する）
+    // MISSION 2.21: canonical 完全一致 + アレルギー名がレシピ食材の broader（上位）
+    //   の場合も除外（「鶏肉」アレルギー → 「鶏もも肉」recipe）。
+    // MISSION 2.25: さらに ingredient → allergen relation（例: 「小麦」「大豆」アレルギー
+    //   → generic「しょうゆ」を含む recipe）でも fail-safe に除外する。
+    // stock マッチングにはどちらの層も使わない（generic → specific の自動確定はしない）。
     const relevant = allergyRelevantIngredients(recipe)
-    if (containsAny(relevant, allergyCanonical)) {
+    if (
+      recipeIngredientsHitAllergy(relevant, params.allergyNames) ||
+      recipeIngredientsHitAllergenRisk(relevant, params.allergyNames)
+    ) {
       continue
     }
 
     // 2. 調理時間（ハードフィルタ。超過は候補外。fallbackで復活させない）
-    if (params.maxCookingMinutes !== null && recipe.cookingTimeMinutes > params.maxCookingMinutes) {
-      continue
+    // MISSION 2.20: max-timeフィルタ指定時、Product Time が未確定（review/unknown）の
+    // Recipe は「≤max である」と確定的に主張できないため候補外にする。legacy/established
+    // （＝productCookingTimeMinutesが数値を返す）Recipe の挙動は従来どおり。
+    if (params.maxCookingMinutes !== null) {
+      const productTime = productCookingTimeMinutes(recipe)
+      if (productTime === null || productTime > params.maxCookingMinutes) {
+        continue
+      }
     }
 
     // 3. 必須食材のmatch判定（seasoningsはmatchingの必須条件にしない）。
@@ -137,7 +153,9 @@ function matchRatio(candidate: RecipeCandidate): number {
  *    上位を占めてしまう。より多くの手元食材を活かす具体的な料理を
  *    僅かに優先する）
  * 4. 苦手食材を含まないものを優先（SOFT。除外はしない）
- * 5. cookingTimeMinutesが短いものを優先
+ * 5. cookingTimeMinutesが短いものを優先（MISSION 2.20: Product Time が未確定＝review/
+ *    unknown の Recipe は確定した経過時間として比較できないため、この基準では最後尾扱い
+ *    （+Infinity）。legacy/established の Recipe 同士の相対順序は従来どおり）
  * 6. catalog内の並び順（安定ソート。ランダム要素を持たない）
  */
 function sortCandidates(candidates: RecipeCandidate[]): RecipeCandidate[] {
@@ -152,8 +170,10 @@ function sortCandidates(candidates: RecipeCandidate[]): RecipeCandidate[] {
     if (a.hasDislikedIngredient !== b.hasDislikedIngredient) {
       return a.hasDislikedIngredient ? 1 : -1
     }
-    if (a.recipe.cookingTimeMinutes !== b.recipe.cookingTimeMinutes) {
-      return a.recipe.cookingTimeMinutes - b.recipe.cookingTimeMinutes
+    const aTime = productCookingTimeMinutes(a.recipe) ?? Number.POSITIVE_INFINITY
+    const bTime = productCookingTimeMinutes(b.recipe) ?? Number.POSITIVE_INFINITY
+    if (aTime !== bTime) {
+      return aTime - bTime
     }
     return 0 // catalog順（Array.prototype.sortは安定ソート）を維持
   })

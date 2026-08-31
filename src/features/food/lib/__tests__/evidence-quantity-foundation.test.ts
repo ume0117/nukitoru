@@ -212,16 +212,20 @@ describe('MISSION 2.17 — Evidence Traceability & Quantity Semantics Foundation
     expect(normalizeObservationSummary('B|a| |A ')).toBe('a|a|b')
   })
 
-  it('TA extra: 既存 EVIDENCE_SOURCE_CATALOG は observation 未設定（legacy）で有効なまま', () => {
+  it('TA extra: observation 未設定の legacy source は有効なまま／付いている場合は 64hex（no mass migration）', () => {
     for (const s of EVIDENCE_SOURCE_CATALOG) {
       // observation は任意。未設定でも source として壊れない
       expect(typeof s.id).toBe('string')
       if (s.observation) {
         expect(s.observation.contentFingerprint).toMatch(/^[0-9a-f]{64}$/)
+        expect(typeof s.observation.observedAt).toBe('string')
       }
     }
-    // 現時点では誰も observation を付けていない（no mass migration）
-    expect(EVIDENCE_SOURCE_CATALOG.some((s) => s.observation)).toBe(false)
+    // observation を持つのは MISSION 2.18 Batch 3 で実際に本文を再確認した少数のみ
+    // （一括移行はしていない：全体のごく一部）
+    const withObs = EVIDENCE_SOURCE_CATALOG.filter((s) => s.observation)
+    expect(withObs.length).toBeGreaterThan(0)
+    expect(withObs.length).toBeLessThan(EVIDENCE_SOURCE_CATALOG.length / 2)
   })
 
   // ================================================================
@@ -411,7 +415,7 @@ describe('MISSION 2.17 — Evidence Traceability & Quantity Semantics Foundation
   it('R32: Recipe Coherence Gate 無傷', () => {
     expect(recipe('medama-yaki').verification?.coherenceReview?.status).toBe('incoherent')
     expect(recipe('sake-shioyaki').verification?.coherenceReview?.status).toBe('incoherent')
-    expect(RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').length).toBe(0)
+    expect(RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)).toEqual(['tori-teriyaki']) /* MISSION 2.26: 初の VERIFIED */
   })
 
   it('R33: Source Silence 原則（EVIDENCE_POLICY.md）無傷', async () => {

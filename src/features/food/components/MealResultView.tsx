@@ -47,6 +47,10 @@ function CandidateCard({
   const [shareOutcome, setShareOutcome] = useState<ShareOutcome | null>(null)
   const isAvailable = suggestion.isFullyAvailable ?? true
   const missing = suggestion.missingIngredients ?? []
+  // MISSION 2.20: Product Time が未確定（review/unknown）の Recipe は estimatedMinutes=null。
+  // 確定値「約○分」を出さず「調理時間は確認中」と表示する。
+  const timeText =
+    suggestion.estimatedMinutes != null ? `約${suggestion.estimatedMinutes}分` : '調理時間は確認中'
 
   const handleShare = async () => {
     const outcome = await shareCandidate({ title: suggestion.title, estimatedMinutes: suggestion.estimatedMinutes })
@@ -72,7 +76,7 @@ function CandidateCard({
 
       <p className="text-base font-medium text-gray-900 dark:text-white break-words">{suggestion.title}</p>
 
-      <p className="text-[12px] text-gray-600 dark:text-gray-400">約{suggestion.estimatedMinutes ?? '-'}分</p>
+      <p className="text-[12px] text-gray-600 dark:text-gray-400">{timeText}</p>
 
       {!isAvailable && missing.length > 0 && (
         <p className="text-[11px] text-amber-700 dark:text-amber-400">あと1つ：{missing.join('、')}</p>
@@ -111,7 +115,7 @@ function CandidateCard({
           </p>
           <textarea
             readOnly
-            value={`今日これどう？\n\n${suggestion.title}\n約${suggestion.estimatedMinutes ?? '-'}分\n\nNUKITORU FOOD\nhttps://nukitoru.pages.dev/food`}
+            value={`今日これどう？\n\n${suggestion.title}\n${timeText}\n\nNUKITORU FOOD\nhttps://nukitoru.pages.dev/food`}
             aria-label="共有文"
             className="w-full h-24 text-[11px] p-1.5 border border-gray-200 dark:border-gray-800 bg-white dark:bg-black text-gray-800 dark:text-gray-100"
             onFocus={(e) => e.currentTarget.select()}

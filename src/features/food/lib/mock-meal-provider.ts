@@ -25,6 +25,7 @@ import type { MealSuggestionRequest, MealSuggestionResponse, MealSuggestion, Ing
 import { RECIPE_CATALOG } from './recipe-catalog'
 import { rankRecipes, type RecipeCandidate } from './recipe-suggestion-engine'
 import { canonicalizeIngredientName } from './ingredient-normalization'
+import { productCookingTimeMinutes } from './recipe-time'
 
 const CONDITION_NOTES: Partial<Record<string, string>> = {
   cold_symptoms: '体調メモ：風邪気味として登録されています。',
@@ -93,7 +94,9 @@ function candidateToSuggestion(
         requiredIngredients: recipe.requiredIngredients.map((ri) => ({ name: ri.name, amount: ri.amount })),
       },
     ],
-    estimatedMinutes: recipe.cookingTimeMinutes,
+    // MISSION 2.20: Product Time が未確定（review/unknown）の Recipe は null。
+    // MealSuggestion.estimatedMinutes は元々 number | null で、UI/共有側も null を扱える。
+    estimatedMinutes: productCookingTimeMinutes(recipe),
     shoppingItems: [],
     notes,
     warnings,

@@ -67,9 +67,27 @@ RANGE→exact値化の具体例（PHASE D.7-Bで実際に遭遇した問題）: 
 
 ## Critical Field Policy
 
-VERIFIEDに必要な最低限のCritical Field（`RecipeVerifiableField`）: `requiredIngredients` / `ingredientAmounts` / `seasonings`（該当時）/ `seasoningAmounts`（該当時）/ `cookingLiquids`（該当時）/ `cookingTimeMinutes` / `servingsBase` / `criticalSteps` / `equipment`（該当時）/ `allergyIdentity`。
+VERIFIEDに必要な最低限のCritical Field（`RecipeVerifiableField`）: `requiredIngredients` / `ingredientAmounts` / `seasonings`（該当時）/ `seasoningAmounts`（該当時）/ `cookingLiquids`（該当時）/ `cookingTimeMinutes`（下記の条件付き）/ `servingsBase` / `criticalSteps` / `equipment`（該当時）/ `allergyIdentity`。
 
 該当しないRecipeにはNOT APPLICABLEとして要求しない（`applicableFieldsFor()`が動的に決定）。Critical Fieldに CONFLICT・NOT_FOUND・unsupported inferenceが1つでも残る場合はVERIFIED禁止（Gate BS/BT/BW）。
+
+### Recipe Evidence VERIFIED ≠ Product Time VERIFIED（MISSION 2.23 Decision B / 2.26で確立）
+
+**Recipe Evidence VERIFIED** とは、`requiredIngredients` / 分量 / `servingsBase` / `seasonings` / 調味料量 / 下ごしらえ（`preparation`）/ 調理工程（`criticalSteps`）/ `equipment` / `allergyIdentity` / process coherence がEvidence要件を満たしたことを意味する。**Product Time はこれとは別の dimension である。**
+
+- `cookingTimeMinutes` が VERIFIED の Critical Field として **applicable になるのは `verification.timeVerification.productTimeStatus === 'established'` のときだけ**。`productTimeStatus` が `'review'` / `'unknown'` の Recipe では `cookingTimeMinutes` は **NOT APPLICABLE**（`applicableFieldsFor()` が除外する）。`productTimeStatus` 未設定（legacy 44 Recipe）は従来どおり `cookingTimeMinutes` を必須にする＝挙動不変。
+- Product Time が未確定（`review`/`unknown`）の Recipe も **Recipe Evidence VERIFIED になれる**。ただしその Recipe は:
+  - 確定した調理時間を主張してはならない（`estimatedMinutes` は `null`）
+  - strict max-time 結果（「15分以内」等）に一切登場してはならない（`productCookingTimeMinutes()` が `null` を返す）
+  - legacy `cookingTimeMinutes` を「速いレシピ」として ranking に使ってはならない（ranking は `null → +Infinity` 扱い）
+  - UI は「調理時間の目安：確認中」を表示する（「約○分」を Product Time として表示しない）
+  - 情報源が述べる時間（`sourceStatedTotal`）は Evidence として内部保持してよい（除外スコープは `sourceStatedTotal.excludes` に machine-readable に記録。value との足し算はしない）
+- `isRecipePublishable()` は `timeVerification` の `elapsedToReady` / `sourceStatedTotal` を参照しない（MISSION 2.15 §「Publishability との分離」の元設計）。`productTimeStatus` そのものを理由に publishability を落とすこともしない（MISSION 2.20 でここに入れていたブロックは MISSION 2.26 で撤去）。
+- **Evidence Gate は一切緩めない。** これは「時間が未確定でも Recipe body の検証は成立し得る」という dimension の分離であって、body 側の要件の緩和ではない。
+
+### hasUnsupportedInference の意味（MISSION 2.26で明確化）
+
+`hasUnsupportedInference === true` は **Recipe body / Recipe-Evidence fact の中に未支持の推測値が残っている**ことを意味する。**Product Time が未確定であること（`productTimeStatus`）はこれに含めない**（時間の不確実性は `productTimeStatus` が表現する）。
 
 ## VERIFIED昇格ルール（再掲・厳格化）
 
@@ -78,13 +96,22 @@ RecipeをVERIFIEDへ変更できるのは、次のすべてを満たす場合の
 1. 実際にSource本文を開いて確認した（検索snippetのみは不可）
 2. sourceIdsが`EVIDENCE_SOURCE_CATALOG`の実在entryを参照する
 3. `recipeIdentity`が設定され、必須項目が埋まっている
-4. 全applicable Critical Fieldが`direct`または`derivation`付きの`derived`/`range`で解決されている
-5. 未解決のCONFLICTが残っていない（`reviewNotes`が空）
+4. 全applicable Critical Fieldが`direct`または`derivation`付きの`derived`/`range`で解決されている（`cookingTimeMinutes` の applicable 判定は上記「Recipe Evidence VERIFIED ≠ Product Time VERIFIED」を参照）
+5. 未解決のCONFLICTが残っていない（`reviewNotes`が空。解決済みの監査履歴・source比較・provenance は `provenanceNotes` に置き、これは VERIFIED をブロックしない）
 6. 未解決のNOT_FOUNDが残っていない
-7. `hasUnsupportedInference !== true`
+7. `hasUnsupportedInference !== true`（Recipe body の未支持推測値のみが対象。Product Time 未確定は対象外）
 8. Safety Gate（Allergy HARD EXCLUSION等）・既存Evidence Gate（AQ〜BZ）すべてPASS
+9. `coherenceReview` が構造的に妥当な `coherent`（`isCoherenceReviewValid()`）。ただし `allergyIdentity` 等の非プロセス系 derived field「のみ」を支持する Evidence Source は process-coherence contributor にしない（`NON_PROCESS_COHERENCE_FIELDS`。安全分類の Evidence を「調理processを記述する source」として扱わない）
 
-**1件もVERIFIEDにならなくてもMISSION成功とする。件数目標を設定しない。** 無理な昇格よりも、正しく`review`/`blocked`に留めることの方が高い品質である。
+**件数目標を設定しない。** 無理な昇格よりも、正しく`review`/`blocked`に留めることの方が高い品質である。
+
+### PRACTICAL_COOK_VALIDATION
+
+現行 policy では **実際に作って再現性を確認する工程は Recipe Evidence VERIFIED の要件ではない**（8 rules は Evidence 構造のみ）。ただし将来の **Beta Quality Gate** では、Commander が別途判断するまで、実地調理検証が済んでいない Recipe の Beta 公開を block すべき。「実際に作って確認済み」と主張してよいのは、それが実際に行われた後だけ。
+
+### Recipe VERIFIED が意味しないこと
+
+`verification.status === 'verified'` が意味するのは Recipe Evidence の検証のみ。次のいずれも意味しない: allergen-free（該当アレルギー登録者は HARD EXCLUDE されるが「安全」を断定しない・PRODUCT CHECK ALERT は併存）・確定した調理時間・味の保証・authentic/本場・情報源との公式提携。
 
 ## Evidence Variant Foundation（MISSION 2.13で確立）
 
