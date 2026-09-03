@@ -35,6 +35,8 @@ import type {
   SourceRecipeKnowledge,
   StockAvailabilityStatus,
   StockStatus,
+  StockStatusEntry,
+  StockSummary,
 } from '@/features/food/types'
 import {
   canonicalizeSourceIngredientKnowledge,
@@ -101,6 +103,67 @@ export function projectStockToSnapshots(
   registry: WorldIngredientIdentity[] = WORLD_INGREDIENT_IDENTITY_REGISTRY,
 ): FoodStockIngredientSnapshot[] {
   return items.map((i) => toStockIngredientSnapshot(i, registry))
+}
+
+// ------------------------------------------------------------
+// MISSION 2.40A — 既存の永続 Stock を Matching の主データにする pure adapter
+//   （既存 StockStatus / StockStatusEntry / storage schema は読むだけ・変更しない）
+// ------------------------------------------------------------
+
+/**
+ * 永続 stock status map（item 名 → StockStatusEntry）から、ある item の
+ * availabilityStatus を返す。エントリが無い / 不正なら既存 getStockStatus と同じ
+ * 安全側の既定 'available' として扱う。
+ */
+export function persistedStockAvailability(
+  statusMap: Record<string, StockStatusEntry>,
+  itemName: string,
+): StockAvailabilityStatus {
+  const raw = statusMap[itemName]?.status
+  const status: StockStatus =
+    raw === 'available' || raw === 'low' || raw === 'out' ? raw : 'available'
+  return mapStockStatusToAvailability(status)
+}
+
+/**
+ * 既存の「家の在庫」（登録済み食品名 + 現在庫 status map）を FoodStockIngredientSnapshot[] へ
+ * pure projection する。ユーザーに食材を再入力させないための本筋 adapter。
+ * - Ingredient identity は MISSION 2.38 canonicalization（resolved は id 保持 /
+ *   unresolved は UNRESOLVED / ambiguous は AMBIGUOUS。推測しない）。
+ * - 元の itemNames / statusMap を mutate しない。
+ */
+export function projectPersistedStockToFoodSnapshots(
+  input: { itemNames: string[]; statusMap: Record<string, StockStatusEntry> },
+  registry: WorldIngredientIdentity[] = WORLD_INGREDIENT_IDENTITY_REGISTRY,
+): FoodStockIngredientSnapshot[] {
+  // 同一名の重複を除去（複数カテゴリに登録されている場合）
+  const uniqueNames = [...new Set(input.itemNames.map((n) => n.trim()).filter((n) => n.length > 0))]
+  return uniqueNames.map((name) =>
+    toStockIngredientSnapshot(
+      {
+        stockItemKey: name,
+        sourceName: name,
+        availabilityStatus: persistedStockAvailability(input.statusMap, name),
+        language: 'ja',
+      },
+      registry,
+    ),
+  )
+}
+
+/** stock スナップショット群の概要（実データからのみ。fake count なし） */
+export function summarizeStockSnapshots(
+  snapshots: FoodStockIngredientSnapshot[],
+): StockSummary {
+  return {
+    availableCount: snapshots.filter((s) => s.availabilityStatus === 'available').length,
+    lowCount: snapshots.filter((s) => s.availabilityStatus === 'low').length,
+    unavailableCount: snapshots.filter((s) => s.availabilityStatus === 'unavailable').length,
+    resolvedCount: snapshots.filter((s) => s.identityStatus === 'RESOLVED').length,
+    unresolvedCount: snapshots.filter((s) => s.identityStatus === 'UNRESOLVED').length,
+    ambiguousCount: snapshots.filter((s) => s.identityStatus === 'AMBIGUOUS').length,
+    totalCount: snapshots.length,
+  }
 }
 
 // ------------------------------------------------------------

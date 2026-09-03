@@ -2168,3 +2168,246 @@ export interface RecipeFoodMatchResult {
   /** Shopping boundary（§38）: 明示的に MISSING な canonical id の一覧（dedup + sort） */
   missingCanonicalIngredientIds: CanonicalFoodId[]
 }
+
+// ============================================================
+// MISSION 2.40 — Smartphone Food Decision & Swipe Cooking UX Foundation (types only)
+//
+//   探すときは楽しく。料理中は迷わずスワイプ。
+//   1 画面 = 1 工程 / 左右スワイプ中心 / 小さいボタンを狙わせない。
+//
+// 絶対原則（SMARTPHONE_COOKING_UX.md 参照）:
+// - MISSION 2.39 の Matching Truth（EXACT / LOW / MISSING / UNRESOLVED / AMBIGUOUS）を
+//   UI 都合で統合・破壊しない。UNRESOLVED ≠ AMBIGUOUS は内部で別のまま
+//   （表示だけ「確認が必要」へまとめてよい）。
+// - 「家にある」は「必要量が十分」ではない（EXACT ≠ Quantity Sufficient）。
+//   「十分あります」「これだけで作れます」を断定しない。
+// - Source にない火加減 / 時間 / 分量 / 人数 / 国 / occasion を UI が生成・補完しない。
+// - Presentation → Source Fact の mutation 禁止（一方向）。
+// - Meal Occasion を料理名・食材から推測しない（明示 metadata のみ）。
+// - SYNTHETIC fixture を production UI へ表示しない。fake count / fake recipe を出さない。
+// - AI を使わない。「おすすめ」「AI が選びました」等を根拠なく表示しない。
+//   ranking の意味は「家にある食材との一致状況」であって「おすすめ順」ではない。
+// - これらの型・関数は RecipeVerification / Allergy / Rights Gate / Practical /
+//   Matching Truth / Canonicalization / Stock schema を一切変更しない。
+// ============================================================
+
+// ------------------------------------------------------------
+// Ingredient Match Presentation
+// ------------------------------------------------------------
+
+/** MISSION 2.39 の matchClass をユーザー向けラベルへ写像したもの（内部区別は保持） */
+export type IngredientAvailabilityLabel =
+  | 'at-home' // 家にある（EXACT）
+  | 'low' // 少ない（LOW）
+  | 'missing' // 足りない（MISSING）
+  | 'needs-check' // 確認が必要（UNRESOLVED / AMBIGUOUS — 表示上のみ統合）
+
+export interface IngredientAvailabilityPresentation {
+  sourceIngredientName: string
+  /** SourceIngredientKnowledge.quantity?.displayText（SOURCE FACT。そのまま表示） */
+  quantityDisplayText?: string
+  label: IngredientAvailabilityLabel
+  /** 内部の真の分類（統合しない。UNRESOLVED / AMBIGUOUS は別のまま保持） */
+  internalMatchClass: IngredientMatchClass
+  /** 数量を過剰主張しないための注記（常に 'not-evaluated'） */
+  quantityNote: 'not-evaluated'
+}
+
+/** Recipe 単位の見出し（観測できた事実のみ。保証的表現を避ける） */
+export type RecipeMatchHeadline =
+  | 'ALL_LISTED_AT_HOME' // 全 listed 材料が家にある（分量は未確認）
+  | 'SOME_MISSING' // 足りない材料がある
+  | 'NEEDS_CHECK_ONLY' // 確認が必要な材料だけ残っている（missing は無い）
+
+export interface RecipeMatchPresentation {
+  canonicalRecipeId: WorldRecipeCanonicalId
+  /** SourceRecipeKnowledge.sourceRecipeName（原文。翻訳しない） */
+  recipeName: string
+  /** 明示 metadata の occasion（unknown なら []） */
+  mealOccasions: MealOccasion[]
+  /** 上記の日本語ラベル（known のときのみ） */
+  mealOccasionLabels: string[]
+  ingredients: IngredientAvailabilityPresentation[]
+  atHomeCount: number
+  lowCount: number
+  missingCount: number
+  /** 表示用: UNRESOLVED + AMBIGUOUS の合算（内部 count は別途保持） */
+  needsCheckCount: number
+  /** 内部区別を保持（表示では needs-check に統合するが count は分けて持つ） */
+  unresolvedCount: number
+  ambiguousCount: number
+  listedIngredientCount: number
+  headline: RecipeMatchHeadline
+  /** Shopping boundary（§38）: 「あと○個」は missingCount のみ。needs-check を混ぜない */
+  shoppingHint: {
+    missingCount: number
+    missingCanonicalIngredientIds: CanonicalFoodId[]
+  }
+}
+
+/** Forward（家にあるもので作る）リスト表示 */
+export interface ForwardMatchListPresentation {
+  items: RecipeMatchPresentation[]
+  /** 並び順の意味（「おすすめ順」ではない） */
+  rankingMeaning: 'availability-fit'
+  /** production 実データが無い / 候補ゼロ のときの中立文言 */
+  emptyStateText?: string
+}
+
+// ------------------------------------------------------------
+// Recipe Detail Presentation（Source Fact を変更しない）
+// ------------------------------------------------------------
+
+export interface RecipeDetailIngredientPresentation {
+  sourceIngredientName: string
+  quantityDisplayText?: string
+  preparationState?: string
+  /** match result が与えられた場合のみ */
+  availability?: IngredientAvailabilityLabel
+}
+
+export interface RecipeDetailStepPresentation {
+  displayNumber: number // 1-based
+  title: string
+  shortInstruction: string
+  ingredientActions: string[]
+  /** Source が示した場合のみ */
+  heatAction?: string
+  durationDisplay?: string
+  completionCue?: string
+  warning?: string
+  sourceStepReference: number
+}
+
+export interface RecipeDetailPresentation {
+  canonicalRecipeId: WorldRecipeCanonicalId
+  /** 原文 */
+  recipeName: string
+  /** WorldRecipeIdentity に identityEvidenceSourceIds がある場合のみ */
+  originCountry?: CountryCode
+  originRegion?: string
+  /** 明示 metadata がある場合のみ */
+  mealOccasionLabels: string[]
+  /** SourceRecipeKnowledge.servings?.displayText（Source にある場合のみ） */
+  servingsDisplayText?: string
+  ingredients: RecipeDetailIngredientPresentation[]
+  /** 事前準備（SourceRecipeKnowledge.preCookPreparation[].text） */
+  preCookPreparation: string[]
+  /** 下準備（SourceRecipeKnowledge.preparation[].text） */
+  preparation: string[]
+  steps: RecipeDetailStepPresentation[]
+  /** Source が内訳なしで示した合計時間（ある場合のみ） */
+  sourceStatedTotalTimeDisplay?: string
+  /** Evidence / Source への導線（Matching result と混同しない） */
+  evidence: {
+    evidenceSourceId: string
+    /** MISSION 2.37 Import 由来か */
+    imported: boolean
+  }
+}
+
+// ------------------------------------------------------------
+// Cooking Mode / Swipe Navigation
+// ------------------------------------------------------------
+
+export type CookingSessionStatus = 'cooking' | 'completed'
+
+export interface CookingSession {
+  canonicalRecipeId: WorldRecipeCanonicalId
+  steps: PresentationStep[]
+  currentIndex: number // 0-based。completed のとき steps.length（境界外）
+  status: CookingSessionStatus
+}
+
+/** 1 画面 1 工程の表示モデル */
+export interface CookingStepView {
+  index: number // 0-based
+  displayNumber: number // 1-based
+  totalSteps: number
+  title: string
+  shortInstruction: string
+  ingredientActions: string[]
+  heatAction?: string
+  durationDisplay?: string
+  completionCue?: string
+  warning?: string
+  sourceStepReference: number
+  isFirst: boolean
+  isLast: boolean
+}
+
+/** スワイプ判定の結果 */
+export type SwipeIntent = 'next' | 'previous' | 'none'
+
+export interface SwipeInput {
+  /** 終点X - 始点X（px）。負 = 左方向 */
+  deltaX: number
+  /** 終点Y - 始点Y（px） */
+  deltaY: number
+  elapsedMs?: number
+}
+
+export interface SwipeConfig {
+  /** これ未満の水平移動は swipe 扱いしない（短い動き・誤タップ対策） */
+  minHorizontalDistance: number
+  /** |deltaY| > maxVerticalRatio * |deltaX| なら「主に縦」→ none */
+  maxVerticalRatio: number
+}
+
+// ------------------------------------------------------------
+// Completion / Share / deferred actions
+// ------------------------------------------------------------
+
+/** 完成後にのみ表示してよい二次アクション（Cooking 中は前面に出さない） */
+export type FoodDeferredAction =
+  | 'favorite' // ♡ お気に入り（boundary のみ・永続化は別 MISSION）
+  | 'repeat' // また作る（Favorite とは別概念）
+  | 'share' // みんなにシェアする
+  | 'print' // プリント
+
+export interface FoodCompletionPresentation {
+  canonicalRecipeId: WorldRecipeCanonicalId
+  recipeName: string
+  /** 完成後に表示してよい二次アクション（順序は探す→作る→気に入る→覚える→また作る→シェア） */
+  deferredActions: FoodDeferredAction[]
+}
+
+/** Share text / hashtags は FACT のみから生成する（推測でタグを付けない） */
+export interface FoodShareInput {
+  /** SourceRecipeKnowledge.sourceRecipeName（原文） */
+  recipeName: string
+  /** Evidence / 明示 metadata がある場合のみ呼び出し側が渡す（# 抜きの語） */
+  factualTags?: string[]
+}
+
+// ============================================================
+// MISSION 2.40A — Core UX Alignment: Existing Stock → Food Decision (types only)
+//
+// NUKITORU FOOD の本筋:「NUKITORU を見れば家にある食材が分かる。その家にある
+// もので何が作れるか分かる。」= 既存 Stock persistence を Matching の主データにする。
+//
+// 絶対ルール:
+// - 既存 StockStatus / StockStatusEntry / storage schema を変更しない。読むだけ。
+// - available → available / low → low / out → unavailable の写像のみ。
+// - Ingredient identity は MISSION 2.38 canonicalization（resolved は canonicalIngredientId
+//   を保持、unresolved は UNRESOLVED、ambiguous は AMBIGUOUS。推測しない）。
+// - fake count を出さない（summary は実データからのみ）。
+// ============================================================
+
+/** 家にある食材スナップショット群の概要（実データからのみ計算。fake count 禁止） */
+export interface StockSummary {
+  /** availabilityStatus === 'available' の件数（= 家にあるもの） */
+  availableCount: number
+  /** availabilityStatus === 'low' の件数（= 少ないもの） */
+  lowCount: number
+  /** availabilityStatus === 'unavailable' の件数（= 明示的に無いもの / out） */
+  unavailableCount: number
+  /** canonicalIngredientId が解決済みの件数 */
+  resolvedCount: number
+  /** identity 未解決の件数 */
+  unresolvedCount: number
+  /** identity 曖昧の件数 */
+  ambiguousCount: number
+  /** 総件数 */
+  totalCount: number
+}
