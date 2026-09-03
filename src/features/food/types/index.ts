@@ -1880,3 +1880,120 @@ export type RecipeImportResult =
       reasons: ImportDecisionReason[]
       decision?: RecipeImportRightsDecision
     }
+
+// ============================================================
+// MISSION 2.38 — World Ingredient Canonicalization Foundation (types only)
+//
+// 「世界のレシピに登場する食材」と「ユーザーの在庫にある食材」を、表示名の
+// 文字列一致ではなく同じ Canonical Ingredient Identity へ **安全・決定論的に**
+// 接続するための基礎。
+//
+// 絶対原則（WORLD_INGREDIENT_CANONICALIZATION.md 参照）:
+// - 推測による食材統合をしない。名前が似ているだけで同一食材にしない。
+// - fuzzy / typo correction / stemming / substring / AI synonym / 自動翻訳 は一切しない。
+// - 曖昧なら AMBIGUOUS。知らなければ UNRESOLVED。推測で埋めない（fail-closed）。
+// - Canonicalization が変更してよいのは「Identity へのリンク」だけ。
+//   source ingredient name / quantity / unit / semantics / preparation / notes /
+//   language / wording は一切変更しない（Translation ≠ Canonicalization）。
+// - Identity Evidence ≠ Recipe Evidence ≠ Rights Evidence ≠ Allergen Evidence（混ぜない）。
+// - Ingredient variant を潰さない（chicken ≠ chicken thigh、tomato ≠ cherry tomato、
+//   milk ≠ soy milk、olive oil ≠ sesame oil、rice ≠ cooked rice）。
+// - Identity ≠ State/Preparation（raw / boiled / diced 等は Identity に含めない）。
+// - Generic Ingredient Identity ≠ Specific Product Identity。
+// - これらの型・関数は既存 Allergy / Substitution / Unit / Rights Gate /
+//   RecipeVerification / PracticalCookValidation を一切変更・迂回しない。
+// - canonicalIngredientId は既存 CanonicalFoodId 型を再利用する（新 ID 体系を作らない。
+//   canonical-food.ts の既存 id（chicken / onion / rice_raw / rice_cooked）と整合させる）。
+// ============================================================
+
+/** 登録名の種別。canonical = 代表名、alias = 明示登録された別名（表記ゆれ含む） */
+export type WorldIngredientNameKind = 'canonical' | 'alias'
+
+/** WorldIngredientIdentity に紐づく 1 つの言語別名称（明示登録された事実のみ） */
+export interface WorldIngredientIdentityName {
+  language: LanguageCode
+  /** 登録された表記（表示用） */
+  name: string
+  kind: WorldIngredientNameKind
+}
+
+/**
+ * ある食材 Identity が「なぜその Identity として登録されているか」の来歴。
+ * これは Identity Evidence であって Recipe / Rights / Allergen Evidence ではない。
+ * 大規模 Evidence システムは作らない — 最小の追跡情報のみ。
+ */
+export interface WorldIngredientIdentityEvidence {
+  /** 出典・根拠の参照（URL / dataset id / 内部辞書メモ等） */
+  reference: string
+  /** この登録を確認した日付（ISO） */
+  checkedAt: string
+  notes?: string
+}
+
+/**
+ * 表示名から独立した「ある食材そのもの」の Identity。
+ * canonicalIngredientId は安定した内部 id（既存 CanonicalFoodId を再利用）。
+ */
+export interface WorldIngredientIdentity {
+  canonicalIngredientId: CanonicalFoodId
+  /** 主たる表示名（識別のための固定名。表示名 ≠ Identity なので names[] とは別に固定する） */
+  canonicalName: string
+  /** 明示登録された言語別名称。ここに無い名前は事実として扱わない */
+  names: WorldIngredientIdentityName[]
+  /** 大分類（任意・自由記述の最小情報。enum 化しない） */
+  category?: string
+  /**
+   * 将来の親子関係の「境界」だけ（例: chicken_thigh の親 = chicken）。
+   * MISSION 2.38 では自動親子推論をしない。fixture に明示登録されたものだけ保持する。
+   * Matching では親子で自動 MATCH しない（exact canonical id 一致のみ）。
+   */
+  parentCanonicalIngredientId?: CanonicalFoodId
+  /** この Identity 登録の来歴（Identity Evidence。他の Evidence と混ぜない） */
+  identityEvidence?: WorldIngredientIdentityEvidence
+  notes?: string[]
+}
+
+/** 食材名解決の結果種別 */
+export type WorldIngredientResolutionStatus = 'RESOLVED' | 'UNRESOLVED' | 'AMBIGUOUS'
+
+export interface WorldIngredientResolution {
+  status: WorldIngredientResolutionStatus
+  /** 入力（正規化前） */
+  query: { sourceName: string; language?: LanguageCode }
+  /** 決定論的に正規化した検索キー（trim + NFKC + lowercase + 空白畳み込み のみ） */
+  normalizedQuery: string
+  /** RESOLVED のときのみ設定 */
+  canonicalIngredientId?: CanonicalFoodId
+  identity?: WorldIngredientIdentity
+  /** AMBIGUOUS のとき: 候補 id 一覧（1 つも選ばない） */
+  candidateIds?: CanonicalFoodId[]
+  /** 判断理由（監査用） */
+  reason: string
+}
+
+/**
+ * SourceIngredientKnowledge を canonical id へ「安全に link した」結果。
+ * original は一切変更しない。linked は Identity へのリンクだけを足したコピー。
+ */
+export interface CanonicalizedSourceIngredient {
+  /** 元の SourceIngredientKnowledge（不変） */
+  original: SourceIngredientKnowledge
+  resolution: WorldIngredientResolution
+  /**
+   * RESOLVED のとき: original に canonicalIngredientId を link した新しいコピー。
+   * それ以外 or 元々 canonicalIngredientId が設定済みのとき: 元の値を保った新しいコピー。
+   * いずれの場合も sourceIngredientName / quantity / preparationState / normalizedName /
+   * japaneseName / englishName / originalLanguage / role は original と同一。
+   */
+  linked: SourceIngredientKnowledge
+}
+
+/**
+ * MISSION 2.39（双方向 Matching Engine）が使う match 分類の最小 interface。
+ * MISSION 2.38 では Recipe Matching 自体は実装しない。
+ * - EXACT:      両者が同じ canonicalIngredientId（exact canonical match のみ）
+ * - MISSING:    片方に canonicalIngredientId がある / もう片方に無い（在庫に該当なし等）
+ * - UNRESOLVED: 少なくとも片方が canonical id を持たない（未解決）
+ * - AMBIGUOUS:  解決が AMBIGUOUS だった
+ */
+export type IngredientIdentityMatchKind = 'EXACT' | 'MISSING' | 'UNRESOLVED' | 'AMBIGUOUS'
