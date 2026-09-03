@@ -2515,3 +2515,251 @@ export interface CookedMealPresentation {
   /** 常に表示する注記: これは「作った記録」であって Recipe 検証ではない */
   disclaimer: string
 }
+
+// ============================================================
+// MISSION 2.41A — Real Recipe Evidence Pack Intake (types only)
+//
+//   External Research Layer（Claude Code の外部）
+//     ↓ Official Source を開く / Source Body を確認 / Rights を確認 / Fact を抽出
+//   RecipeEvidencePack（Commander / External Research Layer が渡す staging object）
+//     ↓ validateEvidencePack（Schema + Evidence Completeness + Rights + Identity + Process）
+//     ↓ canEnterRecipeImport（COMPLETE のときだけ true）
+//     ↓ toRawSourceRecord（PRESENT の Fact だけを値として渡す。生成しない）
+//   RawRecipeImportCandidate（MISSION 2.37）
+//     ↓ 既存 importRecipeCandidate（Rights Gate / Identity / Promote）
+//   SourceRecipeKnowledge
+//
+// 絶対原則（RECIPE_EVIDENCE_PACK.md 参照）:
+// - Evidence を生成しない。External Research Layer が確認した Fact を構造化・検証するだけ。
+// - Commander / External Research Layer が渡したという理由だけで trusted / verified /
+//   rightsAllowed / publishable / practicallyValidated にしない（Evidence Pack 自体を検証する）。
+// - SOURCE_NOT_STATED ≠ NOT_CAPTURED を厳格に分離する。
+// - CONFLICT を平均・統合して単一値にしない。
+// - SOURCE RIGHTS ≠ RECORD RIGHTS ≠ ASSET RIGHTS。third-party クレジット検出 = 自動 SKIP ではなく
+//   record-level rights review が必要（確認できなければ fail-closed）。
+// - Evidence Pack COMPLETE ≠ RecipeVerification VERIFIED ≠ Publishable ≠ Practical Validated ≠ Allergy Safe。
+// - これらの型は RecipeVerification / isRecipePublishable / Allergy Gate / PracticalCookValidation /
+//   Matching Truth / Presentation を一切変更しない（独立した追加レイヤー）。
+// ============================================================
+
+/**
+ * ある Fact を External Research Layer がどう確認したかの状態（MISSION 2.41A §6）。
+ * - PRESENT:          Source Body 上でその Fact を確認済み。
+ * - SOURCE_NOT_STATED: Source Body を確認したが、その Fact について記載が無い。
+ * - NOT_CAPTURED:      Source Body 確認 / Evidence capture が未完了。
+ * - CONFLICT:          同一 Evidence scope 内に互いに両立しない Fact が存在する。
+ *
+ * SOURCE_NOT_STATED（情報源が沈黙している）と NOT_CAPTURED（まだ調べていない）を必ず区別する。
+ */
+export type FactPresenceState = 'PRESENT' | 'SOURCE_NOT_STATED' | 'NOT_CAPTURED' | 'CONFLICT'
+
+/**
+ * 単一の Evidence Fact（MISSION 2.41A §7）。
+ * - status === 'PRESENT'          → value 必須。
+ * - status === 'SOURCE_NOT_STATED' → value 禁止（default 値へ変換しない）。
+ * - status === 'NOT_CAPTURED'      → value 禁止（空文字等でごまかさない）。
+ * - status === 'CONFLICT'          → value 禁止。conflictingValues に複数候補をそのまま保持
+ *                                    （平均・統合して 1 値にしない）。
+ */
+export interface EvidenceFact<T> {
+  status: FactPresenceState
+  /** PRESENT のときのみ設定。それ以外の status では設定してはならない */
+  value?: T
+  /** CONFLICT のとき、両立しない候補を統合せずそのまま保持する */
+  conflictingValues?: T[]
+  /** この Fact を External Research Layer が確認した根拠（URL / 引用箇所メモ等） */
+  evidenceReference?: string
+  notes?: string
+}
+
+/** Evidence Pack 内の 1 食材（Source 表記を保持。ここでは canonical 化しない — §22） */
+export interface EvidencePackIngredient {
+  /** Source Body に書かれた食材名（原文表記。翻訳・正規化しない） */
+  sourceIngredientName: string
+  role: SourceIngredientRole
+  /** Source が示した分量（原文表記 + presence state） */
+  amount: EvidenceFact<QuantityStatement>
+  /** 下ごしらえ状態（Source が示した場合のみ） */
+  preparationState?: EvidenceFact<string>
+}
+
+/** Evidence Pack 内の 1 調理ステップ */
+export interface EvidencePackStep {
+  /** 1 始まりの手順番号 */
+  order: number
+  /** Source 手順の事実要約（逐語コピーしない — §37） */
+  factSummary: EvidenceFact<string>
+  /** この手順で使う食材（EvidencePackIngredient.sourceIngredientName と一致） */
+  ingredientsUsed?: string[]
+  heat?: EvidenceFact<SourceHeatLevel>
+  heatTransition?: EvidenceFact<SourceHeatTransition>
+  duration?: EvidenceFact<TimeValue>
+  completionCue?: EvidenceFact<string>
+}
+
+export interface RecipeEvidencePackIdentity {
+  /** Evidence Pack 自体の id */
+  id: string
+  /**
+   * WorldRecipeIdentity へ完全一致で解決する候補 id。
+   * Evidence で確定できなければ undefined（料理名の類似だけで決めない — §16）。
+   */
+  candidateCanonicalRecipeId?: WorldRecipeCanonicalId
+}
+
+export interface RecipeEvidencePackSource {
+  /** WorldFoodSource.sourceId（rights + publisher 登録簿） */
+  sourceId: string
+  /** Source を発行している組織（原文表記） */
+  sourceOrganization: string
+  /** Source ページ / record のタイトル（原文表記） */
+  sourceTitle: string
+  /** この record の一次 URL（空文字は provenance 欠落扱い） */
+  sourceUrl: string
+  /** source 側の record id（あれば。無ければ adapter は Evidence Pack id を使う） */
+  sourceRecordId?: string
+  /** External Research Layer が Source Body を確認した日時（ISO） */
+  accessedAt: string
+}
+
+/** third-party クレジットの record-level review 状態（§10） */
+export type ThirdPartyRightsReviewState = 'cleared' | 'unresolved' | 'not-reviewed'
+
+/**
+ * Evidence Pack が申告する Rights（MISSION 2.36 / 2.36A の RightsFlag を再利用 — §11）。
+ * SOURCE / RECORD / ASSET を別フィールドで保持する（§9）。
+ */
+export interface RecipeEvidencePackRights {
+  /** SOURCE 全体の構造化 fact 利用可否 */
+  sourceRightsStatus: RightsFlag
+  /** この RECORD 単位の利用可否 */
+  recordRightsStatus: RightsFlag
+  /** 構造化した料理事実を保存してよいか（Import の核心条件） */
+  structuredFactStorageStatus: RightsFlag
+  /** 逐語テキスト保存可否（Import 可否には使わない。保持のみ） */
+  verbatimTextStatus: RightsFlag
+  /** 画像 ASSET 再利用可否（今回画像は取り込まない。保持のみ） */
+  imageAssetStatus: RightsFlag
+  /** 第三者クレジットを検出したか。true でも自動 SKIP しない（§10） */
+  thirdPartyIndication?: boolean
+  /** thirdPartyIndication が true のときの record-level rights review 結果 */
+  thirdPartyRightsReview?: ThirdPartyRightsReviewState
+  rightsEvidenceReference?: string
+  rightsNotes?: string
+}
+
+export interface RecipeEvidencePackRecipe {
+  /** Source Body に書かれたレシピ名（原文） */
+  sourceRecipeName: string
+  sourceLanguage: LanguageCode
+  servings: EvidenceFact<QuantityStatement>
+  /** 食材リスト全体の capture 状態（PRESENT = required 食材と分量を Source から拾えた） */
+  ingredientListStatus: FactPresenceState
+  ingredients: EvidencePackIngredient[]
+  /** 手順リスト全体の capture 状態（PRESENT = Primary Process の手順順序を Source から拾えた） */
+  stepListStatus: FactPresenceState
+  steps: EvidencePackStep[]
+  /** 下準備（Source が示した工程） */
+  preparation: EvidenceFact<string[]>
+  /** 完成・仕上がりの目安（レシピ全体） */
+  completionCues: EvidenceFact<string[]>
+  /** 器具・熱源等の調理条件 */
+  equipmentConditions: EvidenceFact<string[]>
+}
+
+export interface RecipeEvidencePackClassification {
+  /** 由来国。料理名・食材から推測しない（§39） */
+  country: EvidenceFact<CountryCode>
+  cuisine: EvidenceFact<RecipeCuisine>
+  mealOccasions: EvidenceFact<MealOccasion[]>
+}
+
+/** Evidence Pack を誰が用意したか */
+export type EvidenceProvidedBy = 'external-research-layer' | 'commander'
+
+/**
+ * Evidence をどう取得したか。
+ * - official-source-body-review: 公式 Source 本文を直接確認した（PRESENT の前提）。
+ * - official-source-summary:     公式 Source の要約のみ（Fact を PRESENT にできない）。
+ * - not-yet-captured:            未取得。
+ */
+export type EvidenceCaptureMethod =
+  | 'official-source-body-review'
+  | 'official-source-summary'
+  | 'not-yet-captured'
+
+export interface RecipeEvidencePackProvenance {
+  providedBy: EvidenceProvidedBy
+  evidenceMethod: EvidenceCaptureMethod
+  /** この Evidence Pack を作成した日時（ISO） */
+  capturedAt: string
+  notes?: string
+}
+
+/**
+ * External Research Layer / Commander が渡す Evidence の staging object。
+ * これは SourceRecipeKnowledge ではない（validate + Rights Gate を通過し adapter を経るまで昇格しない）。
+ * `as SourceRecipeKnowledge` / `as RawRecipeImportCandidate` の cast は禁止。
+ */
+export interface RecipeEvidencePack {
+  identity: RecipeEvidencePackIdentity
+  source: RecipeEvidencePackSource
+  rights: RecipeEvidencePackRights
+  recipe: RecipeEvidencePackRecipe
+  classification: RecipeEvidencePackClassification
+  provenance: RecipeEvidencePackProvenance
+}
+
+/** Evidence Pack validation の結果分類（MISSION 2.41A §12） */
+export type EvidenceCompletenessResult =
+  | 'COMPLETE'
+  | 'INCOMPLETE'
+  | 'RIGHTS_BLOCKED'
+  | 'IDENTITY_REVIEW'
+  | 'PROCESS_REVIEW'
+
+/** validation で付く監査可能な理由コード */
+export type EvidenceCompletenessReason =
+  | 'SOURCE_ID_MISSING'
+  | 'SOURCE_NOT_REGISTERED'
+  | 'SOURCE_ORGANIZATION_MISSING'
+  | 'SOURCE_TITLE_MISSING'
+  | 'SOURCE_URL_MISSING'
+  | 'ACCESSED_AT_MISSING'
+  | 'RECIPE_NAME_MISSING'
+  | 'EVIDENCE_METHOD_NOT_SOURCE_BODY'
+  | 'SERVINGS_NOT_CAPTURED'
+  | 'INGREDIENTS_NOT_CAPTURED'
+  | 'INGREDIENT_AMOUNT_NOT_CAPTURED'
+  | 'STEPS_NOT_CAPTURED'
+  | 'PRIMARY_PROCESS_ANCHOR_MISSING'
+  | 'THIRD_PARTY_RIGHTS_REVIEW_PENDING'
+  | 'FACT_PRESENCE_INVALID'
+  | 'RIGHTS_SOURCE_BLOCKED'
+  | 'RIGHTS_RECORD_BLOCKED'
+  | 'RIGHTS_STRUCTURED_FACT_BLOCKED'
+  | 'RIGHTS_CONDITIONAL_UNMET'
+  | 'RIGHTS_CLAIM_EXCEEDS_SOURCE'
+  | 'THIRD_PARTY_RIGHTS_UNRESOLVED'
+  | 'IDENTITY_CANDIDATE_MISSING'
+  | 'IDENTITY_NOT_IN_REGISTRY'
+  | 'INGREDIENT_AMOUNT_CONFLICT'
+  | 'STEP_FACT_CONFLICT'
+  | 'SERVINGS_CONFLICT'
+  | 'PROCESS_FACT_CONFLICT'
+
+export interface EvidencePackValidation {
+  result: EvidenceCompletenessResult
+  reasons: EvidenceCompletenessReason[]
+  /**
+   * result === 'COMPLETE'（= Schema OK + Rights PASS + Identity review 不要 +
+   * Process review 不要 + 必須 Evidence capture 済み）のときのみ true。
+   * COMPLETE ≠ Verified / Publishable / Practical Validated / Allergy Safe。
+   */
+  importEligible: boolean
+}
+
+/** Evidence Pack → RawRecipeImportCandidate 変換の結果（§20 / §21） */
+export type EvidencePackAdapterResult =
+  | { ok: true; candidate: RawRecipeImportCandidate }
+  | { ok: false; reasons: EvidenceCompletenessReason[] }
