@@ -1370,3 +1370,288 @@ export interface Recipe {
    */
   practicalCookValidation?: PracticalCookValidation
 }
+
+// ============================================================
+// MISSION 2.35 — World Food Knowledge Foundation
+//
+// 「世界にすでに存在する信頼できる料理知識を、Evidence と出典を保持したまま
+// 構造化して学び、NUKITORU らしい料理体験へ変換する」ための最小の器（型のみ）。
+//
+// 4つの概念を型レベルで厳密に分離する（WORLD_FOOD_KNOWLEDGE_PRINCIPLES.md 参照）:
+//   A. SOURCE RECIPE KNOWLEDGE  — 外部の信頼できる情報源から確認した料理事実
+//      （SourceRecipeKnowledge）。
+//   B. NUKITORU PRESENTATION    — A の料理事実を「変更せず」スマホで理解しやすい形へ
+//      構造化した表示情報（NukitoruPresentation）。Evidence を増やさない。
+//   C. NUKITORU VERIFIED        — 既存の厳格な Verification Gate（RecipeVerification /
+//      isRecipePublishable）。本 MISSION は一切変更しない。
+//   D. AI ORIGINAL              — 本 MISSION では実装しない。
+//
+// 絶対原則:
+// - SOURCE RECIPE KNOWLEDGE ≠ NUKITORU VERIFIED。
+// - NUKITORU PRESENTATION ≠ 新しい料理 Evidence（表示を分かりやすくしただけ）。
+// - UNKNOWN は UNKNOWN。情報源が示さない火加減・時間・分量・器具サイズを
+//   AI や一般常識で補完しない。
+// - Translation is not Evidence / Calculation is not Culinary Evidence /
+//   Canonicalization is not Allergen Composition。
+// - Presentation の各事実は SOURCE KNOWLEDGE のどこ由来か追跡可能であること。
+// - これらの型は既存 Recipe / RecipeIngredient / RecipeVerification /
+//   ingredient-normalization.ts / recipe-safety.ts / recipe-publishability.ts の
+//   挙動を一切変更しない（独立した追加レイヤー）。
+// ============================================================
+
+// ------------------------------------------------------------
+// World Recipe Identity（世界料理の同一性）
+//
+// 表示名（japaneseName / englishName 等）と Canonical Identity を混同しない。
+// 日本語訳によって Recipe Identity を別 Recipe へ変えてはいけない。
+// ------------------------------------------------------------
+
+/** 表示文字列から独立した「世界のある料理そのもの」の id（fuzzy match で解決しない） */
+export type WorldRecipeCanonicalId = string
+
+export interface WorldRecipeIdentity {
+  canonicalRecipeId: WorldRecipeCanonicalId
+  /** その料理圏での代表的な正式名（例: "Tortilla Española"） */
+  canonicalName: string
+  /** 現地表記（canonicalName と同じでもよい。例: "Tortilla de patatas"） */
+  localName: string
+  /** 原語（ISO 639-1 相当。LanguageCode） */
+  originalLanguage: LanguageCode
+  /** 由来国（ISO 3166-1 alpha-2 相当。CountryCode）。Cuisine とは別概念 */
+  country: CountryCode
+  region?: string
+  /** 由来料理圏。既存 RecipeCuisine を再利用（任意） */
+  cuisine?: RecipeCuisine
+  japaneseName?: string
+  englishName?: string
+  /** 表記ゆれ・別名（人間が確認した明示リストのみ。fuzzy match 禁止） */
+  aliases?: string[]
+  /**
+   * この Identity（名称・由来）の根拠となる sourceId（任意。EVIDENCE_SOURCE_CATALOG）。
+   * 未設定は「一般的な名称として登録したが Identity 用 Evidence 未添付」を表す。
+   * Identity の登録は SOURCE RECIPE KNOWLEDGE（分量・時間・工程等の料理事実）の
+   * Evidence には一切ならない。
+   */
+  identityEvidenceSourceIds?: string[]
+}
+
+// ------------------------------------------------------------
+// Global Ingredient Knowledge（世界対応の食材知識）
+//
+// 既存 Ingredient Taxonomy / canonical-food.ts を尊重する。
+// 翻訳 ≠ Evidence。Canonicalization ≠ Allergen Composition。
+// ------------------------------------------------------------
+
+export type SourceIngredientRole =
+  | 'required' // 必須食材
+  | 'seasoning' // 調味料
+  | 'optional' // 入れなくてよい
+  | 'garnish' // 飾り・薬味
+  | 'cooking-liquid' // 水・湯等の基礎液体
+
+export interface SourceIngredientKnowledge {
+  /** 情報源に書かれた食材名（原文の表記を尊重。翻訳で置き換えない） */
+  sourceIngredientName: string
+  /** 既存 canonical-food.ts の canonicalFoodId（任意。fuzzy 解決禁止・未知は付けない） */
+  canonicalIngredientId?: CanonicalFoodId
+  /** 既存 ingredient-normalization.ts で正規化した名前（任意） */
+  normalizedName?: string
+  japaneseName?: string
+  englishName?: string
+  originalLanguage?: LanguageCode
+  role: SourceIngredientRole
+  /**
+   * 情報源が示した分量。displayText（原文表記）は常に保持し、semantics は
+   * 既存 QuantitySemantics を再利用する（range を midpoint 化しない・
+   * unknown を推測で埋めない・「大さじ」を g へ無言換算しない）。
+   */
+  quantity?: QuantityStatement
+  /** 下ごしらえの状態（例: "みじん切り" / "thinly sliced"）。情報源が示した場合のみ */
+  preparationState?: string
+}
+
+/**
+ * SOURCE FACT と PRODUCT CONVERSION を分離するための型（本 MISSION では未使用）。
+ * 「計算できる ≠ Evidence である」。UI 上の換算値を将来表示する場合も、
+ * 情報源の原文（sourceStatement）は決して書き換えない。
+ */
+export interface ProductUnitConversion {
+  /** 情報源の原文の分量表記（QuantityStatement。書き換え禁止） */
+  sourceStatement: QuantityStatement
+  /** NUKITORU が UI 表示用に導出した値（Product Decision。Evidence ではない） */
+  convertedValue: number
+  convertedUnit: string
+  /** どの前提でどう換算したかの NUKITORU 自作の説明（空文字不可） */
+  conversionNote: string
+}
+
+// ------------------------------------------------------------
+// Cooking Knowledge Structure（調理知識の構造）
+//
+// すべて「情報源にある場合のみ」事実として設定する。
+// 情報源にない情報を AI や一般常識で補完しない。
+// ------------------------------------------------------------
+
+/** 情報源が示した火加減。示していなければ 'unknown'（発明しない） */
+export type SourceHeatLevel =
+  | 'off'
+  | 'very-low'
+  | 'low'
+  | 'medium-low'
+  | 'medium'
+  | 'medium-high'
+  | 'high'
+  | 'unknown'
+
+/** 情報源が示した火加減の変化。示していなければ 'unknown' */
+export type SourceHeatTransition =
+  | 'turn-on' // 火をつける
+  | 'keep' // そのまま維持
+  | 'lower' // 弱める
+  | 'raise' // 強める
+  | 'turn-off' // 火を止める
+  | 'unknown'
+
+export type SourceLidUsage = 'lid-on' | 'lid-off' | 'unknown'
+
+export interface SourceCookingStep {
+  /** 1 始まりの手順番号 */
+  order: number
+  /**
+   * 情報源の手順を、著作物性のある表現をそのまま転記せずに要約した事実記述（任意）。
+   * EVIDENCE_POLICY.md「Sources are for verification, not duplication」を守る。
+   */
+  factSummary?: string
+  /** この手順で投入・使用する食材（SourceIngredientKnowledge.sourceIngredientName と一致） */
+  ingredientsUsed?: string[]
+  /** 情報源がこの手順で示した火加減。未設定/'unknown' は「情報源が示していない」 */
+  heat?: SourceHeatLevel
+  /** 情報源が示した火加減の変化。未設定/'unknown' は「情報源が示していない」 */
+  heatTransition?: SourceHeatTransition
+  /** 情報源が示したこの手順の能動的な所要時間（TimeValue）。無ければ undefined */
+  duration?: TimeValue
+  /** 情報源が示した受動的な待ち時間（蒸し焼き・煮込み等）。無ければ undefined */
+  passiveDuration?: TimeValue
+  /** 油の使用（情報源の記述。'unknown' 可） */
+  oilUsage?: string
+  /** 液体・水の使用（情報源の記述。'unknown' 可） */
+  liquidUsage?: string
+  /** ふたの使用。未設定/'unknown' は「情報源が示していない」 */
+  lidUsage?: SourceLidUsage
+  /** 完成・次へ進む目安（例: "皮がこんがりしたら"）。情報源が示した場合のみ */
+  completionSign?: string
+}
+
+export interface SourcePreparationKnowledge {
+  /** 準備工程 1 手順（情報源由来の事実記述） */
+  text: string
+  /** 受動的な待ち時間か（常温戻し・浸水・解凍・漬け込み等） */
+  passiveWait?: boolean
+  /** 情報源が明示した所要時間（TimeValue）。発明しない */
+  duration?: TimeValue
+}
+
+/**
+ * A. SOURCE RECIPE KNOWLEDGE — 外部の信頼できる情報源から「確認した」料理事実。
+ * NUKITORU VERIFIED でも NUKITORU オリジナルでもない。すべての事実は
+ * evidenceSourceId（EVIDENCE_SOURCE_CATALOG）へ追跡可能である。
+ */
+export interface SourceRecipeKnowledge {
+  /** WorldRecipeIdentity.canonicalRecipeId */
+  canonicalRecipeId: WorldRecipeCanonicalId
+  /** 情報源に書かれたレシピ名（原文） */
+  sourceRecipeName: string
+  /** EVIDENCE_SOURCE_CATALOG の RecipeEvidenceSource.id */
+  evidenceSourceId: string
+  /** 情報源の言語（LanguageCode） */
+  sourceLanguage: LanguageCode
+  /** 情報源が示した「作る量／食数」。displayText は原文表記 */
+  servings?: QuantityStatement
+  ingredients: SourceIngredientKnowledge[]
+  /**
+   * PRE-COOK PREPARATION / 事前準備 — 調理開始「前」に時間が必要な工程
+   * （解凍・常温戻し・漬け込み・炊飯・予熱）。
+   */
+  preCookPreparation?: SourcePreparationKnowledge[]
+  /**
+   * PREPARATION / 下準備 — 調理フロー「内」で行う準備（切る・混ぜる・計る）。
+   */
+  preparation?: SourcePreparationKnowledge[]
+  /** 情報源が示した調理器具（原文表記） */
+  equipment?: string[]
+  cookingSteps: SourceCookingStep[]
+  /** 情報源が内訳なしで示した合計時間（TimeValue） */
+  sourceStatedTotalTime?: TimeValue
+  /** この知識を情報源から構造化した日付（ISO） */
+  structuredAt: string
+  /** 補足メモ（NUKITORU 自作。料理事実の追加ではない） */
+  notes?: string[]
+}
+
+// ------------------------------------------------------------
+// B. NUKITORU PRESENTATION
+//
+// SOURCE RECIPE KNOWLEDGE の料理事実を「変更せず」、スマホで・片手で・
+// 料理中に 3 秒で理解できる形へ構造化した表示情報。Evidence を増やさない。
+// 各事実が SOURCE の何処由来か追跡可能であること（sourceStepReference 必須）。
+// ------------------------------------------------------------
+
+export interface PresentationStep {
+  /** 見出し（例: "鶏肉を焼く"） */
+  title: string
+  /** 一行の指示 */
+  shortInstruction: string
+  /** 食材の操作（例: "鶏肉を皮を下にして入れる"） */
+  ingredientActions: string[]
+  /** 道具の操作（任意） */
+  toolAction?: string
+  /**
+   * 火の操作の表示（任意）。対応する SourceCookingStep が火加減／火加減変化を
+   * 示していない場合は undefined（"medium" 等で勝手に埋めない）。
+   */
+  heatAction?: string
+  /**
+   * 時間の表示（任意）。対応する SourceCookingStep が時間を示していない場合は
+   * undefined（"5分" 等で勝手に埋めない）。range は "2〜3分" のまま保持する。
+   */
+  durationDisplay?: string
+  /** 完成／次へ進む合図（任意）。SourceCookingStep.completionSign 由来のみ */
+  completionCue?: string
+  /** 注意（任意） */
+  warning?: string
+  /** 追跡可能性: このステップが依拠した SourceCookingStep.order（必須） */
+  sourceStepReference: number
+}
+
+/** PRE-START KNOWLEDGE（section 11）。調理 START 前に確認する項目の種別 */
+export type PresentationPreCheckKind =
+  | 'diners' // 食べる人数
+  | 'servings' // 作る量／食数（diners とは別）
+  | 'ingredients' // 使用食材
+  | 'products' // 使用商品
+  | 'equipment' // 使用道具
+  | 'heat-source' // 熱源
+  | 'ingredient-state' // 食材の現在状態
+  | 'pre-cook-prep' // 事前準備
+  | 'prep' // 下準備
+  | 'compatibility' // Recipe 条件との Compatibility
+
+export interface PresentationPreCheckItem {
+  label: string
+  kind: PresentationPreCheckKind
+  /** 情報源に由来する場合の参照メモ（任意。NUKITORU 自作） */
+  sourceReference?: string
+}
+
+export interface NukitoruPresentation {
+  canonicalRecipeId: WorldRecipeCanonicalId
+  /** どの SourceRecipeKnowledge から構造化したか（evidenceSourceId と一致させる） */
+  sourceEvidenceSourceId: string
+  /** 表示名（ローカライズ済み。Canonical Identity とは別） */
+  displayName: string
+  displayLocale: Locale
+  preCookChecklist?: PresentationPreCheckItem[]
+  steps: PresentationStep[]
+  /** この Presentation を生成した日付（ISO） */
+  generatedAt: string
+}
