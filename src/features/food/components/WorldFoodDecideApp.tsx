@@ -145,6 +145,8 @@ export function WorldFoodDecideApp() {
       <CookingModeView
         presentation={cookPresentation}
         recipeName={detail.recipeName}
+        canonicalRecipeId={detail.canonicalRecipeId}
+        evidenceSourceId={detail.evidence.evidenceSourceId}
         onExit={() => setScreen('detail')}
       />
     )

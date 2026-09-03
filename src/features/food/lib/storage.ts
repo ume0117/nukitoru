@@ -17,6 +17,7 @@ import type {
   MealDecision,
   MealCandidateType,
   MealFeedback,
+  CookedMealRecord,
 } from '@/features/food/types'
 
 const KEY_HOUSEHOLD = 'nukitoru_food_household'
@@ -258,4 +259,30 @@ export function loadMealFeedback(): MealFeedback[] {
 export function recordMealFeedback(feedback: MealFeedback): void {
   const next = [...loadMealFeedback(), feedback].slice(-MAX_STORED_FEEDBACK)
   safeSet(KEY_MEAL_FEEDBACK, next)
+}
+
+// ------------------------------------------------------------
+// MISSION 2.40B — Cooked Meal Record（実際に作った記録）の最小 persistence。
+//   既存 recordMealDecision / recordMealFeedback と同じ pattern（capped list）。
+//   **画像 binary / base64 / EXIF は一切保存しない**。CompletionPhotoMetadata の
+//   localReference（blob: URL 等）も保存しない（session 内のみ）。
+//   Recipe Evidence / Verification とは無関係な Product Behavior 記録。
+// ------------------------------------------------------------
+
+const KEY_COOKED_MEALS = 'nukitoru_food_cooked_meals'
+const MAX_STORED_COOKED_MEALS = 100
+
+export const DEFAULT_COOKED_MEALS: CookedMealRecord[] = []
+
+export function loadCookedMealRecords(): CookedMealRecord[] {
+  return safeGet(KEY_COOKED_MEALS, DEFAULT_COOKED_MEALS)
+}
+
+/**
+ * Cooked Meal Record を追記する（capped list）。record は cooked-meal-record.ts の
+ * createCookedMealRecord() で作られた plain metadata であること（画像 binary を含まない）。
+ */
+export function recordCookedMeal(record: CookedMealRecord): void {
+  const next = [...loadCookedMealRecords(), record].slice(-MAX_STORED_COOKED_MEALS)
+  safeSet(KEY_COOKED_MEALS, next)
 }

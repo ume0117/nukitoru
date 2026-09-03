@@ -2411,3 +2411,107 @@ export interface StockSummary {
   /** 総件数 */
   totalCount: number
 }
+
+// ============================================================
+// MISSION 2.40B — Cooked Meal Record & Completion Photo Foundation (types only)
+//
+// 「実際にこの料理を作った」という Product Event と「完成写真」を、
+// Recipe Evidence とは完全に分離して安全に記録する基礎。
+//
+// 絶対原則（COOKED_MEAL_RECORD.md 参照）:
+// - Cooked Meal Record ≠ Recipe Verification。100 人が記録しても VERIFIED にならない。
+// - Completion Photo ≠ Recipe Evidence ≠ Rights permission ≠ commercial reuse permission。
+// - Repeat Intent（また作りたい）≠ Taste Fact ≠ 「世界中の人に美味しい」。Household Preference。
+// - Cooked Meal Record ≠ Practical Cook Validation（Commander が正式に実施するものとは別）。
+// - 写真保存 ≠ 公開許可 ≠ SNS 共有 ≠ 分析許可 ≠ AI 学習許可（すべて別 flag）。
+// - Share アクション ≠ Publication Consent。Upload ≠ AI Training Consent。
+// - consent の default は必ず安全側（'not-granted'）。単一 `consent: true` にまとめない。
+// - visibility の default は必ず 'private'。写真を追加しただけで public にならない。
+// - 画像 binary / base64 を永続保存しない。EXIF を抽出・保存しない。server upload しない。
+//   AI 画像認識・料理判定・盛り付け採点・Ingredient 推定をしない。
+// - これらの型・関数は RecipeVerification / PracticalCookValidation / World Food /
+//   Matching / Stock / Rights の既存型を一切変更しない（append-only）。
+// ============================================================
+
+/** 個別 consent の 3 状態。default は必ず 'not-granted'（安全側） */
+export type ConsentState = 'not-granted' | 'granted' | 'declined'
+
+/**
+ * 写真の利用同意。**それぞれ独立**（単一 flag にまとめない）。
+ * すべての default は 'not-granted'。
+ */
+export interface PhotoConsentState {
+  /** F. NUKITORU 内で他人に公開してよいか（Publication Consent） */
+  publicationConsent: ConsentState
+  /** G-1. サービス改善への利用許可（Service Improvement） */
+  serviceImprovementConsent: ConsentState
+  /** G-2. 十分に集計・匿名化した分析への利用許可（Aggregate Analytics） */
+  aggregateAnalyticsConsent: ConsentState
+  /** H. AI/ML 学習等への利用許可（AI Training） */
+  aiTrainingConsent: ConsentState
+  /** この consent 状態を記録した日時（ISO） */
+  recordedAt: string
+}
+
+/** 写真の可視範囲。default は必ず 'private'。将来 'shared-with-household' / 'public' へ拡張 */
+export type PhotoVisibility = 'private' | 'shared-with-household' | 'public'
+
+/**
+ * 完成写真の metadata（**画像 binary は含まない**）。
+ * localReference は session 内のローカル参照（object URL 等）で、永続化しない。
+ */
+export interface CompletionPhotoMetadata {
+  id: string
+  cookedMealRecordId: string
+  /** session 内のみのローカル参照（blob: URL 等）。保存時に必ず除去する */
+  localReference?: string
+  mimeType?: string
+  width?: number
+  height?: number
+  /** 撮影/選択日時（端末が渡す値。EXIF 由来ではない） */
+  capturedAt?: string
+  createdAt: string
+  /** 生成時は必ず 'private' */
+  visibility: PhotoVisibility
+  consent: PhotoConsentState
+}
+
+/**
+ * 「また作りたい」= Household / User Preference。
+ * Taste Fact / Recipe Evidence へ絶対に昇格させない。
+ */
+export type RepeatIntent = 'want-to-repeat' | 'not-sure' | 'no'
+
+/**
+ * B. Cooked Meal Record —「NUKITORU 上でユーザーが完成操作まで到達した」Product Event。
+ * これ以上を意味しない（本当に食べた / 家族全員が食べた / 美味しかった / 安全だった /
+ * Recipe が正しかった / 再現可能だった、とは断定しない）。
+ */
+export interface CookedMealRecord {
+  id: string
+  /** 既存 World Recipe Identity。料理名から再推測しない */
+  canonicalRecipeId: WorldRecipeCanonicalId
+  /** 完成時点の表示名 snapshot（後で表示名が変わっても当時の記録が読める） */
+  recipeDisplayNameSnapshot: string
+  /** NUKITORU 上で完成操作まで到達した日時（ISO）。Product Event */
+  completedAt: string
+  /** どの SourceRecipeKnowledge から作ったか（あれば snapshot。Identity 再推測しない） */
+  evidenceSourceIdSnapshot?: string
+  /** 完成写真 metadata id（あれば。写真は完全 optional） */
+  completionPhotoId?: string
+  /** また作りたい（Household Preference。Recipe Evidence へ昇格しない） */
+  repeatIntent?: RepeatIntent
+  createdAt: string
+}
+
+/** 食卓アルバム表示用の最小 presentation（History 画面は本 MISSION では作らない） */
+export interface CookedMealPresentation {
+  id: string
+  canonicalRecipeId: WorldRecipeCanonicalId
+  recipeDisplayName: string
+  completedAt: string
+  hasPhoto: boolean
+  repeatIntent?: RepeatIntent
+  /** 常に表示する注記: これは「作った記録」であって Recipe 検証ではない */
+  disclaimer: string
+}
