@@ -1997,3 +1997,174 @@ export interface CanonicalizedSourceIngredient {
  * - AMBIGUOUS:  解決が AMBIGUOUS だった
  */
 export type IngredientIdentityMatchKind = 'EXACT' | 'MISSING' | 'UNRESOLVED' | 'AMBIGUOUS'
+
+// ============================================================
+// MISSION 2.39 — Bidirectional Food Matching Engine Foundation (types only)
+//
+//   A. Forward:  Stock → Recipe collection → 各 Recipe の Ingredient Availability Fit
+//   B. Reverse:  選択 Recipe → listed ingredients → Stock 比較 → 家にある/少ない/足りない/不明/曖昧
+//   C. Meal Occasion: breakfast / lunch / snack / dinner / late-night / bento（明示 metadata のみ）
+//
+// 絶対原則（FOOD_MATCHING_ENGINE.md 参照）:
+// - EXACT MATCH は canonicalIngredientId の **完全一致のみ**。
+//   似ている ≠ 同じ / 親カテゴリ ≠ 持っている / 代用品 ≠ 一致 / UNKNOWN ≠ MATCH。
+// - EXACT ≠ Quantity Sufficient（quantityStatus は常に NOT_EVALUATED）。個→g 換算・単位変換をしない。
+// - LOW ≠ 必要量を満たす（Identity は存在するが十分量は保証しない）。
+// - UNRESOLVED ≠ MISSING / AMBIGUOUS ≠ MISSING / AMBIGUOUS ≠ EXACT。
+// - missingCount には UNRESOLVED / AMBIGUOUS を混ぜない（「あとN個」の安全計算）。
+// - parentCanonicalIngredientId を EXACT に使わない。preparation state を同一視しない。
+// - Meal Occasion は推測分類しない。未設定は unknown（そのまま扱う）。
+// - Matching 成功 ≠ VERIFIED / Allergy Safe / Practical Validated / Rights Permission /
+//   Substitution Permission / Product Identity Mapping / Recipe Quality Score。
+// - これらの型・関数は SourceRecipeKnowledge / Stock schema / RecipeVerification /
+//   Allergy Gate / PracticalCookValidation / Rights Gate を一切変更しない。Derived Result のみ。
+// - deterministic / non-mutating / no AI / no network / no random / no time-in-ranking。
+// ============================================================
+
+// ------------------------------------------------------------
+// Meal Occasion Foundation
+// ------------------------------------------------------------
+
+export type MealOccasion =
+  | 'breakfast' // 朝食
+  | 'lunch' // 昼食
+  | 'snack' // おやつ（2.39 から正式 Foundation）
+  | 'dinner' // 夕食
+  | 'late-night' // 夜食
+  | 'bento' // お弁当
+
+/**
+ * ある Canonical Recipe Identity に「明示的に」付与された Meal Occasion 分類。
+ * 料理名・食材から推測しない。source は分類の来歴（推測は登録できない）。
+ */
+export interface MealOccasionMetadata {
+  occasions: MealOccasion[]
+  source: 'explicit' | 'trusted-source-metadata' | 'nukitoru-reviewed'
+  notes?: string
+}
+
+/** STRICT occasion filter の判定（§19） */
+export type MealOccasionFilterResult =
+  | 'INCLUDED' // 明示的に要求 occasion を含む
+  | 'EXCLUDED' // 明示的に含まない
+  | 'EXCLUDED_FROM_STRICT_FILTER' // occasion 情報が無い（unknown。「向かない」という意味ではない）
+
+// ------------------------------------------------------------
+// Stock Ingredient Snapshot（既存 Stock からの pure projection）
+// ------------------------------------------------------------
+
+/** 既存 StockStatus（available/low/out）を Matching 用へ写像した状態 */
+export type StockAvailabilityStatus =
+  | 'available' // 今ある
+  | 'low' // ある（が必要量は保証しない）
+  | 'unavailable' // 明示的に無い（out）
+
+export interface FoodStockIngredientSnapshot {
+  /** 在庫アイテムの識別子（既存 stock の item 名等）。provenance */
+  stockItemKey: string
+  /** 在庫アイテムの元の名前（原文。canonicalize で変えない） */
+  sourceName: string
+  /** MISSION 2.38 で解決した canonical id。解決できなければ undefined */
+  canonicalIngredientId?: CanonicalFoodId
+  identityStatus: WorldIngredientResolutionStatus
+  /** identityStatus === 'AMBIGUOUS' のときの候補 id（1 つも選ばない） */
+  candidateIds?: CanonicalFoodId[]
+  availabilityStatus: StockAvailabilityStatus
+  notes?: string[]
+}
+
+// ------------------------------------------------------------
+// Recipe Requirement Snapshot（SourceRecipeKnowledge からの pure projection）
+// ------------------------------------------------------------
+
+/**
+ * レシピにその食材が「どういう意味で載っているか」。推測しない。
+ * - SOURCE_LISTED: SourceRecipeKnowledge.ingredients に載っている（それ以上の必須性を推測しない）
+ * - UNKNOWN:       中立
+ */
+export type RecipeRequirementKind = 'SOURCE_LISTED' | 'UNKNOWN'
+
+export interface RecipeIngredientRequirement {
+  /** SourceRecipeKnowledge の食材名（原文。翻訳しない） */
+  sourceIngredientName: string
+  canonicalIngredientId?: CanonicalFoodId
+  identityStatus: WorldIngredientResolutionStatus
+  candidateIds?: CanonicalFoodId[]
+  /** SourceIngredientKnowledge.role をそのまま持つ（推測で必須性を足さない） */
+  role?: SourceIngredientRole
+  /** QuantityStatement.displayText（SOURCE FACT。数量評価はしない） */
+  quantityDisplayText?: string
+  preparationState?: string
+  requirementKind: RecipeRequirementKind
+}
+
+// ------------------------------------------------------------
+// Ingredient Match Classification / Explainability
+// ------------------------------------------------------------
+
+export type IngredientMatchClass =
+  | 'EXACT' // canonical id 完全一致 + stock available
+  | 'LOW' // canonical id 完全一致 + stock low
+  | 'MISSING' // canonical id は解決済みだが、一致する available/low stock が無い（or 明示 unavailable）
+  | 'UNRESOLVED' // recipe 側または関連 stock 側の Identity を確定できず一致を証明できない
+  | 'AMBIGUOUS' // Identity 候補が複数で 1 つに確定できない
+
+/** MISSION 2.39 では数量充足を評価しない（常にこの値） */
+export type QuantityEvaluationStatus = 'NOT_EVALUATED'
+
+export type FoodMatchReasonCode =
+  | 'CANONICAL_ID_EXACT'
+  | 'STOCK_LOW'
+  | 'STOCK_ABSENT'
+  | 'STOCK_EXPLICITLY_UNAVAILABLE'
+  | 'RECIPE_IDENTITY_UNRESOLVED'
+  | 'STOCK_IDENTITY_UNRESOLVED'
+  | 'IDENTITY_AMBIGUOUS'
+  | 'NON_EXACT_CANONICAL_ID'
+  | 'QUANTITY_NOT_EVALUATED'
+  | 'MEAL_OCCASION_EXPLICIT_MATCH'
+  | 'MEAL_OCCASION_UNKNOWN'
+
+export interface IngredientFoodMatch {
+  requirement: RecipeIngredientRequirement
+  matchClass: IngredientMatchClass
+  /** EXACT / LOW のとき: 一致した stock snapshot（複数一致時は決定論的に 1 件） */
+  matchedStock?: FoodStockIngredientSnapshot
+  /** 常に 'NOT_EVALUATED'（EXACT ≠ Quantity Sufficient） */
+  quantityStatus: QuantityEvaluationStatus
+  reasonCodes: FoodMatchReasonCode[]
+}
+
+// ------------------------------------------------------------
+// Recipe Match Result
+// ------------------------------------------------------------
+
+/** 観測できた事実だけを表すフラグ（READY_TO_COOK のような保証的名称は使わない） */
+export type RecipeFoodMatchFlag =
+  | 'ALL_LISTED_IDENTITIES_PRESENT' // 全 listed requirement が EXACT または LOW
+  | 'HAS_LOW_STOCK'
+  | 'HAS_MISSING_INGREDIENTS'
+  | 'HAS_UNRESOLVED_INGREDIENTS'
+  | 'HAS_AMBIGUOUS_INGREDIENTS'
+
+export interface RecipeFoodMatchResult {
+  canonicalRecipeId: WorldRecipeCanonicalId
+  /** SourceRecipeKnowledge.sourceRecipeName（原文。翻訳しない） */
+  recipeName: string
+  /** 明示 metadata の occasion。unknown なら [] */
+  mealOccasions: MealOccasion[]
+  mealOccasionKnown: boolean
+  ingredientMatches: IngredientFoodMatch[]
+  exactCount: number
+  lowCount: number
+  /** 明示的に MISSING の listed identity 数のみ。UNRESOLVED / AMBIGUOUS を混ぜない */
+  missingCount: number
+  unresolvedCount: number
+  ambiguousCount: number
+  listedIngredientCount: number
+  matchFlags: RecipeFoodMatchFlag[]
+  /** 全 ingredient match の reason code を dedup + sort した一覧 */
+  reasonCodes: FoodMatchReasonCode[]
+  /** Shopping boundary（§38）: 明示的に MISSING な canonical id の一覧（dedup + sort） */
+  missingCanonicalIngredientIds: CanonicalFoodId[]
+}
