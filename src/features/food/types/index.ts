@@ -1561,8 +1561,20 @@ export interface SourceRecipeKnowledge {
   canonicalRecipeId: WorldRecipeCanonicalId
   /** 情報源に書かれたレシピ名（原文） */
   sourceRecipeName: string
-  /** EVIDENCE_SOURCE_CATALOG の RecipeEvidenceSource.id */
+  /**
+   * 料理事実の出所 id。
+   * - 人手で構造化した knowledge: EVIDENCE_SOURCE_CATALOG の RecipeEvidenceSource.id。
+   * - MISSION 2.37 Import Pipeline 経由の knowledge: WorldFoodSource.sourceId
+   *   （rights + publisher の登録簿）。この場合 importProvenance が必ず設定される。
+   *   import された knowledge は EVIDENCE_SOURCE_CATALOG には無いため
+   *   sourceKnowledgeHasValidEvidence() は false を返す（Import ≠ VERIFIED の証）。
+   */
   evidenceSourceId: string
+  /**
+   * MISSION 2.37 — Import Pipeline 経由で昇格した場合の権利・取り込み来歴。
+   * 未設定 = 人手で構造化した knowledge。設定あり = Rights Gate を通過した import。
+   */
+  importProvenance?: RecipeImportProvenance
   /** 情報源の言語（LanguageCode） */
   sourceLanguage: LanguageCode
   /** 情報源が示した「作る量／食数」。displayText は原文表記 */
@@ -1655,3 +1667,216 @@ export interface NukitoruPresentation {
   /** この Presentation を生成した日付（ISO） */
   generatedAt: string
 }
+
+// ============================================================
+// MISSION 2.37 — Rights-Aware World Recipe Import Pipeline (types only)
+//
+//   RAW SOURCE DATA
+//     ↓ normalize（単位換算・翻訳・欠落補完を一切しない）
+//   RawRecipeImportCandidate
+//     ↓ Rights Gate（evaluateRecipeImportRights / fail-closed）
+//     ↓ Identity Resolution（完全一致のみ・fuzzy 禁止・新 Identity 生成禁止）
+//   SourceRecipeKnowledge（+ importProvenance）
+//     ↓ MISSION 2.35 buildPresentation
+//   NukitoruPresentation
+//
+// 絶対原則（WORLD_RECIPE_IMPORT_PIPELINE.md 参照）:
+// - SOURCE RIGHTS ≠ RECORD RIGHTS ≠ ASSET RIGHTS。
+// - UNKNOWN を自動的に allowed へ昇格しない（fail-closed）。
+// - RIGHTS EVIDENCE（保存・利用してよいか）≠ CULINARY EVIDENCE（分量・工程の根拠）。
+// - Import 可能 ≠ VERIFIED / Publishable / Allergy-safe / Practically-validated /
+//   AI-training permitted。
+// - これらの型・関数は RecipeVerification / isRecipePublishable / Allergy Gate /
+//   PracticalCookValidation / Product Time / Process Coherence を一切変更しない。
+// - 画像の download / storage / render は実装しない（imageReuse は判断の保持のみ）。
+// ============================================================
+
+/** 権利フラグ。unknown は「未確認」であって「許可」ではない */
+export type RightsFlag = 'allowed' | 'conditional' | 'prohibited' | 'unknown'
+
+/** Source 全体の分類（MISSION 2.36A §0.4） */
+export type SourceRightsClassification = 'use' | 'research-only' | 'do-not-ingest' | 'unknown'
+
+/** WorldFoodSource の種別（既存 RecipeSourceType を壊さず拡張した別 union） */
+export type WorldFoodSourceType =
+  | RecipeSourceType
+  | 'open-dataset'
+  | 'encyclopedia'
+  | 'academic-dataset'
+  | 'commercial-api'
+  | 'ugc-platform'
+
+/**
+ * ある source / record について「NUKITORU が何を保存・利用してよいか」の 5 軸。
+ * これは RIGHTS EVIDENCE であって CULINARY EVIDENCE ではない。
+ */
+export interface WorldFoodRightsProfile {
+  /** 商用利用。※ これが allowed でも Import は許可されない（structuredFactStorage を見る） */
+  commercialUse: RightsFlag
+  /** 構造化した料理事実を NUKITORU Knowledge DB へ保存してよいか。Import の核心条件 */
+  structuredFactStorage: RightsFlag
+  /** 情報源の逐語テキスト（creative prose）を保存してよいか */
+  verbatimTextStorage: RightsFlag
+  /** 画像を再利用してよいか（本 MISSION では判断の保持のみ・実装しない） */
+  imageReuse: RightsFlag
+  /** AI/ML 学習に使ってよいか。※ Import 許可条件にしない（別 dimension） */
+  aiMlUse: RightsFlag
+}
+
+/**
+ * Source-level 権利登録簿の 1 エントリ。MISSION 2.36 / 2.36A の Audit 結果を
+ * 「実際に一次情報で確認できた範囲だけ」表現する。checkedAt 未設定 = 未確認。
+ */
+export interface WorldFoodSource {
+  sourceId: string
+  name: string
+  organization: string
+  sourceType: WorldFoodSourceType
+  country?: CountryCode
+  languages: LanguageCode[]
+  officialUrl: string
+  /** Source default の rights。record override が無ければこれが継承される */
+  rights: WorldFoodRightsProfile
+  classification: SourceRightsClassification
+  /** この rights 判断を一次情報で確認した日付（ISO）。未設定 = 未確認 → Import 不可 */
+  checkedAt?: string
+  /** 判断根拠の URL（利用規約 / ライセンス / 政府規約ページ等） */
+  rightsEvidenceUrl?: string
+  notes?: string[]
+}
+
+/** 個々の Recipe（record）に第三者の権利が絡むか */
+export type ThirdPartyRightsState =
+  | 'none' // 第三者権利なし（例: 連邦職員の職務著作物と確認済み）
+  | 'cleared' // 第三者権利はあるが利用条件を一次確認済み
+  | 'unresolved' // 第三者権利があり利用条件が未確認
+  | 'unknown' // 第三者権利の有無自体が不明
+
+/** record 単位の取り込み可否ステータス */
+export type RecordRightsStatus = 'use' | 'conditional' | 'do-not-ingest' | 'unknown'
+
+/**
+ * Record-level 権利。Source default を override できる（inheritance: override > source）。
+ * originalContributor / adaptedFrom 等が存在する record は、その提供元の利用条件を
+ * 確認するまで thirdPartyRights を 'unresolved' に保つ。
+ */
+export interface WorldFoodSourceRecordRights {
+  /** WorldFoodSource.sourceId */
+  sourceId: string
+  /** source 側の record id（例: MFDS の RCP_SEQ） */
+  sourceRecordId: string
+  /** この record の一次 URL（provenance。空文字は「provenance 欠落」扱い） */
+  sourceUrl: string
+
+  /** "adapted from" / 提供元 / 監修者 等（あれば thirdPartyRights の確認対象） */
+  originalContributor?: string
+  originalSourceName?: string
+  originalSourceUrl?: string
+  adaptedFrom?: string
+
+  thirdPartyRights: ThirdPartyRightsState
+  rightsStatus: RecordRightsStatus
+
+  /**
+   * Source default rights を record 単位で上書きする。ここに設定された flag のみ
+   * source より優先される。設定しなければ source default を継承。
+   */
+  rightsOverride?: Partial<WorldFoodRightsProfile>
+
+  /** この record の rights を一次情報で確認した日付（ISO）。未設定 = 未確認 → Import 不可 */
+  rightsCheckedAt?: string
+  rightsEvidenceUrl?: string
+  rightsNotes?: string[]
+}
+
+/** source と record を合成した実効 rights（監査用スナップショット） */
+export interface EffectiveRecipeRights extends WorldFoodRightsProfile {
+  /** 各 flag の値が source default 由来か record override 由来か */
+  resolvedFrom: Record<keyof WorldFoodRightsProfile, 'source-default' | 'record-override'>
+}
+
+/** Import が止まった／通った理由（監査可能な decision trace） */
+export type ImportDecisionReason =
+  | 'SOURCE_NOT_REGISTERED'
+  | 'SOURCE_DO_NOT_INGEST'
+  | 'SOURCE_CLASSIFICATION_UNKNOWN'
+  | 'SOURCE_RESEARCH_ONLY'
+  | 'SOURCE_RIGHTS_CHECK_DATE_MISSING'
+  | 'RECORD_PROVENANCE_MISSING'
+  | 'RECORD_RIGHTS_DO_NOT_INGEST'
+  | 'RECORD_RIGHTS_UNKNOWN'
+  | 'RECORD_RIGHTS_CHECK_DATE_MISSING'
+  | 'THIRD_PARTY_RIGHTS_UNRESOLVED'
+  | 'STRUCTURED_FACT_STORAGE_PROHIBITED'
+  | 'STRUCTURED_FACT_STORAGE_UNKNOWN'
+  | 'STRUCTURED_FACT_STORAGE_CONDITIONAL_UNMET'
+  | 'IDENTITY_UNRESOLVED'
+
+export interface RecipeImportRightsDecision {
+  allowed: boolean
+  reasons: ImportDecisionReason[]
+  /** source + record を合成した実効 rights（source 未登録時は undefined） */
+  effectiveRights?: EffectiveRecipeRights
+  /** structuredFactStorage=allowed の根拠が source default か record override か */
+  structuredFactStorageBasis?: 'source-default' | 'record-override'
+  /** 画像を Knowledge へ入れてよいか（本 MISSION の Pipeline は常に画像を入れない） */
+  imageImportAllowed: boolean
+  /** AI/ML 利用の実効フラグ（情報として保持。Import 可否には使わない） */
+  aiMlUse: RightsFlag
+}
+
+/**
+ * 外部データを Rights Gate へ通す前の staging object。
+ * これは SourceRecipeKnowledge ではない（Rights Gate 通過まで昇格しない）。
+ * `as SourceRecipeKnowledge` での cast は禁止（Pipeline 関数のみが昇格させる）。
+ */
+export interface RawRecipeImportCandidate {
+  sourceRecipeName: string
+  sourceLanguage: LanguageCode
+  /** WorldRecipeIdentity へ完全一致で解決する id。未知なら undefined（新規生成しない） */
+  canonicalRecipeId?: WorldRecipeCanonicalId
+  servings?: QuantityStatement
+  ingredients: SourceIngredientKnowledge[]
+  preCookPreparation?: SourcePreparationKnowledge[]
+  preparation?: SourcePreparationKnowledge[]
+  equipment?: string[]
+  cookingSteps: SourceCookingStep[]
+  sourceStatedTotalTime?: TimeValue
+  /**
+   * 外部データにたまたま含まれる画像 URL 等。Pipeline は Knowledge へ入れない。
+   * （imageReuse の判断には影響するが、SourceRecipeKnowledge には転写しない）
+   */
+  imageUrl?: string
+  notes?: string[]
+  recordRights: WorldFoodSourceRecordRights
+}
+
+/** SourceRecipeKnowledge.importProvenance — Rights Gate 通過の来歴 */
+export interface RecipeImportProvenance {
+  /** WorldFoodSource.sourceId（rights + publisher） */
+  worldFoodSourceId: string
+  sourceRecordId: string
+  sourceUrl: string
+  sourceLanguage: LanguageCode
+  rightsCheckedAt: string
+  rightsEvidenceUrl?: string
+  /** Import 判定時の実効 rights スナップショット */
+  effectiveRights: EffectiveRecipeRights
+  structuredFactStorageBasis: 'source-default' | 'record-override'
+  /** この import を実行した日付（ISO。呼び出し側が渡す。関数内で now を読まない） */
+  importedAt: string
+}
+
+/** Import Pipeline の結果（例外に依存せず監査可能な reason を返す） */
+export type RecipeImportResult =
+  | {
+      ok: true
+      knowledge: SourceRecipeKnowledge
+      identity: WorldRecipeIdentity
+      decision: RecipeImportRightsDecision
+    }
+  | {
+      ok: false
+      reasons: ImportDecisionReason[]
+      decision?: RecipeImportRightsDecision
+    }
