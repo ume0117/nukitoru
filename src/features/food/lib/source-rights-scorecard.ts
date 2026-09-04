@@ -236,3 +236,180 @@ export function partitionByThirdPartyReview<
   }
   return { thirdPartyFree, needsReview }
 }
+
+// ============================================================
+// MISSION 2.41D — Public-sector provider distinction（§7 / §8 / §21）
+// ============================================================
+
+/**
+ * Recipe 提供元の分類。§8 / §21 — private individual/publisher と public-sector を同一扱いしない。
+ * ただし「public-sector だから自動 allowed」もしない（provider type は Rights Decision の入力の一つ）。
+ */
+export type RecipeProviderClass =
+  | 'maff-held' // 提供元表示なし = MAFF 自身
+  | 'public-sector' // 都道府県・自治体・公的機関
+  | 'private-individual' // 個人名
+  | 'private-publisher' // 書籍・出版社・民間企業
+  | 'unknown'
+
+/** 明示登録した提供元名だけを分類する（推測しない。未知は 'unknown'） */
+const PUBLIC_SECTOR_PROVIDERS = new Set<string>([
+  '山形県', '青森県', '岩手県', '宮城県', '秋田県', '福島県', '茨城県', '栃木県', '群馬県',
+  '埼玉県', '千葉県', '東京都', '神奈川県', '新潟県', '富山県', '石川県', '福井県', '山梨県',
+  '長野県', '岐阜県', '静岡県', '愛知県', '三重県', '滋賀県', '京都府', '大阪府', '兵庫県',
+  '奈良県', '和歌山県', '鳥取県', '島根県', '岡山県', '広島県', '山口県', '徳島県', '香川県',
+  '愛媛県', '高知県', '福岡県', '佐賀県', '長崎県', '熊本県', '大分県', '宮崎県', '鹿児島県',
+  '沖縄県', '北海道',
+])
+
+/**
+ * §8 / §21 — 提供元名の分類。
+ * - 空 / 未指定 → 'maff-held'
+ * - 47 都道府県のいずれか（完全一致のみ）→ 'public-sector'
+ * - 「〜より」等で書籍を含む → 'private-publisher'
+ * - それ以外の個人名らしき表記 → 'private-individual'
+ * - 判定できなければ 'unknown'
+ */
+export function classifyRecipeProvider(providerName: string | undefined | null): RecipeProviderClass {
+  const p = (providerName ?? '').trim()
+  if (p.length === 0) return 'maff-held'
+  if (PUBLIC_SECTOR_PROVIDERS.has(p)) return 'public-sector'
+  if (/『.+』|より$|出版|社$/.test(p)) return 'private-publisher'
+  if (/^[一-龥ぁ-んァ-ヶ]{2,4}\s?[一-龥ぁ-んァ-ヶ]{1,4}$/.test(p)) return 'private-individual'
+  return 'unknown'
+}
+
+/**
+ * §2〜§6 — MAFF「リンクについて・著作権」本文 + PDL1.0 の追加 Evidence。
+ * これは Source **General Rule** の Evidence であって、個別 Record への適用を確定するものではない（§6）。
+ */
+export const MAFF_LINK_COPYRIGHT_EVIDENCE = {
+  evidenceUrl: 'https://www.maff.go.jp/j/use/link.html',
+  generalRule:
+    'MAFF ウェブサイトで掲載・発信しているコンテンツは、特記されていない限り農林水産省に著作権が帰属し、'
+    + '権利表記の記載がない限り「公共データ利用規約（第1.0版）PDL1.0」に準拠した利用条件の下で利用可能。',
+  pdlScope:
+    'PDL1.0 適用対象コンテンツは、複製・公衆送信・翻訳・変形等の翻案を含め自由に利用でき、商用利用も可能。'
+    + 'ただし PDL1.0 applicable content であることが前提で、第三者権利物には自動適用しない。',
+  attributionCondition: 'コンテンツ利用時は出典を記載する。',
+  modificationCondition:
+    '編集・加工等して利用する場合は、出典とは別に「編集・加工したこと」を記載する。'
+    + '加工した情報を、あたかも国・府省等が作成した情報であるかのように公表・利用してはいけない。',
+  thirdPartyCondition:
+    '第三者が権利を有していることを表示・示唆している場合、利用者側で確認する必要がある。',
+} as const
+
+/**
+ * §9〜§22 — 山形県提供の「うちの郷土料理」Record（芋煮 / 納豆汁 / 玉こんにゃく）についての
+ * Rights 分析。Claude Code は法的結論を生成しない（§7）。Evidence / Missing / Reason / NextResearch を分離保持。
+ *
+ * 結論: **public-sector provider（山形県）は private third-party（近藤 惠津子・書籍）とは別分類**だが、
+ * 「都道府県提供 Record が MAFF の PDL1.0 grant に含まれる」ことを追加 Evidence が**明示していない**ため、
+ * record-level PDL1.0 applicability を推測せずに PASS にはできない → REVIEW_REQUIRED（§22 / §40）。
+ */
+export const MAFF_YAMAGATA_PUBLIC_SECTOR_RIGHTS_ANALYSIS: RightsEvidenceRecord[] = [
+  {
+    scope: 'source-purpose',
+    evidenceFound: [
+      MAFF_LINK_COPYRIGHT_EVIDENCE.generalRule,
+      MAFF_LINK_COPYRIGHT_EVIDENCE.pdlScope,
+      '2.41C: MAFF は「うちの郷土料理」の外食メニュー化・食品商品化・調査等への活用を明示的に案内',
+    ],
+    evidenceMissing: [
+      '「General Rule = PDL1.0」は個別 Record（特に外部提供元クレジットのある Record）への適用を'
+        + '自動的に確定しない（§6 — Source General Rule ≠ Individual Record Applicability）',
+    ],
+    decision: 'conditional',
+    reasonCodes: ['SOURCE_PURPOSE_SUPPORTS_REUSE', 'PDL1_0_GENERAL_RULE', 'PDL_APPLICABILITY_PER_RECORD_NOT_CONFIRMED'],
+    nextResearch: [
+      '§12-A: MAFF「リンクについて・著作権」/ コンテンツ利用条件で、都道府県提供 Record の PDL1.0 適用可否を明示確認',
+    ],
+  },
+  {
+    scope: 'record',
+    evidenceFound: [
+      '芋煮 / 納豆汁 / 玉こんにゃく: いずれも農林水産省ドメインの Official page・Source Body 逐語確認済み',
+      'レシピ提供元名 = 「山形県」= public-sector provider（classifyRecipeProvider → public-sector）',
+      'ページ上に「無断転載禁止」等の別利用条件・PDL 除外の権利表記は確認されていない',
+    ],
+    evidenceMissing: [
+      '都道府県が MAFF データベースへ提供した Record が、MAFF の PDL1.0 grant の対象なのか、'
+        + 'それとも 山形県 が別に権利を保持しているのかを示す明示的記述',
+      '「レシピ提供：山形県」を required attribution に含めれば足りるのか、山形県の別途許諾が必要なのか',
+    ],
+    decision: 'unknown',
+    reasonCodes: [
+      'PUBLIC_SECTOR_PROVIDER',
+      'NOT_PRIVATE_THIRD_PARTY',
+      'NO_SEPARATE_TERMS_OBSERVED',
+      'PDL_APPLICABILITY_TO_RECORD_NOT_EXPLICIT',
+    ],
+    nextResearch: [
+      '§12-A: MAFF へ都道府県提供 Record の PDL1.0 適用を確認',
+      '§12-C: 山形県（提供元）の郷土料理コンテンツ利用条件を確認',
+    ],
+  },
+  {
+    scope: 'third-party',
+    evidenceFound: [
+      '提供元「山形県」は 2.41B の「近藤 惠津子（『食材選びからわかるおうちごはん』より）」= '
+        + 'private-individual + private-publisher とは**別分類（public-sector）**',
+      '個人・出版社・民間企業の権利表示は確認されていない',
+    ],
+    evidenceMissing: [
+      'public-sector provider の場合に MAFF の第三者確認条項（§4）が求める「確認」の到達点',
+    ],
+    decision: 'conditional',
+    reasonCodes: ['PROVIDER_IS_PUBLIC_SECTOR', 'NOT_PRIVATE_COPYRIGHT_HOLDER', 'REVIEW_STILL_REQUIRED_FOR_PDL_APPLICABILITY'],
+    nextResearch: [
+      '山形県 = public-sector なので private-party HOLD とは扱わない。ただし record PDL applicability の'
+        + '確認が済むまで REVIEW_REQUIRED（§21 / §22）',
+    ],
+  },
+  {
+    scope: 'asset',
+    evidenceFound: [
+      '納豆汁ページ: Recipe image provider =「やまがたの広報写真ライブラリー」（Recipe Record provider = 山形県 とは別）',
+      '2.41C: MAFF 画像は「リンク・著作権について」確認 + 出典明記 + 画像提供元表示、と独自条件',
+    ],
+    evidenceMissing: [],
+    decision: 'prohibited',
+    reasonCodes: ['ASSET_SEPARATE', 'IMAGE_PROVIDER_DIFFERS_FROM_RECIPE_PROVIDER', 'IMAGES_NOT_USED_THIS_BATCH'],
+    nextResearch: ['今回画像を一切利用しない。Evidence Pack の imageAssetStatus は prohibited のまま変更しない'],
+  },
+]
+
+/** §22 — 山形県 3 Record の現時点の結論（cleared / allowed へ変更禁止・§40） */
+export const MAFF_YAMAGATA_CURRENT_DECISION = {
+  imoni: 'REVIEW_REQUIRED' as const,
+  nattojiru: 'REVIEW_REQUIRED' as const,
+  tamakonnyaku: 'REVIEW_REQUIRED' as const,
+  isProhibited: false, // 禁止 Evidence は無い。「PDL applicability 未確認」であって「禁止」ではない
+  providerClass: 'public-sector' as const,
+  note:
+    'MAFF の General Rule（PDL1.0・商用可・出典 + 加工表示条件）と「うちの郷土料理」の商用活用推奨は確認済み。'
+    + '提供元「山形県」は public-sector で private third-party（書籍・個人）とは別分類。しかし「都道府県提供 Record が '
+    + 'MAFF の PDL1.0 grant に含まれる」ことを追加 Evidence が明示していないため、record-level PDL applicability を'
+    + '推測せずに Rights PASS にはしない（§22 / §40）。3 Record とも REVIEW_REQUIRED を維持し Import しない。',
+}
+
+export const MAFF_YAMAGATA_SCORECARD: SourceSelectionScorecard = {
+  sourceId: 'jp-maff-kyodo-ryori',
+  sourceName: '農林水産省「うちの郷土料理」× 山形県提供 Record',
+  axes: {
+    officiality: 'strong',
+    sourceBodyAccessibility: 'moderate',
+    structuredFactCompleteness: 'strong', // 芋煮: 分量・工程・条件付き Fact まで確認
+    commercialUseClarity: 'moderate', // General Rule は明確・record 適用は未確認
+    recordRightsClarity: 'moderate', // public-sector provider・別利用条件なし。ただし PDL applicability 未確認
+    thirdPartyRightsComplexity: 'moderate', // private ではないが「確認要」条項が残る
+    assetSeparation: 'strong',
+    attributionRequirements: 'moderate', // MAFF + 山形県 の attribution + 加工表示
+    recipeProcessCompleteness: 'strong', // 芋煮: 手順順序 + 一部火加減。玉こんにゃくは火加減・時間 SOURCE_NOT_STATED
+    ingredientCoverageUtility: 'moderate',
+  },
+  researchNote:
+    'private-party（親子丼・玉子焼き）より record rights は明確に近い（public-sector provider・別利用条件なし）。'
+    + '残る 1 点「都道府県提供 Record への PDL1.0 適用」を §12-A / §12-C で確認できれば Rights PASS へ進める可能性が高い。'
+    + 'これが「同じ条件の Public-sector Recipe を安全に増やせる」道になり得る（§0 / §42）。',
+}

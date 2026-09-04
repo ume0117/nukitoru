@@ -175,3 +175,80 @@ Layer が提供する。現在の EGG branch 2 件はどちらも `needsThirdPar
 
 - **第一候補: D**（第三者 Credit の無い MAFF-held / 自治体提供 Record を次 Batch 対象に切り替える）+ **A**（MAFF「リンク・著作権について」の明示確認）を並行。
 - 親子丼・玉子焼きは HOLD のまま保持（削除しない）。Rights が明確な Official Recipe を優先し、レシピ数より信用を優先する（§13）。
+
+---
+
+## Batch #2 — 山形県 public-sector Record（MISSION 2.41D）
+
+External Research：農林水産省「うちの郷土料理」の Source Body を逐語確認（`evidenceMethod: official-source-body-review`）。
+**3 件とも レシピ提供元名 = 「山形県」= public-sector provider**（`classifyRecipeProvider` → `'public-sector'`。
+2.41B の「近藤 惠津子（書籍より）」= private-individual + private-publisher とは**別分類**）。
+
+コード: `source-rights-scorecard.ts`（`MAFF_LINK_COPYRIGHT_EVIDENCE` / `MAFF_YAMAGATA_PUBLIC_SECTOR_RIGHTS_ANALYSIS` /
+`MAFF_YAMAGATA_CURRENT_DECISION` / `MAFF_YAMAGATA_SCORECARD` / `classifyRecipeProvider`）、
+fixtures: `IMONI_YAMAGATA_EVIDENCE_PACK` / `NATTOJIRU_YAMAGATA_EVIDENCE_PACK` / `TAMAKONNYAKU_YAMAGATA_EVIDENCE_PACK`。
+
+### 追加 Rights Evidence（§2〜§6）
+
+MAFF「リンクについて・著作権」`https://www.maff.go.jp/j/use/link.html` 本文を確認:
+- **General Rule**: MAFF コンテンツは特記されていない限り農水省に著作権が帰属し、権利表記がない限り **PDL1.0** に準拠して利用可能。
+- **PDL1.0 scope**: 複製・公衆送信・翻訳・翻案を含め自由に利用でき **商用利用も可能**（ただし *PDL1.0 applicable content* が前提。第三者権利物には自動適用しない）。
+- **attribution**: 利用時は出典を記載する。
+- **modification disclosure**: 編集・加工して利用する場合は出典とは別に「編集・加工したこと」を記載。加工情報を、あたかも国・府省等が作成した情報であるかのように公表・利用しない。
+- **third-party**: 第三者が権利を有していることを表示・示唆している場合、利用者側で確認する必要がある。
+
+**§6 correction to 2.41C**: Source General Rule = PDL1.0 という Evidence が追加された。ただし既存データを allowed へ書き換えず、
+**Source General Rule** と **Individual Record Applicability** を分離する。
+
+### 4 層の決定（§7〜§22・cleared / allowed へ変更禁止）
+
+| scope | 決定 | 主な理由コード |
+|---|---|---|
+| source-purpose | `conditional` | `PDL1_0_GENERAL_RULE` / `PDL_APPLICABILITY_PER_RECORD_NOT_CONFIRMED` |
+| record | `unknown` | `PUBLIC_SECTOR_PROVIDER` / `NOT_PRIVATE_THIRD_PARTY` / `NO_SEPARATE_TERMS_OBSERVED` / `PDL_APPLICABILITY_TO_RECORD_NOT_EXPLICIT` |
+| third-party | `conditional` | `PROVIDER_IS_PUBLIC_SECTOR` / `NOT_PRIVATE_COPYRIGHT_HOLDER` / `REVIEW_STILL_REQUIRED_FOR_PDL_APPLICABILITY` |
+| asset | `prohibited` | `ASSET_SEPARATE` / `IMAGE_PROVIDER_DIFFERS_FROM_RECIPE_PROVIDER`（納豆汁の画像提供 =「やまがたの広報写真ライブラリー」≠ 山形県）/ `IMAGES_NOT_USED_THIS_BATCH` |
+
+- **prohibited evidence は無い**（`isProhibited: false`）。「PDL applicability 未確認」＝「許可 Evidence 不足」であって「禁止」ではない（§10 / §11）。
+- **public-sector provider（山形県）を private-party HOLD と機械的に同一視しない**（§21）。しかし「山形県だから allowed」にも自動変換しない。
+- record-level PDL applicability の確認が済むまで **3 件とも Rights = REVIEW_REQUIRED**（§22 / §40）。
+
+### Batch #2 候補の状態
+
+| Recipe | Source URL | Provider | Evidence | Rights | Identity | Import | HOLD |
+|---|---|---|---|---|---|---|---|
+| 芋煮（山形県）`evp-maff-imoni-yamagata-v2` | `.../menu/imoni_yamagata.html` | 山形県（public-sector） | **COMPLETE** | **REVIEW_REQUIRED** | **REVIEW_REQUIRED**（`WorldRecipeIdentity` 未登録・Rights 未 PASS のため追加提案しない） | **BLOCKED** | `HOLD_RECORD_RIGHTS_REVIEW`, `HOLD_IDENTITY_REVIEW` |
+| 納豆汁（山形県）`evp-maff-nattojiru-yamagata` | `.../menu/nattojiru_yamagata.html` | 山形県（画像は別提供元） | **COMPLETE** | **REVIEW_REQUIRED** | **REVIEW_REQUIRED** | **BLOCKED** | 同上 |
+| 玉こんにゃく（山形県）`evp-maff-tamakonnyaku-yamagata` | `.../menu/tamakonnyaku_yamagata.html` | 山形県（public-sector） | **COMPLETE** | **REVIEW_REQUIRED** | **REVIEW_REQUIRED** | **BLOCKED** | 同上 |
+
+**imported recipes: 0**。first real import success: **なし**（3 件とも全 Gate を通過せず）。Import Pipeline / Canonicalization /
+Forward Matching / Reverse Matching / Cooking Mode boundary の E2E は**未実行**（Import 成功 Recipe が無いため — §28〜§32）。
+
+### 確認済み Fact（要点）
+
+- **芋煮**: 4〜5人分（range 保持）/ 里芋（皮つき）500g・板こんにゃく1/2枚・牛肉150g（脂身の多い部位が好ましい）・長ねぎ1本・**醤油 大さじ4（Source total・工程で STEP4 大さじ1 + STEP5 大さじ3 に分割。二重計上しない — §13）**・砂糖 大さじ1・1/2・清酒（日本酒）大さじ3・水800cc / 6 手順（順序保持）/ STEP3 に条件付き Fact「精粉こんにゃく=ゆでこぼし不要でもよい／生芋こんにゃく=ゆでこぼし必要」/ STEP4 heat は SOURCE_NOT_STATED（`turn-on` のみ）/ equipment 鍋。
+- **納豆汁**: 5人分 / 納豆200g・豆腐1/5丁（80g）・いもがら8g・油揚げ2枚・こんにゃく1/5枚（50g）・きのこ適宜・山菜適宜・だし汁5カップ・味噌大さじ5・ねぎ10cm・せり少々 / **ゴボウ・人参・里芋は「好みで」= role `optional`（required へ昇格しない — §26）** / 8 手順 / STEP7「沸騰直前に火を止める」cue 保持 / 「味噌味はほんの少し濃いめ」「熱々を食べる」は taste/serving expression として notes のみ・Safety Fact へ変換しない / equipment すり鉢。
+- **玉こんにゃく**: 4本分（skewer serving unit）/ 玉こんにゃく20個・醤油大さじ3・スルメイカ適量（role `optional`）・練り辛子適量（role `optional`）/ **串は equipment（Ingredient ではない — §27）** / 具体的火力・時間は SOURCE_NOT_STATED（§19）/ equipment 鍋・串。
+
+### Canonical Ingredient audit（§25・Rights とは独立・Import 前なので参考）
+
+| 状態 | 食材 |
+|---|---|
+| RESOLVED（2） | 醤油→`soy_sauce` / 砂糖→`sugar`（explicit alias のみ） |
+| UNRESOLVED（多数） | 里芋 / 里芋（皮つき）/ 板こんにゃく / 牛肉（registry に beef なし）/ 長ねぎ（≠ 玉ねぎ）/ 清酒（日本酒）（≠ 料理酒 — §25）/ 水 / 納豆 / 豆腐 / いもがら / 油揚げ / こんにゃく / 玉こんにゃく（≠ generic konjac）/ きのこ（≠ 特定種）/ 山菜 / だし汁（≠ 特定だし商品）/ 味噌 / ねぎ / せり / ゴボウ / 人参 / スルメイカ / 練り辛子 |
+| AMBIGUOUS（0） | （なし） |
+
+Import 前のため実 canonicalization（MISSION 2.38）は未実行。上記は監査結果。
+
+### CHOI-TASHI / future preparation candidate（§14 / §36）
+
+- **七味唐辛子（芋煮）** — 将来の Source-backed CHOI-TASHI Evidence Candidate。Primary Recipe Fact へ混ぜない。今回実装しない。
+- **洗い里芋（芋煮）** — future preparation-shortcut / product-state candidate。
+
+### Batch #2 を前へ進めるために必要な入力（§60）
+
+すべて `HOLD_RECORD_RIGHTS_REVIEW` + `HOLD_IDENTITY_REVIEW`。
+
+1. **Rights（§12-A / §12-C）**: 都道府県が MAFF「うちの郷土料理」データベースへ提供した Record が MAFF の PDL1.0 grant の対象か、それとも山形県が別に権利を保持し別途許諾が必要かを、MAFF「リンクについて・著作権」/ コンテンツ利用条件、または山形県の郷土料理コンテンツ利用条件で明示確認する。PDL applicability が確認できれば Rights PASS（attribution =「出典：農林水産省／レシピ提供：山形県」+ 加工表示 を条件に）。確認できなければ REVIEW_REQUIRED を維持。
+2. **Identity（§24）**: Rights PASS 後、`jp-imoni` / `jp-nattojiru` / `jp-tamakonnyaku` を `world-recipe-identity.ts` へ登録する Product Decision（MAFF Source で名称確認済み・既存 Identity と衝突なし）。
+3. **Attribution provenance schema（§33）**: Import 時に必要な「Original Recipe Provider / PDL1.0 applicability / Required attribution 文字列 / Modification disclosure requirement」を構造的に追跡できる schema が現状の `RecipeEvidencePack` / `RecipeImportProvenance` に無い。Rights PASS で実際に import する際に、この最小 schema 追加を別途 Product Decision として行う（今回は無理な拡張をせず STOP）。

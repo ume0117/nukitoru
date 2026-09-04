@@ -776,3 +776,326 @@ export const EGG_BRANCH_BATCH1_EVIDENCE_PACKS: RecipeEvidencePack[] = [
   OYAKODON_EVIDENCE_PACK,
   TAMAGOYAKI_EVIDENCE_PACK,
 ]
+
+// ============================================================
+// 4. MISSION 2.41D — Batch #2 / 山形県 public-sector Record（芋煮・納豆汁・玉こんにゃく）
+//
+// External Research Layer が農林水産省「うちの郷土料理」の Source Body を逐語確認。
+// **レシピ提供元名 = 「山形県」= public-sector provider**（近藤 惠津子・書籍 = private とは別分類）。
+// ただし「都道府県提供 Record が MAFF の PDL1.0 grant に含まれる」ことを追加 Evidence が明示しないため、
+// record-level PDL applicability を推測せずに Rights PASS にはしない → 3 件とも Rights REVIEW_REQUIRED（§22）。
+// staging Candidate fixture として保持（§11 / §23 — 削除しない・将来 Rights Evidence 追加で再評価可能）。
+// SOURCE_RECIPE_KNOWLEDGE_FIXTURES / RECIPE_CATALOG へは流さない。画像は一切利用しない（§15）。
+// ============================================================
+
+const YAMAGATA_CREDIT = '山形県'
+
+/** 山形県 public-sector Record 共通の rights（§21 — private HOLD と機械的に同一視しない） */
+function yamagataPublicSectorRights(imageProviderNote?: string): RecipeEvidencePack['rights'] {
+  return {
+    sourceRightsStatus: 'allowed', // MAFF General Rule = PDL1.0（§2 / §5）
+    recordRightsStatus: 'allowed', // MAFF hosting record default。ただし下記 review が gate する
+    structuredFactStorageStatus: 'allowed',
+    verbatimTextStatus: 'prohibited',
+    imageAssetStatus: 'prohibited',
+    thirdPartyIndication: true, // 非 MAFF の提供元クレジット（「山形県」）が存在する
+    thirdPartyRightsReview: 'not-reviewed',
+    rightsEvidenceReference: MAFF_RIGHTS_EVIDENCE,
+    rightsNotes:
+      `レシピ提供元 = ${YAMAGATA_CREDIT}（public-sector provider。classifyRecipeProvider → 'public-sector'）。`
+      + 'MAFF General Rule は PDL1.0（商用可・出典 + 加工表示条件）だが、都道府県提供 Record への PDL1.0 適用を'
+      + '追加 Evidence が明示していない。private third-party（書籍・個人）の HOLD とは別分類だが、record-level '
+      + 'PDL applicability の確認が済むまで REVIEW_REQUIRED（§21 / §22 / §40）。'
+      + (imageProviderNote ? ` ${imageProviderNote}` : ''),
+  }
+}
+
+const YAMAGATA_CLASSIFICATION: RecipeEvidencePack['classification'] = {
+  country: sourceNotStated(),
+  cuisine: sourceNotStated(),
+  mealOccasions: sourceNotStated(),
+}
+
+/**
+ * §9〜§14 — 芋煮 / 山形県。Primary Candidate。
+ * 醤油は Source total 大さじ4（工程で STEP4 大さじ1 + STEP5 大さじ3 に分割使用）。二重計上しない（§13）。
+ */
+export const IMONI_YAMAGATA_EVIDENCE_PACK: RecipeEvidencePack = {
+  identity: {
+    id: 'evp-maff-imoni-yamagata-v2',
+    // 芋煮 の WorldRecipeIdentity は未登録。Rights が REVIEW_REQUIRED なので Identity 追加を提案しない（§24 / §16）
+  },
+  source: {
+    sourceId: 'jp-maff-kyodo-ryori',
+    sourceOrganization: '農林水産省',
+    sourceTitle: '芋煮 山形県 — うちの郷土料理',
+    sourceUrl:
+      'https://www.maff.go.jp/j/keikaku/syokubunka/k_ryouri/search_menu/menu/imoni_yamagata.html',
+    accessedAt: '2026-09-04',
+  },
+  rights: yamagataPublicSectorRights(),
+  recipe: {
+    sourceRecipeName: '芋煮',
+    sourceLanguage: 'ja',
+    servings: present(rangeQty('丼または大きな椀で4〜5人分', 4, 5, '人分')),
+    ingredientListStatus: 'PRESENT',
+    ingredients: [
+      { sourceIngredientName: '里芋（皮つき）', role: 'required', amount: present(exactQty('500g', 500, 'g')) },
+      { sourceIngredientName: '板こんにゃく', role: 'required', amount: present(exactQty('1/2枚', 0.5, '枚')) },
+      {
+        sourceIngredientName: '牛肉',
+        role: 'required',
+        amount: present(exactQty('150g', 150, 'g')),
+        preparationState: present('バラ肉・切り落とし肉など脂身の多い部位が好ましい（Source note）'),
+      },
+      { sourceIngredientName: '長ねぎ', role: 'required', amount: present(exactQty('1本', 1, '本')) },
+      {
+        sourceIngredientName: '醤油',
+        role: 'seasoning',
+        amount: {
+          status: 'PRESENT',
+          value: exactQty('大さじ4', 4, '大さじ'),
+          notes: 'Source total。工程では STEP4 で大さじ1、STEP5 で残り大さじ3 に分けて使用（二重計上しない — §13）',
+        },
+      },
+      { sourceIngredientName: '砂糖', role: 'seasoning', amount: present(exactQty('大さじ1・1/2', 1.5, '大さじ')) },
+      {
+        sourceIngredientName: '清酒（日本酒）',
+        role: 'seasoning',
+        amount: present(exactQty('大さじ3', 3, '大さじ')),
+      },
+      { sourceIngredientName: '水', role: 'cooking-liquid', amount: present(exactQty('800cc', 800, 'cc')) },
+    ],
+    stepListStatus: 'PRESENT',
+    steps: [
+      {
+        order: 1,
+        factSummary: present('里芋の皮を剥き、大きめの一口大に切る'),
+        ingredientsUsed: ['里芋（皮つき）'],
+      },
+      {
+        order: 2,
+        factSummary: present('牛肉を約4cmに切る。ねぎを大きめの斜め切りにする'),
+        ingredientsUsed: ['牛肉', '長ねぎ'],
+      },
+      {
+        order: 3,
+        factSummary: present(
+          '板こんにゃくを手で一口大にちぎる（精粉こんにゃくの場合はゆでこぼし不要でもよい／生芋こんにゃくの場合はゆでこぼしが必要という条件付き）',
+        ),
+        ingredientsUsed: ['板こんにゃく'],
+      },
+      {
+        order: 4,
+        factSummary: present(
+          '鍋に水・里芋・こんにゃくを入れて火にかける。軽く沸騰してきたら醤油大さじ1を加えて煮る',
+        ),
+        ingredientsUsed: ['水', '里芋（皮つき）', '板こんにゃく', '醤油'],
+        heat: sourceNotStated(), // Source は「火にかける」のみで火力レベルを述べていない
+        heatTransition: present('turn-on'),
+      },
+      {
+        order: 5,
+        factSummary: present(
+          '里芋が柔らかくなったら、牛肉と残りの調味料（醤油大さじ3・砂糖・日本酒）を入れる。アクをすくいながら煮る',
+        ),
+        ingredientsUsed: ['牛肉', '醤油', '砂糖', '清酒（日本酒）'],
+        completionCue: present('里芋が柔らかくなったら'),
+      },
+      {
+        order: 6,
+        factSummary: present('ねぎを加える。くたくたになるまで煮込み、味を染み込ませる'),
+        ingredientsUsed: ['長ねぎ'],
+        completionCue: present('くたくたになるまで'),
+      },
+    ],
+    preparation: sourceNotStated(),
+    completionCues: sourceNotStated(),
+    equipmentConditions: present(['鍋']),
+  },
+  classification: YAMAGATA_CLASSIFICATION,
+  provenance: {
+    providedBy: 'external-research-layer',
+    evidenceMethod: 'official-source-body-review',
+    capturedAt: '2026-09-04',
+    notes:
+      'MISSION 2.41D §9〜§14。農林水産省「うちの郷土料理」芋煮（山形県）Source Body 逐語確認。'
+      + 'Source Arrangement:「洗い里芋を使えば皮むきの手間を省ける」「七味唐辛子をかけても美味しい」→ Primary Recipe Fact へ混ぜない。'
+      + '七味唐辛子は将来 CHOI-TASHI Evidence Candidate、洗い里芋は future preparation-shortcut / product-state candidate。'
+      + '鍋のサイズ/材質・火力レベル・各工程の所要時間・食材の中心温度は Source に記載なく推測しない。',
+  },
+}
+
+/**
+ * §15〜§17 — 納豆汁 / 山形県。Secondary Candidate。
+ * 画像提供元「やまがたの広報写真ライブラリー」は Recipe Record provider（山形県）とは別（§15）。画像は利用しない。
+ * ゴボウ・人参・里芋は Source 上「好みで」→ role 'optional'（required へ昇格しない — §26）。
+ */
+export const NATTOJIRU_YAMAGATA_EVIDENCE_PACK: RecipeEvidencePack = {
+  identity: { id: 'evp-maff-nattojiru-yamagata' },
+  source: {
+    sourceId: 'jp-maff-kyodo-ryori',
+    sourceOrganization: '農林水産省',
+    sourceTitle: '納豆汁 山形県 — うちの郷土料理',
+    sourceUrl:
+      'https://www.maff.go.jp/j/keikaku/syokubunka/k_ryouri/search_menu/menu/nattojiru_yamagata.html',
+    accessedAt: '2026-09-04',
+  },
+  rights: yamagataPublicSectorRights(
+    'Recipe image provider =「やまがたの広報写真ライブラリー」（Recipe Record provider の山形県とは別・§15）。画像は利用しない。',
+  ),
+  recipe: {
+    sourceRecipeName: '納豆汁',
+    sourceLanguage: 'ja',
+    servings: present(exactQty('5人分', 5, '人分')),
+    ingredientListStatus: 'PRESENT',
+    ingredients: [
+      { sourceIngredientName: '納豆', role: 'required', amount: present(exactQty('200g', 200, 'g')) },
+      { sourceIngredientName: '豆腐', role: 'required', amount: present(exactQty('1/5丁（80g）', 0.2, '丁')) },
+      { sourceIngredientName: 'いもがら', role: 'required', amount: present(exactQty('8g', 8, 'g')) },
+      { sourceIngredientName: '油揚げ', role: 'required', amount: present(exactQty('2枚', 2, '枚')) },
+      { sourceIngredientName: 'こんにゃく', role: 'required', amount: present(exactQty('1/5枚（50g）', 0.2, '枚')) },
+      { sourceIngredientName: 'きのこ', role: 'required', amount: present(culinaryTermQty('適宜', '適宜')) },
+      { sourceIngredientName: '山菜', role: 'required', amount: present(culinaryTermQty('適宜', '適宜')) },
+      { sourceIngredientName: 'だし汁', role: 'cooking-liquid', amount: present(exactQty('5カップ', 5, 'カップ')) },
+      { sourceIngredientName: '味噌', role: 'seasoning', amount: present(exactQty('大さじ5', 5, '大さじ')) },
+      { sourceIngredientName: 'ねぎ', role: 'garnish', amount: present(exactQty('10cm', 10, 'cm')) },
+      { sourceIngredientName: 'せり', role: 'garnish', amount: present(culinaryTermQty('少々', '少々')) },
+      // §26 — Source 上「好みで」。required へ昇格しない
+      { sourceIngredientName: 'ゴボウ', role: 'optional', amount: sourceNotStated() },
+      { sourceIngredientName: '人参', role: 'optional', amount: sourceNotStated() },
+      { sourceIngredientName: '里芋', role: 'optional', amount: sourceNotStated() },
+    ],
+    stepListStatus: 'PRESENT',
+    steps: [
+      { order: 1, factSummary: present('納豆をすり鉢でよくすりつぶす'), ingredientsUsed: ['納豆'] },
+      {
+        order: 2,
+        factSummary: present(
+          'いもがらをぬるま湯で戻し、水気を絞り1cm角に切る。油揚げは熱湯をかけ油抜き。こんにゃくはさっとゆでる。豆腐・油揚げ・こんにゃくを1cmのさいの目切り',
+        ),
+        ingredientsUsed: ['いもがら', '油揚げ', 'こんにゃく', '豆腐'],
+      },
+      {
+        order: 3,
+        factSummary: present('きのこが塩蔵品なら塩出し。山菜も同様。食べやすい大きさにする'),
+        ingredientsUsed: ['きのこ', '山菜'],
+      },
+      {
+        order: 4,
+        factSummary: present('だし汁でいもがらを煮る。柔らかくなったら、こんにゃく・油揚げ・山菜などを加える'),
+        ingredientsUsed: ['だし汁', 'いもがら', 'こんにゃく', '油揚げ', '山菜'],
+        heatTransition: present('turn-on'),
+        completionCue: present('いもがらが柔らかくなったら'),
+      },
+      {
+        order: 5,
+        factSummary: present('最後に豆腐を加える。味噌で味付けする'),
+        ingredientsUsed: ['豆腐', '味噌'],
+      },
+      {
+        order: 6,
+        factSummary: present('火を止め、すりつぶした納豆を溶かし入れる'),
+        ingredientsUsed: ['納豆'],
+        heatTransition: present('turn-off'),
+      },
+      {
+        order: 7,
+        factSummary: present('煮立てないよう再び火にかけ、沸騰直前に火を止める'),
+        heatTransition: present('turn-off'),
+        completionCue: present('沸騰直前'),
+      },
+      {
+        order: 8,
+        factSummary: present('刻みねぎ・せりを添える'),
+        ingredientsUsed: ['ねぎ', 'せり'],
+      },
+    ],
+    preparation: sourceNotStated(),
+    completionCues: sourceNotStated(),
+    equipmentConditions: present(['すり鉢']),
+  },
+  classification: YAMAGATA_CLASSIFICATION,
+  provenance: {
+    providedBy: 'external-research-layer',
+    evidenceMethod: 'official-source-body-review',
+    capturedAt: '2026-09-04',
+    notes:
+      'MISSION 2.41D §15〜§17。農林水産省「うちの郷土料理」納豆汁（山形県）Source Body 逐語確認。'
+      + 'ゴボウ・人参・里芋は Source 上「好みで」= role optional（required へ昇格しない）。「適宜」「少々」は数値化しない。'
+      + 'Source の「味噌味はほんの少し濃いめ」「熱々を食べる」は taste / serving expression であり、客観的 Safety Fact へ変換しない。'
+      + '火力レベル・加熱分数・完成中心温度は Source に記載なく推測しない。',
+  },
+}
+
+/**
+ * §18〜§19 — 玉こんにゃく / 山形県。Tertiary Candidate。
+ * 串は equipment（Ingredient ではない — §27）。火力・時間は Source 未記載 → SOURCE_NOT_STATED（§19）。
+ */
+export const TAMAKONNYAKU_YAMAGATA_EVIDENCE_PACK: RecipeEvidencePack = {
+  identity: { id: 'evp-maff-tamakonnyaku-yamagata' },
+  source: {
+    sourceId: 'jp-maff-kyodo-ryori',
+    sourceOrganization: '農林水産省',
+    sourceTitle: '玉こんにゃく 山形県 — うちの郷土料理',
+    sourceUrl:
+      'https://www.maff.go.jp/j/keikaku/syokubunka/k_ryouri/search_menu/menu/tamakonnyaku_yamagata.html',
+    accessedAt: '2026-09-04',
+  },
+  rights: yamagataPublicSectorRights(),
+  recipe: {
+    sourceRecipeName: '玉こんにゃく',
+    sourceLanguage: 'ja',
+    servings: present(exactQty('4本分', 4, '本')),
+    ingredientListStatus: 'PRESENT',
+    ingredients: [
+      { sourceIngredientName: '玉こんにゃく', role: 'required', amount: present(exactQty('20個', 20, '個')) },
+      { sourceIngredientName: '醤油', role: 'seasoning', amount: present(exactQty('大さじ3', 3, '大さじ')) },
+      // §18 — スルメイカ・練り辛子は「適量」= culinary-term、optional 扱い
+      { sourceIngredientName: 'スルメイカ', role: 'optional', amount: present(culinaryTermQty('適量', '適量')) },
+      { sourceIngredientName: '練り辛子', role: 'optional', amount: present(culinaryTermQty('適量', '適量')) },
+    ],
+    stepListStatus: 'PRESENT',
+    steps: [
+      {
+        order: 1,
+        factSummary: present('鍋で玉こんにゃくを軽くから炒りする'),
+        ingredientsUsed: ['玉こんにゃく'],
+        heat: sourceNotStated(), // §19 — 具体的火力は Source に無い
+        duration: sourceNotStated(), // §19 — 時間も無い
+      },
+      {
+        order: 2,
+        factSummary: present('醤油と裂いたスルメイカを入れ、炒りつける'),
+        ingredientsUsed: ['醤油', 'スルメイカ'],
+        heat: sourceNotStated(),
+        duration: sourceNotStated(),
+      },
+      {
+        order: 3,
+        factSummary: present('串に刺す。好みで辛子を付けて食べる'),
+        ingredientsUsed: ['練り辛子'],
+      },
+    ],
+    preparation: sourceNotStated(),
+    completionCues: sourceNotStated(),
+    // §27 — 串は Food ではなく equipment / serving tool
+    equipmentConditions: present(['鍋', '串']),
+  },
+  classification: YAMAGATA_CLASSIFICATION,
+  provenance: {
+    providedBy: 'external-research-layer',
+    evidenceMethod: 'official-source-body-review',
+    capturedAt: '2026-09-04',
+    notes:
+      'MISSION 2.41D §18〜§19。農林水産省「うちの郷土料理」玉こんにゃく（山形県）Source Body 逐語確認。'
+      + '串は Ingredient ではなく equipment / serving tool。具体的火力・時間は Source に明示なく SOURCE_NOT_STATED（推測禁止）。',
+  },
+}
+
+/** MISSION 2.41D Batch #2 — 山形県 public-sector Record。3 件とも import-eligible ではない（Rights REVIEW_REQUIRED） */
+export const YAMAGATA_BATCH2_EVIDENCE_PACKS: RecipeEvidencePack[] = [
+  IMONI_YAMAGATA_EVIDENCE_PACK,
+  NATTOJIRU_YAMAGATA_EVIDENCE_PACK,
+  TAMAKONNYAKU_YAMAGATA_EVIDENCE_PACK,
+]
