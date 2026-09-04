@@ -252,3 +252,89 @@ Import 前のため実 canonicalization（MISSION 2.38）は未実行。上記�
 1. **Rights（§12-A / §12-C）**: 都道府県が MAFF「うちの郷土料理」データベースへ提供した Record が MAFF の PDL1.0 grant の対象か、それとも山形県が別に権利を保持し別途許諾が必要かを、MAFF「リンクについて・著作権」/ コンテンツ利用条件、または山形県の郷土料理コンテンツ利用条件で明示確認する。PDL applicability が確認できれば Rights PASS（attribution =「出典：農林水産省／レシピ提供：山形県」+ 加工表示 を条件に）。確認できなければ REVIEW_REQUIRED を維持。
 2. **Identity（§24）**: Rights PASS 後、`jp-imoni` / `jp-nattojiru` / `jp-tamakonnyaku` を `world-recipe-identity.ts` へ登録する Product Decision（MAFF Source で名称確認済み・既存 Identity と衝突なし）。
 3. **Attribution provenance schema（§33）**: Import 時に必要な「Original Recipe Provider / PDL1.0 applicability / Required attribution 文字列 / Modification disclosure requirement」を構造的に追跡できる schema が現状の `RecipeEvidencePack` / `RecipeImportProvenance` に無い。Rights PASS で実際に import する際に、この最小 schema 追加を別途 Product Decision として行う（今回は無理な拡張をせず STOP）。
+
+---
+
+## MISSION 2.41E — Public-sector Record Rights Final Gap
+
+追加 External Research：MAFF 別紙・山形県 Open Data 条件。コード: `source-rights-scorecard.ts`
+（`MAFF_APPENDIX_THIRD_PARTY_EVIDENCE` / `YAMAGATA_OPEN_DATA_EVIDENCE` / `CONTENT_CATEGORY_SEPARATION` /
+`MAFF_YAMAGATA_RIGHTS_MATRIX` / `LICENSE_INHERITANCE_RULE` / `MAFF_YAMAGATA_REMAINING_RIGHTS_GAP` /
+`NUKITORU_STRUCTURED_FACT_SCOPE` / `NUKITORU_USE_CASE_SUMMARY` / `RIGHTS_INQUIRY_DRAFTS` /
+`RIGHTS_CLEAR_SOURCE_KPI_CONCEPTS` / `ALTERNATIVE_SOURCE_PRIORITY`）。
+
+### 核心（§31）: **License が存在すること ≠ 目的の Record へその License が適用されること**
+
+- MAFF「リンクについて・著作権」→ **PDL1.0 general rule あり**（権利表記がない限り。出典 + 加工表示条件、国・府省作成と誤認させる利用禁止）。
+- MAFF 別紙 `https://www.maff.go.jp/j/use/bessi.html` → 第三者権利の表示・示唆の**例示**（資料：○○ / 写真提供：○○ / ○○ホームページ / 出典：○○）。**「レシピ提供元名」は直接列挙されていない** → NUKITORU は「必ず第三者著作権」とも「権利表記ではない」とも断定せず **Review Signal**（`thirdPartyIndication: true`）として扱う。
+- 山形県オープンデータカタログ `https://www.pref.yamagata.jp/.../opendata/index.html` → カタログ掲載データは注記があるものを除き **CC BY 4.0**。ただし**外部リンク先は Open Data ではなくリンク先の著作権に従う**（external-link boundary）。
+
+### Content 区分の完全分離（§8）— License inheritance 禁止（§10）
+
+| | Content | License |
+|---|---|---|
+| A | 山形県 Open Data Catalog 直接掲載 Data | CC BY 4.0（注記除く） |
+| B | 山形県 Web Site 上の通常 Content | 山形県サイトの著作権の取扱いに従う（未確認） |
+| C | **山形県が MAFF へ提供した Content（芋煮等）** | **NOT ESTABLISHED（本 MISSION の Gap）** |
+| D | MAFF が自ら作成した Content | PDL1.0 general rule（権利表記がない限り） |
+| E | 第三者 private provider Content（親子丼・玉子焼き = 近藤 惠津子・書籍） | record-level review required（2.41B HOLD） |
+
+A が CC BY 4.0 でも B/C/D/E へ自動継承しない。**PDL1.0 と CC BY 4.0 を統合しない。有利な License を勝手に Recipe へ適用しない**（`LICENSE_INHERITANCE_RULE.prohibited === true`）。
+
+### Rights Matrix（§9・`MAFF_YAMAGATA_RIGHTS_MATRIX`）
+
+| subject | license evidence | 目的 Record への適用 |
+|---|---|---|
+| MAFF General Content | PDL1.0 general rule exists | `conditional` |
+| MAFF content with no rights indication | potentially PDL1.0 applicable, subject to conditions | `conditional` |
+| MAFF content with provider indication（芋煮等） | record-specific review required | `unknown` |
+| Yamagata Open Data Catalog content | CC BY 4.0, subject to catalog terms | `unknown`（MAFF レシピには自動適用しない） |
+| **Yamagata-provided MAFF Recipe（芋煮 / 納豆汁 / 玉こんにゃく）** | **license currently NOT ESTABLISHED** | `unknown` |
+
+どの行も target record へ `allowed` を主張しない（test で固定）。
+
+### 現在の Recipe 状態（変更なし・§11）
+
+芋煮 / 納豆汁 / 玉こんにゃく: Evidence COMPLETE / Rights **REVIEW_REQUIRED** / Identity **REVIEW_REQUIRED** / Import **BLOCKED**。
+親子丼 / 玉子焼き: 変更なし。allowed へ変更禁止（§5 / §25）。
+
+### 残っている Rights Gap（§12）— 非常に限定された 2 問。どちらかが「はい」なら Rights PASS へ
+
+- **Question A**: MAFF「うちの郷土料理」で「レシピ提供元名：山形県」と表示されている Recipe Record は、MAFF Website の PDL1.0 に基づいて商用サービスで利用可能な Content に含まれるか。
+- **Question B**: 含まれない場合、山形県は MAFF へ提供した当該 Record の料理名・材料・分量・調理工程等の Structured Facts について、出典を明示し必要な加工表示を行う条件で、商用 Web Service での再利用を認めているか。
+
+**resolved by**: MAFF または山形県への確認のみ（コード変更不要）。
+
+### 再利用スコープ（§13・`NUKITORU_STRUCTURED_FACT_SCOPE`）
+
+- 希望: 料理名 / 材料名 / 材料分量 / 人数 / 下準備 / 調理工程 / 火加減 / 時間 / 完成Cue
+- 希望しない: Recipe 写真 / 動画 / イラスト / ロゴ / 文章の丸ごと転載 / 書籍本文 / 画像 Asset
+
+### 問い合わせ Draft（§15〜§18 — **送信していない**。`RIGHTS_INQUIRY_DRAFTS.contactNotSent === true`）
+
+> **MAFF 問い合わせ用**
+> 農林水産省「うちの郷土料理」に掲載されている「レシピ提供元名：山形県」等の公的機関提供レシピについて、料理名・材料・分量・調理工程等を構造化し、出典を明示したうえで商用 Web Service 内で再構成して表示する場合、農林水産省 Web Site の PDL1.0 準拠利用条件の対象として利用可能でしょうか。写真・動画等は利用しません。編集・加工表示等、必要な表示条件があればご教示ください。
+
+> **山形県 問い合わせ用**
+> 農林水産省「うちの郷土料理」に掲載され、レシピ提供元名として「山形県」と表示されている芋煮・納豆汁・玉こんにゃく等について、料理名・材料・分量・調理工程等を構造化し、出典（農林水産省／レシピ提供：山形県）等を表示したうえで、商用 Web Service 内で再構成して表示することは可能でしょうか。写真・動画は利用しません。山形県オープンデータカタログの CC BY 4.0 が当該提供レシピにも適用されるか、または別の利用条件があるか、ご教示ください。
+
+送信は External Research Layer / Commander が判断する。Claude Code は Draft のみ（メール / フォーム / 電話 いずれも実施していない）。
+
+### Alternative Source Strategy（§19 / §20 — Discovery 実装なし）
+
+Rights 問い合わせを待つ間も別 Source 探索は可能。優先条件: Official / Record-level License explicit / Commercial reuse explicit /
+Structured Fact completeness high / No private third-party provider / No asset dependency / Attribution manageable。
+候補形: Government Open Data / CC BY・CC0 Recipe Dataset / Official API with storage・reuse permission。
+**Product Decision**: 1 Source に固執しない。MAFF の Rights 確認コストが大量 Recipe 拡張のボトルネックになるなら、より明示的に
+Open License された Food Knowledge Source を Primary にし、MAFF は Supplementary / Regional Cuisine Source として利用する。
+
+### Rights-clear Source KPI Concepts（§21 — 数値実装不要・`RIGHTS_CLEAR_SOURCE_KPI_CONCEPTS`）
+
+Rights-clear Recipe Count / Evidence-complete Recipe Count / Canonicalizable Ingredient Coverage /
+Process-complete Recipe Count / Stock-to-Dish Branch Coverage / Rights Review Cost per Recipe / Attribution Complexity。
+
+### Attribution schema gap（§22 — 変更しない）
+
+2.41D で発見した「Original Recipe Provider / License Applicability / Required Attribution / Modification Disclosure を
+Import 後も構造的に保持する場所が無い」問題は今回も schema 変更せず。Rights PASS Recipe が 1 件確定した時点で
+別 MISSION「ATTRIBUTION PROVENANCE MINIMUM SCHEMA」を実施する（先に schema を作りすぎない）。

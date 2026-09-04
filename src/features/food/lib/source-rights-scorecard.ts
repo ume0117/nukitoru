@@ -413,3 +413,185 @@ export const MAFF_YAMAGATA_SCORECARD: SourceSelectionScorecard = {
     + '残る 1 点「都道府県提供 Record への PDL1.0 適用」を §12-A / §12-C で確認できれば Rights PASS へ進める可能性が高い。'
     + 'これが「同じ条件の Public-sector Recipe を安全に増やせる」道になり得る（§0 / §42）。',
 }
+
+// ============================================================
+// MISSION 2.41E — Public-sector Record Rights Final Gap
+//
+// 追加 External Research: MAFF 別紙・山形県 Open Data 条件。
+// **License が存在すること ≠ 目的の Record へその License が適用されること**（§31）。
+// License inheritance をしない。Source / Record / Provider / Asset ごとに保持（§10）。
+// ============================================================
+
+/**
+ * §3 — MAFF「利用規約」別紙 `https://www.maff.go.jp/j/use/bessi.html`。
+ * 「第三者に権利があることを表示・示唆している例」として示されているもの。
+ * **「レシピ提供元名」という語は直接列挙されていない** → NUKITORU では「必ず第三者著作権」とも
+ * 「権利表記ではない」とも断定せず、Review Signal として扱う。
+ */
+export const MAFF_APPENDIX_THIRD_PARTY_EVIDENCE = {
+  evidenceUrl: 'https://www.maff.go.jp/j/use/bessi.html',
+  indicatedExamples: ['資料：○○', '写真提供：○○', '○○ホームページ', '出典：○○'],
+  recipeProviderNameListed: false,
+  nukitoruTreatment:
+    '「レシピ提供元名：山形県」は上記例示に直接該当しない。しかし非 MAFF provider の明示であることは事実。'
+    + '「必ず第三者著作権」とも「権利表記ではない」とも断定せず、Rights Review Signal（thirdPartyIndication=true）として扱う。',
+} as const
+
+/**
+ * §6 / §7 — 山形県オープンデータカタログ。
+ * `https://www.pref.yamagata.jp/020051/kensei/shoukai/toukeijouhou/tokeijoho-opendate/opendata/index.html`
+ * カタログ掲載データは注記があるものを除き **CC BY 4.0**。ただし外部サイトへのリンク先は Open Data ではなく、
+ * リンク先サイトの著作権の取扱いに従う（§7 external-link boundary）。
+ */
+export const YAMAGATA_OPEN_DATA_EVIDENCE = {
+  evidenceUrl:
+    'https://www.pref.yamagata.jp/020051/kensei/shoukai/toukeijouhou/tokeijoho-opendate/opendata/index.html',
+  catalogLicense: 'CC BY 4.0',
+  catalogLicenseScope: '山形県 Open Data Catalog で公開するデータのうち、注記があるものを除く',
+  externalLinkBoundary:
+    'カタログ内の外部サイトへのリンク先は Open Data ではない。リンク先サイトの著作権の取扱いに従う。'
+    + 'よって「Yamagata Open Data Catalog = CC BY 4.0」から MAFF 掲載「芋煮 山形県」まで CC BY 4.0 と推論しない（§7）。',
+} as const
+
+/**
+ * §8 — 完全分離すべき 5 つの Content 区分。A が CC BY 4.0 でも B/C/D/E へ自動継承しない。
+ */
+export const CONTENT_CATEGORY_SEPARATION = [
+  { key: 'A', label: '山形県 Open Data Catalog に直接掲載されている Data', license: 'CC BY 4.0（注記除く）' },
+  { key: 'B', label: '山形県 Web Site 上の通常 Content', license: '山形県サイトの著作権の取扱いに従う（未確認）' },
+  { key: 'C', label: '山形県が MAFF へ提供した Content（芋煮等のレシピ）', license: 'NOT ESTABLISHED（本 MISSION の Gap）' },
+  { key: 'D', label: 'MAFF が自ら作成した Content', license: 'PDL1.0 general rule（権利表記がない限り）' },
+  { key: 'E', label: '第三者 private provider Content（親子丼・玉子焼き = 近藤 惠津子・書籍）', license: 'record-level review required（2.41B HOLD）' },
+] as const
+
+/**
+ * §9 — Rights Matrix。License が存在することと、目的 Record へ適用されることを分離して保持。
+ */
+export const MAFF_YAMAGATA_RIGHTS_MATRIX: {
+  subject: string
+  licenseEvidence: string
+  appliesToTargetRecord: RightsFlag
+  note: string
+}[] = [
+  {
+    subject: 'MAFF General Content',
+    licenseEvidence: 'PDL1.0 general rule exists（MAFF「リンクについて・著作権」）',
+    appliesToTargetRecord: 'conditional',
+    note: 'General rule は存在。個別 Record への適用は条件次第（権利表記の有無等）',
+  },
+  {
+    subject: 'MAFF content with no rights indication',
+    licenseEvidence: 'potentially PDL1.0 applicable, subject to conditions',
+    appliesToTargetRecord: 'conditional',
+    note: '出典表示・加工表示等の条件を満たせば適用可能性がある',
+  },
+  {
+    subject: 'MAFF content with provider indication（芋煮等）',
+    licenseEvidence: 'record-specific review required',
+    appliesToTargetRecord: 'unknown',
+    note: '「レシピ提供元名：山形県」= 非 MAFF provider indication。record 単位の確認が要る',
+  },
+  {
+    subject: 'Yamagata Open Data Catalog content',
+    licenseEvidence: 'CC BY 4.0, subject to catalog terms',
+    appliesToTargetRecord: 'unknown',
+    note: 'カタログ掲載データには適用。MAFF 掲載レシピには自動適用しない（external-link boundary）',
+  },
+  {
+    subject: 'Yamagata-provided MAFF Recipe（芋煮 / 納豆汁 / 玉こんにゃく）',
+    licenseEvidence: 'license currently NOT ESTABLISHED',
+    appliesToTargetRecord: 'unknown',
+    note: '本 MISSION の core gap。PDL1.0 と CC BY 4.0 のどちらが適用されるか、あるいは別条件かが未確定',
+  },
+]
+
+/**
+ * §10 — License inheritance をしない。PDL1.0 と CC BY 4.0 を統合しない。
+ * どちらか有利な License を勝手に Recipe へ適用しない。
+ */
+export const LICENSE_INHERITANCE_RULE = {
+  prohibited: true,
+  statement:
+    'PDL1.0 と CC BY 4.0 を統合しない。有利な License を Record へ勝手に適用しない。'
+    + 'Source / Record / Provider / Asset ごとに License を保持する。',
+} as const
+
+/**
+ * §12 — 現在残っている Rights Gap（非常に限定された 2 問）。
+ * この 2 問のどちらかが「はい」なら Rights PASS へ進める。
+ */
+export const MAFF_YAMAGATA_REMAINING_RIGHTS_GAP = {
+  questionA:
+    'MAFF「うちの郷土料理」で「レシピ提供元名：山形県」と表示されている Recipe Record は、'
+    + 'MAFF Website の PDL1.0 に基づいて商用サービスで利用可能な Content に含まれるか。',
+  questionB:
+    '含まれない場合、山形県は MAFF へ提供した当該 Recipe Record の料理名・材料・分量・調理工程等の '
+    + 'Structured Facts について、出典を明示し必要な加工表示を行う条件で、商用 Web Service での再利用を認めているか。',
+  resolvedBy: 'MAFF または 山形県 への確認のみ（コード変更不要）',
+} as const
+
+/**
+ * §13 — 問い合わせ / 再利用の対象を広げすぎない。
+ */
+export const NUKITORU_STRUCTURED_FACT_SCOPE = {
+  wanted: ['料理名', '材料名', '材料分量', '人数', '下準備', '調理工程', '火加減', '時間', '完成Cue'],
+  notWanted: ['Recipe 写真', 'Recipe 動画', 'イラスト', 'ロゴ', '文章の丸ごと転載', '書籍本文', '画像 Asset'],
+} as const
+
+/** §14 — 問い合わせ時に説明できる NUKITORU の使い方（簡潔版） */
+export const NUKITORU_USE_CASE_SUMMARY =
+  'NUKITORU は、家庭にある食材から作れそうな料理を探し、材料・不足食材・調理手順をスマートフォンで'
+  + '分かりやすく表示する Web Service。Source Recipe をそのまま転載せず、Structured Facts として整理し'
+  + 'NUKITORU 独自 UI で表示する。商用サービスになる可能性がある。Source attribution を保持し、必要な'
+  + '加工表示にも対応可能。画像は利用しない。'
+
+/**
+ * §16 / §17 — 問い合わせ Draft（送信しない — §18）。docs / manifest 用の下書き文面。
+ * 法的断定を求めず「この利用方法は貴サイトの利用条件の対象に含まれますか」の確認形式。
+ */
+export const RIGHTS_INQUIRY_DRAFTS = {
+  maff:
+    '農林水産省「うちの郷土料理」に掲載されている「レシピ提供元名：山形県」等の公的機関提供レシピについて、'
+    + '料理名・材料・分量・調理工程等を構造化し、出典を明示したうえで商用 Web Service 内で再構成して表示する場合、'
+    + '農林水産省 Web Site の PDL1.0 準拠利用条件の対象として利用可能でしょうか。'
+    + '写真・動画等は利用しません。編集・加工表示等、必要な表示条件があればご教示ください。',
+  yamagata:
+    '農林水産省「うちの郷土料理」に掲載され、レシピ提供元名として「山形県」と表示されている芋煮・納豆汁・'
+    + '玉こんにゃく等について、料理名・材料・分量・調理工程等を構造化し、出典（農林水産省／レシピ提供：山形県）'
+    + '等を表示したうえで、商用 Web Service 内で再構成して表示することは可能でしょうか。写真・動画は利用しません。'
+    + '山形県オープンデータカタログの CC BY 4.0 が当該提供レシピにも適用されるか、または別の利用条件があるか、ご教示ください。',
+  contactNotSent: true, // §18 — メール / フォーム / 電話 いずれも送信していない
+} as const
+
+/**
+ * §21 — Recipe Source を Recipe count だけで評価しないための KPI Concept（数値実装不要）。
+ */
+export const RIGHTS_CLEAR_SOURCE_KPI_CONCEPTS = [
+  'Rights-clear Recipe Count',
+  'Evidence-complete Recipe Count',
+  'Canonicalizable Ingredient Coverage',
+  'Process-complete Recipe Count',
+  'Stock-to-Dish Branch Coverage',
+  'Rights Review Cost per Recipe',
+  'Attribution Complexity',
+] as const
+
+/**
+ * §19 / §20 — Rights 問い合わせを待つ間の alternative source strategy（Discovery 実装なし）。
+ */
+export const ALTERNATIVE_SOURCE_PRIORITY = {
+  criteria: [
+    'Official',
+    'Record-level License explicit',
+    'Commercial reuse explicit',
+    'Structured Fact completeness high',
+    'No private third-party provider',
+    'No asset dependency',
+    'Attribution manageable',
+  ],
+  candidateShapes: ['Government Open Data', 'CC BY / CC0 Recipe Dataset', 'Official API with storage/reuse permission'],
+  productDecision:
+    '1 Source に固執しない。MAFF の Rights 確認コストが大量 Recipe 拡張のボトルネックになるなら、'
+    + 'より明示的に Open License された Food Knowledge Source を Primary にし、MAFF は Supplementary / '
+    + 'Regional Cuisine Source として利用する（§20）。',
+} as const
