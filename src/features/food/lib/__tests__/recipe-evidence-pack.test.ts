@@ -19,7 +19,9 @@ import {
   canEnterRecipeImport,
   describeEvidenceCompletenessReason,
   evidencePackCanEnterMatching,
+  evidencePackHoldReasons,
   evidencePackIsNotPresentation,
+  evidencePackStateBreakdown,
   factHasValidShape,
   readPresentValue,
   runEvidencePackImport,
@@ -27,11 +29,13 @@ import {
   validateEvidencePack,
 } from '../recipe-evidence-pack'
 import {
+  EGG_BRANCH_BATCH1_EVIDENCE_PACKS,
   MAFF_CANDIDATE_EVIDENCE_PACKS,
   MAFF_CANDIDATE_IMONI_YAMAGATA,
   MAFF_CANDIDATE_KENCHINJIRU,
   MAFF_CANDIDATE_KURE_NIKUJAGA,
   MAFF_CANDIDATE_NIKUJAGA,
+  OYAKODON_EVIDENCE_PACK,
   SYNTHETIC_COMPLETE_PACK,
   SYNTHETIC_IDENTITY_REVIEW_PACK,
   SYNTHETIC_INVALID_FACT_SHAPE_PACK,
@@ -39,6 +43,7 @@ import {
   SYNTHETIC_RIGHTS_BLOCKED_PACK,
   SYNTHETIC_SOURCE_SILENCE_PACK,
   SYNTHETIC_SUMMARY_ONLY_PACK,
+  TAMAGOYAKI_EVIDENCE_PACK,
 } from '../recipe-evidence-pack-fixtures'
 import {
   SOURCE_RECIPE_KNOWLEDGE_FIXTURES,
@@ -47,6 +52,9 @@ import {
 } from '../world-food-fixtures'
 import { createCookedMealRecord, countCookedByRecipe } from '../cooked-meal-record'
 import { buildFoodShareText, buildFoodShareHashtags } from '../food-share'
+import { resolveWorldIngredientIdentity } from '../world-ingredient-canonicalization'
+import { WORLD_RECIPE_IDENTITY_REGISTRY } from '../world-recipe-identity'
+import { RECIPE_CATALOG } from '../recipe-catalog'
 
 const IMPORTED_AT = '2026-09-03T00:00:00.000Z'
 
@@ -477,6 +485,334 @@ describe('MISSION 2.41A — describeEvidenceCompletenessReason', () => {
     const v = validateEvidencePack(MAFF_CANDIDATE_KENCHINJIRU)
     for (const r of v.reasons) {
       expect(describeEvidenceCompletenessReason(r).length).toBeGreaterThan(3)
+    }
+  })
+})
+
+// ============================================================
+// MISSION 2.41B — Batch #1 / EGG branch（親子丼・玉子焼き）実データ検証
+// ============================================================
+
+const oyako = OYAKODON_EVIDENCE_PACK
+const tamago = TAMAGOYAKI_EVIDENCE_PACK
+const soySauceEntries = oyako.recipe.ingredients.filter((i) => i.sourceIngredientName === '醤油')
+const ing = (pack: RecipeEvidencePack, name: string) =>
+  pack.recipe.ingredients.find((i) => i.sourceIngredientName === name)
+
+describe('MISSION 2.41B — oyakodon ingredient / process facts', () => {
+  it('1. oyakodon source URL preserved', () => {
+    expect(oyako.source.sourceUrl).toBe(
+      'https://www.maff.go.jp/j/keikaku/syokubunka/k_ryouri/search_menu/menu/34_12_tokyo.html',
+    )
+  })
+  it('2. oyakodon source organization preserved', () => {
+    expect(oyako.source.sourceOrganization).toBe('農林水産省')
+  })
+  it('3. oyakodon servings preserved', () => {
+    expect(oyako.recipe.servings.status).toBe('PRESENT')
+    expect(oyako.recipe.servings.value?.displayText).toBe('2人分')
+  })
+  it('4. chicken 150g preserved', () => {
+    const c = ing(oyako, '鶏もも肉')
+    expect(c?.amount.value?.displayText).toBe('150g')
+    expect(c?.amount.value?.semantics).toEqual({ kind: 'exact', value: 150, unit: 'g' })
+    expect(c?.preparationState?.value).toBe('一口大のそぎ切り')
+  })
+  it('5. onion 1/2個(100g) preserved verbatim', () => {
+    expect(ing(oyako, '玉ねぎ')?.amount.value?.displayText).toBe('1/2個（100g）')
+    expect(ing(oyako, '玉ねぎ')?.preparationState?.value).toBe('縦半分に切ってから薄切り')
+  })
+  it('6. egg 2 preserved', () => {
+    expect(ing(oyako, '卵')?.amount.value?.displayText).toBe('2個')
+    expect(ing(oyako, '卵')?.preparationState?.value).toBe('軽くほぐすように溶く')
+  })
+  it('7. dashi 100ml preserved', () => {
+    expect(ing(oyako, 'だし')?.amount.value?.semantics).toEqual({ kind: 'exact', value: 100, unit: 'ml' })
+  })
+  it('8. rice 2人分 preserved', () => {
+    expect(ing(oyako, 'ご飯')?.amount.value?.displayText).toBe('2人分')
+  })
+  it('9. soy sauce seasoning roles remain separate (2 distinct entries)', () => {
+    expect(soySauceEntries).toHaveLength(2)
+    const texts = soySauceEntries.map((e) => e.amount.value?.displayText).sort()
+    expect(texts).toEqual(['大さじ1', '小さじ1/2'].sort())
+    expect(soySauceEntries.every((e) => (e.amount.notes ?? '').includes('別'))).toBe(true)
+  })
+  it('10. no soy sauce amount summing', () => {
+    expect(JSON.stringify(oyako)).not.toContain('大さじ1と小さじ')
+    expect(JSON.stringify(oyako)).not.toContain('小さじ1と1/2')
+    for (const e of soySauceEntries) expect(e.amount.value?.semantics.kind).toBe('exact')
+  })
+  it('11. medium heat preserved', () => {
+    const step2 = oyako.recipe.steps[1]
+    expect(step2.heat).toEqual({ status: 'PRESENT', value: 'medium' })
+    expect(step2.heatTransition?.value).toBe('turn-on')
+  })
+  it('12. 2–3 minute duration preserved (not midpoint)', () => {
+    const step3 = oyako.recipe.steps[2]
+    expect(step3.duration).toEqual({
+      status: 'PRESENT',
+      value: { kind: 'range', minMinutes: 2, maxMinutes: 3 },
+    })
+    expect(JSON.stringify(step3.duration)).not.toContain('2.5')
+  })
+  it('13. stop-heat transition preserved', () => {
+    expect(oyako.recipe.steps[3].heatTransition?.value).toBe('turn-off')
+  })
+  it('14. 30-second rest preserved (verbatim, not converted)', () => {
+    expect(oyako.recipe.steps[3].factSummary.value).toContain('30秒蒸らす')
+  })
+  it('15. chicken cooked-through cue preserved without temperature invention', () => {
+    expect(oyako.recipe.steps[2].completionCue?.value).toBe('鶏肉に火が通るまで')
+    expect(JSON.stringify(oyako)).not.toMatch(/\d+\s*(℃|°C|度)/)
+  })
+  it('16. no total cooking time invented', () => {
+    expect(oyako.recipe.completionCues.status).toBe('SOURCE_NOT_STATED')
+    expect(JSON.stringify(oyako)).not.toContain('sourceStatedTotalTime')
+    expect(JSON.stringify(oyako)).not.toContain('総調理時間')
+  })
+  it('17. no equipment size invented', () => {
+    expect(oyako.recipe.equipmentConditions.value).toEqual(['鍋', '蓋', '丼'])
+    expect(JSON.stringify(oyako.recipe.equipmentConditions)).not.toMatch(/cm|センチ|ステンレス|鉄|アルミ|\d+\s*L/)
+  })
+})
+
+describe('MISSION 2.41B — tamagoyaki ingredient / process facts', () => {
+  it('18. tamagoyaki source URL preserved', () => {
+    expect(tamago.source.sourceUrl).toBe(
+      'https://www.maff.go.jp/j/keikaku/syokubunka/k_ryouri/search_menu/menu/34_11_tokyo.html',
+    )
+  })
+  it('19. tamagoyaki source organization preserved', () => {
+    expect(tamago.source.sourceOrganization).toBe('農林水産省')
+  })
+  it('20. 1本分 preserved', () => {
+    expect(tamago.recipe.servings.value?.displayText).toBe('1本分')
+  })
+  it('21. egg 2 preserved', () => {
+    expect(ing(tamago, '卵')?.amount.value?.semantics).toEqual({ kind: 'exact', value: 2, unit: '個' })
+  })
+  it('22. dashi 大さじ1 preserved', () => {
+    expect(ing(tamago, 'だし')?.amount.value?.displayText).toBe('大さじ1')
+  })
+  it('23. sugar 大さじ1/2 preserved', () => {
+    expect(ing(tamago, '砂糖')?.amount.value?.semantics).toEqual({ kind: 'exact', value: 0.5, unit: '大さじ' })
+  })
+  it('24. salt 少々 preserved', () => {
+    expect(ing(tamago, '塩')?.amount.value?.displayText).toBe('少々')
+  })
+  it('25. soy 少々 preserved', () => {
+    expect(ing(tamago, '醤油')?.amount.value?.displayText).toBe('少々')
+  })
+  it('26. oil 適宜 preserved', () => {
+    expect(ing(tamago, '油')?.amount.value?.displayText).toBe('適宜')
+  })
+  it('27. no numeric conversion of 少々', () => {
+    const salt = ing(tamago, '塩')?.amount.value
+    expect(salt?.semantics).toEqual({ kind: 'culinary-term', term: '少々' })
+  })
+  it('28. no numeric conversion of 適宜', () => {
+    const oil = ing(tamago, '油')?.amount.value
+    expect(oil?.semantics).toEqual({ kind: 'culinary-term', term: '適宜' })
+    expect(JSON.stringify(ing(tamago, '油'))).not.toMatch(/\d+\s*(g|ml|cc)/)
+  })
+  it('29. 1/4 egg-liquid step preserved', () => {
+    expect(tamago.recipe.steps[1].factSummary.value).toContain('卵液の1/4')
+  })
+  it('30. semi-set cue preserved', () => {
+    expect(tamago.recipe.steps[1].completionCue?.value).toBe('周囲がかわいて半熟状になったら')
+  })
+  it('31. no heat level invented (SOURCE_NOT_STATED)', () => {
+    expect(tamago.recipe.steps[1].heat).toEqual({ status: 'SOURCE_NOT_STATED' })
+    expect(readPresentValue(tamago.recipe.steps[1].heat)).toBeUndefined()
+  })
+  it('32. no duration invented (SOURCE_NOT_STATED)', () => {
+    expect(tamago.recipe.steps[1].duration?.status).toBe('SOURCE_NOT_STATED')
+    expect(tamago.recipe.steps[2].duration?.status).toBe('SOURCE_NOT_STATED')
+  })
+})
+
+describe('MISSION 2.41B — third-party / MAFF / asset rights handling', () => {
+  it('33. thirdPartyIndication true for oyakodon', () => {
+    expect(oyako.rights.thirdPartyIndication).toBe(true)
+    expect(oyako.rights.rightsNotes).toContain('近藤 惠津子')
+  })
+  it('34. thirdPartyIndication true for tamagoyaki', () => {
+    expect(tamago.rights.thirdPartyIndication).toBe(true)
+  })
+  it('35. third-party credit does not auto-clear rights', () => {
+    expect(oyako.rights.thirdPartyRightsReview).toBe('not-reviewed')
+    expect(tamago.rights.thirdPartyRightsReview).toBe('not-reviewed')
+    expect(evidencePackStateBreakdown(oyako).rights).toBe('REVIEW_REQUIRED')
+    expect(evidencePackStateBreakdown(tamago).rights).toBe('REVIEW_REQUIRED')
+  })
+  it('36. MAFF hosting does not auto-clear record rights (import blocked)', () => {
+    expect(canEnterRecipeImport(oyako)).toBe(false)
+    expect(canEnterRecipeImport(tamago)).toBe(false)
+    expect(runEvidencePackImport(oyako, { importedAt: IMPORTED_AT }).ok).toBe(false)
+  })
+  it('37. image rights do not imply record rights', () => {
+    expect(oyako.rights.imageAssetStatus).toBe('prohibited')
+    expect(oyako.rights.recordRightsStatus).toBe('allowed')
+  })
+  it('38. record rights do not imply image rights', () => {
+    expect(oyako.rights.recordRightsStatus).toBe('allowed')
+    expect(oyako.rights.imageAssetStatus).toBe('prohibited')
+    expect(JSON.stringify(EGG_BRANCH_BATCH1_EVIDENCE_PACKS)).not.toMatch(/\.jpg|\.png|\.webp|imageUrl/)
+  })
+})
+
+describe('MISSION 2.41B — Evidence ≠ Verified / Practical / Allergy（firewall）', () => {
+  it('39. Evidence COMPLETE does not imply VERIFIED', () => {
+    expect(evidencePackStateBreakdown(oyako).evidence).toBe('COMPLETE')
+    expect(JSON.stringify(oyako)).not.toMatch(/"verified"|VERIFIED/)
+  })
+  it('40. Import does not imply VERIFIED（held なので import されない）', () => {
+    const r = runEvidencePackImport(oyako, { importedAt: IMPORTED_AT })
+    expect(r.ok).toBe(false)
+    expect(JSON.stringify(r)).not.toContain('VERIFIED')
+  })
+  it('41. Evidence does not imply Practical Validation', () => {
+    expect(JSON.stringify(EGG_BRANCH_BATCH1_EVIDENCE_PACKS)).not.toMatch(/practical|PracticalCook/i)
+  })
+  it('42. Evidence does not imply Allergy Safe', () => {
+    expect(JSON.stringify(EGG_BRANCH_BATCH1_EVIDENCE_PACKS)).not.toMatch(/allergy|allergen|アレル/i)
+  })
+})
+
+describe('MISSION 2.41B — existing data regression', () => {
+  it('43. existing tori unchanged', () => {
+    expect(TORI_TERIYAKI_SOURCE_KNOWLEDGE.canonicalRecipeId).toBe('jp-tori-teriyaki')
+    expect(TORI_TERIYAKI_SOURCE_KNOWLEDGE.importProvenance).toBeUndefined()
+  })
+  it('44. existing buta unchanged', () => {
+    expect(BUTA_SHOGAYAKI_SOURCE_KNOWLEDGE.canonicalRecipeId).toBe('jp-buta-shogayaki')
+    expect(SOURCE_RECIPE_KNOWLEDGE_FIXTURES).toHaveLength(2)
+  })
+  it('45. existing review oyako-don (repo Recipe) unchanged & isolated', () => {
+    const repoOyako = RECIPE_CATALOG.find((r) => r.id === 'oyako-don')
+    expect(repoOyako).toBeDefined()
+    expect(repoOyako?.verification?.status).toBe('review')
+    expect(oyako.identity.id).toBe('evp-maff-oyakodon-tokyo')
+    expect(oyako.identity.id).not.toBe('oyako-don')
+    expect(JSON.stringify(repoOyako)).not.toContain('近藤')
+  })
+  it('46. Matching Truth unchanged — held pack は Matching へ入れない', () => {
+    expect(evidencePackCanEnterMatching(oyako)).toBe(false)
+    expect(evidencePackCanEnterMatching(tamago)).toBe(false)
+  })
+  it('47. CookedMealRecord unchanged', () => {
+    const rec = createCookedMealRecord(
+      { canonicalRecipeId: 'jp-oyakodon', recipeDisplayName: '親子丼' },
+      { now: IMPORTED_AT },
+    )
+    expect(countCookedByRecipe([rec], 'jp-oyakodon')).toBe(1)
+  })
+  it('48. Share unchanged', () => {
+    expect(buildFoodShareText({ recipeName: '親子丼' })).toContain('親子丼')
+    expect(buildFoodShareHashtags()).toContain('#NUKITORU')
+  })
+})
+
+describe('MISSION 2.41B — Identity audit（§17）', () => {
+  it('oyakodon は既存 WorldRecipeIdentity jp-oyakodon へ exact 一致する', () => {
+    expect(oyako.identity.candidateCanonicalRecipeId).toBe('jp-oyakodon')
+    const id = WORLD_RECIPE_IDENTITY_REGISTRY.find((i) => i.canonicalRecipeId === 'jp-oyakodon')
+    expect(id?.canonicalName).toBe('親子丼')
+    expect(oyako.recipe.sourceRecipeName).toBe(id?.canonicalName)
+    expect(evidencePackStateBreakdown(oyako).identity).toBe('RESOLVED')
+  })
+  it('玉子焼き の WorldRecipeIdentity は無く、推論で作らない → IDENTITY_REVIEW', () => {
+    expect(tamago.identity.candidateCanonicalRecipeId).toBeUndefined()
+    expect(WORLD_RECIPE_IDENTITY_REGISTRY.some((i) => /玉子焼|卵焼/.test(i.canonicalName))).toBe(false)
+    expect(evidencePackStateBreakdown(tamago).identity).toBe('REVIEW_REQUIRED')
+    expect(validateEvidencePack(tamago).reasons).toContain('IDENTITY_CANDIDATE_MISSING')
+  })
+})
+
+describe('MISSION 2.41B — Canonical Ingredient audit（§21・Rights とは独立）', () => {
+  const resolvedExpect: Record<string, string> = {
+    鶏もも肉: 'chicken_thigh',
+    醤油: 'soy_sauce',
+    酒: 'cooking_sake',
+    玉ねぎ: 'onion',
+    卵: 'egg',
+    ご飯: 'rice_cooked',
+    砂糖: 'sugar',
+    みりん: 'mirin',
+    塩: 'salt',
+  }
+  for (const [name, id] of Object.entries(resolvedExpect)) {
+    it(`${name} → RESOLVED ${id}（explicit alias のみ）`, () => {
+      const r = resolveWorldIngredientIdentity(name, 'ja')
+      expect(r.status).toBe('RESOLVED')
+      expect(r.canonicalIngredientId).toBe(id)
+    })
+  }
+  for (const name of ['三つ葉', 'だし', '油']) {
+    it(`${name} → UNRESOLVED（無理に RESOLVE しない）`, () => {
+      expect(resolveWorldIngredientIdentity(name, 'ja').status).toBe('UNRESOLVED')
+    })
+  }
+  it('鶏もも肉 は generic chicken へ格下げしない / ご飯 は生米ではない / 油 は特定油ではない', () => {
+    expect(resolveWorldIngredientIdentity('鶏もも肉', 'ja').canonicalIngredientId).not.toBe('chicken')
+    expect(resolveWorldIngredientIdentity('ご飯', 'ja').canonicalIngredientId).not.toBe('rice_raw')
+    expect(resolveWorldIngredientIdentity('油', 'ja').status).not.toBe('RESOLVED')
+  })
+  it('AMBIGUOUS な食材は無い（今回の 12 食材）', () => {
+    const names = ['鶏もも肉', '醤油', '酒', '玉ねぎ', '卵', '三つ葉', 'だし', 'ご飯', '砂糖', 'みりん', '塩', '油']
+    for (const n of names) expect(resolveWorldIngredientIdentity(n, 'ja').status).not.toBe('AMBIGUOUS')
+  })
+})
+
+describe('MISSION 2.41B — State breakdown / Hold log（§30 / §31）', () => {
+  it('oyakodon: Evidence COMPLETE / Rights REVIEW_REQUIRED / Identity RESOLVED / Import BLOCKED', () => {
+    expect(evidencePackStateBreakdown(oyako)).toMatchObject({
+      evidence: 'COMPLETE',
+      rights: 'REVIEW_REQUIRED',
+      identity: 'RESOLVED',
+      process: 'OK',
+      importEligible: false,
+    })
+    expect(evidencePackHoldReasons(oyako)).toEqual(['HOLD_RECORD_RIGHTS_REVIEW'])
+  })
+  it('tamagoyaki: Evidence COMPLETE / Rights REVIEW_REQUIRED / Identity REVIEW_REQUIRED / Import BLOCKED', () => {
+    expect(evidencePackStateBreakdown(tamago)).toMatchObject({
+      evidence: 'COMPLETE',
+      rights: 'REVIEW_REQUIRED',
+      identity: 'REVIEW_REQUIRED',
+      importEligible: false,
+    })
+    expect(evidencePackHoldReasons(tamago)).toEqual([
+      'HOLD_RECORD_RIGHTS_REVIEW',
+      'HOLD_IDENTITY_REVIEW',
+    ])
+  })
+  it('EGG branch の 2 件はどちらも import-eligible ではない（§20 success condition）', () => {
+    for (const p of EGG_BRANCH_BATCH1_EVIDENCE_PACKS) {
+      expect(canEnterRecipeImport(p)).toBe(false)
+      expect(evidencePackHoldReasons(p).length).toBeGreaterThan(0)
+    }
+  })
+  it('held packs は削除されず fixture として保持されている（§31）', () => {
+    expect(EGG_BRANCH_BATCH1_EVIDENCE_PACKS).toHaveLength(2)
+  })
+})
+
+describe('MISSION 2.41B — SOURCE_NOT_STATED audit（§11 / §16）', () => {
+  it('oyakodon: preparation / completionCues / classification は SOURCE_NOT_STATED', () => {
+    expect(oyako.recipe.preparation.status).toBe('SOURCE_NOT_STATED')
+    expect(oyako.recipe.completionCues.status).toBe('SOURCE_NOT_STATED')
+    expect(oyako.classification.country.status).toBe('SOURCE_NOT_STATED')
+    expect(oyako.classification.mealOccasions.status).toBe('SOURCE_NOT_STATED')
+  })
+  it('tamagoyaki: NOT_CAPTURED は 1 つも無い（本文確認済み）', () => {
+    expect(JSON.stringify(tamago)).not.toContain('NOT_CAPTURED')
+    expect(tamago.provenance.evidenceMethod).toBe('official-source-body-review')
+  })
+  it('両 pack とも全 EvidenceFact が §7 形状ルールを満たす', () => {
+    for (const p of EGG_BRANCH_BATCH1_EVIDENCE_PACKS) {
+      expect(validateEvidencePack(p).reasons).not.toContain('FACT_PRESENCE_INVALID')
     }
   })
 })

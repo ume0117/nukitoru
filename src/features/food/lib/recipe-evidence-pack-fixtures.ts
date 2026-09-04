@@ -460,3 +460,319 @@ export const SYNTHETIC_EVIDENCE_PACK_FIXTURES: Record<string, RecipeEvidencePack
 }
 
 export const SYNTHETIC_EVIDENCE_PACK_NOTE = SYNTHETIC_NOTE
+
+// ============================================================
+// 3. MISSION 2.41B — Batch #1 / EGG branch（親子丼・玉子焼き）
+//
+// External Research Layer が農林水産省「うちの郷土料理」の Source Body を
+// 逐語確認した実 Recipe。書いてよいのは MISSION 2.41B §3〜§12 で明示された Fact だけ。
+// Source Body を確認したが明示が無い Fact は SOURCE_NOT_STATED（NOT_CAPTURED ではない）。
+//
+// **両 Recipe とも第三者提供元（近藤 惠津子『食材選びからわかるおうちごはん』より）**があり、
+// thirdPartyIndication = true / thirdPartyRightsReview = 'not-reviewed'。
+// 今回の Evidence だけで cleared にしない（§7 / §12 / §19 — Rights 不明なら fail-closed）。
+//
+// SOURCE_RECIPE_KNOWLEDGE_FIXTURES / RECIPE_CATALOG / 既存 review oyako-don へは一切流さない。
+// ============================================================
+
+function culinaryTermQty(displayText: string, term: string): QuantityStatement {
+  return { displayText, semantics: { kind: 'culinary-term', term } }
+}
+
+const KONDO_CREDIT = '近藤 惠津子（『食材選びからわかるおうちごはん』より）'
+const MAFF_RIGHTS_EVIDENCE = 'https://www.maff.go.jp/j/use/link.html'
+
+/**
+ * §3〜§7 — 親子丼 / 東京都 / 農林水産省「うちの郷土料理」。
+ * URL: 34_12_tokyo.html。2人分。第三者提供元あり。
+ */
+export const OYAKODON_EVIDENCE_PACK: RecipeEvidencePack = {
+  identity: {
+    id: 'evp-maff-oyakodon-tokyo',
+    // §17 — 既存 WorldRecipeIdentity 'jp-oyakodon'（canonicalName「親子丼」）へ exact 一致。
+    // 既存 review repo Recipe(oyako-don) とは別レイヤー・別 anchor（§18）。
+    candidateCanonicalRecipeId: 'jp-oyakodon',
+  },
+  source: {
+    sourceId: 'jp-maff-kyodo-ryori',
+    sourceOrganization: '農林水産省',
+    sourceTitle: '親子丼 東京都 — うちの郷土料理',
+    sourceUrl:
+      'https://www.maff.go.jp/j/keikaku/syokubunka/k_ryouri/search_menu/menu/34_12_tokyo.html',
+    accessedAt: '2026-09-03',
+  },
+  rights: {
+    // MAFF「うちの郷土料理」source default（PDL1.0・MAFF-held facts は商用 USE 可）
+    sourceRightsStatus: 'allowed',
+    // MAFF hosting record の default。ただし第三者提供 Recipe のため review 必須（下記）
+    recordRightsStatus: 'allowed',
+    structuredFactStorageStatus: 'allowed',
+    verbatimTextStatus: 'prohibited',
+    imageAssetStatus: 'prohibited',
+    thirdPartyIndication: true,
+    thirdPartyRightsReview: 'not-reviewed',
+    rightsEvidenceReference: MAFF_RIGHTS_EVIDENCE,
+    rightsNotes:
+      `レシピ提供元: ${KONDO_CREDIT}。MAFF 掲載 ≠ Record Rights 自動 allowed。`
+      + '第三者提供 Recipe を NUKITORU 商用サービス内で Structured Facts として再利用可能かは未確定。'
+      + 'thirdPartyRightsReview を勝手に cleared にしない（fail-closed）。',
+  },
+  recipe: {
+    sourceRecipeName: '親子丼',
+    sourceLanguage: 'ja',
+    servings: present(exactQty('2人分', 2, '人分')),
+    ingredientListStatus: 'PRESENT',
+    ingredients: [
+      {
+        sourceIngredientName: '鶏もも肉',
+        role: 'required',
+        amount: present(exactQty('150g', 150, 'g')),
+        preparationState: present('一口大のそぎ切り'),
+      },
+      {
+        // §4 — 醤油は「鶏肉の下味」用途。合わせ調味料の醤油とは別エントリ（合算しない）
+        sourceIngredientName: '醤油',
+        role: 'seasoning',
+        amount: {
+          status: 'PRESENT',
+          value: exactQty('小さじ1/2', 0.5, '小さじ'),
+          notes: '用途: 鶏肉の下味（合わせ調味料の醤油とは別。合算しない）',
+        },
+      },
+      {
+        sourceIngredientName: '酒',
+        role: 'seasoning',
+        amount: {
+          status: 'PRESENT',
+          value: exactQty('小さじ1/2', 0.5, '小さじ'),
+          notes: '用途: 鶏肉の下味',
+        },
+      },
+      {
+        sourceIngredientName: '玉ねぎ',
+        role: 'required',
+        amount: present(exactQty('1/2個（100g）', 0.5, '個')),
+        preparationState: present('縦半分に切ってから薄切り'),
+      },
+      {
+        sourceIngredientName: '卵',
+        role: 'required',
+        amount: present(exactQty('2個', 2, '個')),
+        preparationState: present('軽くほぐすように溶く'),
+      },
+      {
+        sourceIngredientName: '三つ葉',
+        role: 'garnish',
+        amount: present(rangeQty('4〜5本', 4, 5, '本')),
+        preparationState: present('2cmに切る'),
+      },
+      {
+        sourceIngredientName: 'だし',
+        role: 'cooking-liquid',
+        amount: present(exactQty('100ml', 100, 'ml')),
+      },
+      {
+        sourceIngredientName: 'ご飯',
+        role: 'required',
+        amount: present(exactQty('2人分', 2, '人分')),
+      },
+      {
+        // §4 — 合わせ調味料の醤油。下味の醤油とは別エントリ
+        sourceIngredientName: '醤油',
+        role: 'seasoning',
+        amount: {
+          status: 'PRESENT',
+          value: exactQty('大さじ1', 1, '大さじ'),
+          notes: '用途: 合わせ調味料（鶏肉の下味の醤油とは別。合算しない）',
+        },
+      },
+      {
+        sourceIngredientName: '砂糖',
+        role: 'seasoning',
+        amount: {
+          status: 'PRESENT',
+          value: exactQty('大さじ1/2', 0.5, '大さじ'),
+          notes: '用途: 合わせ調味料',
+        },
+      },
+      {
+        sourceIngredientName: 'みりん',
+        role: 'seasoning',
+        amount: {
+          status: 'PRESENT',
+          value: exactQty('大さじ1/2', 0.5, '大さじ'),
+          notes: '用途: 合わせ調味料',
+        },
+      },
+    ],
+    stepListStatus: 'PRESENT',
+    steps: [
+      {
+        order: 1,
+        factSummary: present('鶏肉に醤油（小さじ1/2）と酒（小さじ1/2）をまぶして下味をつける'),
+        ingredientsUsed: ['鶏もも肉', '醤油', '酒'],
+      },
+      {
+        order: 2,
+        factSummary: present('鍋にだしと合わせ調味料を入れて中火にかける。煮立ってきたら玉ねぎと鶏肉を入れる'),
+        ingredientsUsed: ['だし', '醤油', '砂糖', 'みりん', '玉ねぎ', '鶏もも肉'],
+        heat: present('medium'),
+        heatTransition: present('turn-on'),
+      },
+      {
+        order: 3,
+        factSummary: present(
+          '蓋をして、鶏肉に火が通るまで2〜3分煮る。その後、卵を鍋の中心から外側へ円を描くように回し入れる',
+        ),
+        ingredientsUsed: ['卵'],
+        duration: present({ kind: 'range', minMinutes: 2, maxMinutes: 3 }),
+        completionCue: present('鶏肉に火が通るまで'),
+      },
+      {
+        order: 4,
+        factSummary: present(
+          '卵の周囲が固まりかけたら火を止める。三つ葉を散らし、再び蓋をして30秒蒸らす',
+        ),
+        ingredientsUsed: ['三つ葉'],
+        heatTransition: present('turn-off'),
+        completionCue: present('卵の周囲が固まりかけたら'),
+      },
+      {
+        order: 5,
+        factSummary: present('丼にご飯をよそい、STEP 4 の具をのせる'),
+        ingredientsUsed: ['ご飯'],
+      },
+    ],
+    // §6 — Source に独立した下準備セクションは無い（下ごしらえは ingredient preparationState と STEP 1）
+    preparation: sourceNotStated(),
+    // レシピ全体の完成目安は各 STEP の completionCue が保持
+    completionCues: sourceNotStated(),
+    // Source が名指しした器具のみ。鍋サイズ・材質は推測しない（§6）
+    equipmentConditions: present(['鍋', '蓋', '丼']),
+  },
+  classification: {
+    // §17 / §39 — Source Body に国・cuisine・meal occasion の明示は無い。推測しない
+    country: sourceNotStated(),
+    cuisine: sourceNotStated(),
+    mealOccasions: sourceNotStated(),
+  },
+  provenance: {
+    providedBy: 'external-research-layer',
+    evidenceMethod: 'official-source-body-review',
+    capturedAt: '2026-09-03',
+    notes:
+      'MISSION 2.41B §3〜§7。農林水産省「うちの郷土料理」親子丼（東京都）Source Body 逐語確認。'
+      + `第三者提供元: ${KONDO_CREDIT}。鍋のサイズ/材質・食材の中心温度・全体の所要時間・事前準備の所要時間は Source に記載が無く推測しない。`,
+  },
+}
+
+/**
+ * §8〜§12 — 玉子焼き / 東京都 / 農林水産省「うちの郷土料理」。
+ * URL: 34_11_tokyo.html。1本分。第三者提供元あり。
+ * 玉子焼きの WorldRecipeIdentity は未登録 → candidateCanonicalRecipeId 未設定（§17 — 卵料理だからで作らない）。
+ */
+export const TAMAGOYAKI_EVIDENCE_PACK: RecipeEvidencePack = {
+  identity: {
+    id: 'evp-maff-tamagoyaki-tokyo',
+    // 玉子焼き / 卵焼き の WorldRecipeIdentity は存在しない。推論で作らない（§17）→ IDENTITY_REVIEW
+  },
+  source: {
+    sourceId: 'jp-maff-kyodo-ryori',
+    sourceOrganization: '農林水産省',
+    sourceTitle: '玉子焼き 東京都 — うちの郷土料理',
+    sourceUrl:
+      'https://www.maff.go.jp/j/keikaku/syokubunka/k_ryouri/search_menu/menu/34_11_tokyo.html',
+    accessedAt: '2026-09-03',
+  },
+  rights: {
+    sourceRightsStatus: 'allowed',
+    recordRightsStatus: 'allowed',
+    structuredFactStorageStatus: 'allowed',
+    verbatimTextStatus: 'prohibited',
+    imageAssetStatus: 'prohibited',
+    thirdPartyIndication: true,
+    thirdPartyRightsReview: 'not-reviewed',
+    rightsEvidenceReference: MAFF_RIGHTS_EVIDENCE,
+    rightsNotes:
+      `レシピ提供元: ${KONDO_CREDIT}。親子丼と同様、今回の Evidence だけで thirdPartyRightsReview を cleared にしない。`,
+  },
+  recipe: {
+    sourceRecipeName: '玉子焼き',
+    sourceLanguage: 'ja',
+    servings: present(exactQty('1本分', 1, '本')),
+    ingredientListStatus: 'PRESENT',
+    ingredients: [
+      { sourceIngredientName: '卵', role: 'required', amount: present(exactQty('2個', 2, '個')) },
+      { sourceIngredientName: 'だし', role: 'cooking-liquid', amount: present(exactQty('大さじ1', 1, '大さじ')) },
+      { sourceIngredientName: '砂糖', role: 'seasoning', amount: present(exactQty('大さじ1/2', 0.5, '大さじ')) },
+      {
+        // §9 — 「少々」を数値へ変換しない
+        sourceIngredientName: '塩',
+        role: 'seasoning',
+        amount: present(culinaryTermQty('少々', '少々')),
+      },
+      {
+        sourceIngredientName: '醤油',
+        role: 'seasoning',
+        amount: present(culinaryTermQty('少々', '少々')),
+      },
+      {
+        // §9 — 「適宜」を数値へ変換しない
+        sourceIngredientName: '油',
+        role: 'seasoning',
+        amount: present(culinaryTermQty('適宜', '適宜')),
+      },
+    ],
+    stepListStatus: 'PRESENT',
+    steps: [
+      {
+        order: 1,
+        factSummary: present('卵を割りほぐし、だしと調味料をすべて混ぜる'),
+        ingredientsUsed: ['卵', 'だし', '砂糖', '塩', '醤油'],
+      },
+      {
+        order: 2,
+        factSummary: present(
+          '卵焼き器に油を入れて熱し、余分な油をふき取る。卵液の1/4を流して均等に広げ、'
+          + '周囲がかわいて半熟状になったら菜箸で巻く。再び油をなじませ、同様の操作を繰り返す',
+        ),
+        ingredientsUsed: ['油', '卵'],
+        // §11 — Source は具体的火力レベルを述べていない
+        heat: sourceNotStated(),
+        // §11 — Source は加熱分数を述べていない
+        duration: sourceNotStated(),
+        completionCue: present('周囲がかわいて半熟状になったら'),
+      },
+      {
+        order: 3,
+        factSummary: present('焼きあがったら巻きすで巻き、粗熱が取れるまで置いてから切り分ける'),
+        // §11 — Source は休ませ時間を述べていない
+        duration: sourceNotStated(),
+        completionCue: present('粗熱が取れるまで'),
+      },
+    ],
+    preparation: sourceNotStated(),
+    completionCues: sourceNotStated(),
+    // Source が名指しした器具のみ。卵焼き器サイズ・油の ml 量は推測しない（§11）
+    equipmentConditions: present(['卵焼き器', '巻きす']),
+  },
+  classification: {
+    country: sourceNotStated(),
+    cuisine: sourceNotStated(),
+    mealOccasions: sourceNotStated(),
+  },
+  provenance: {
+    providedBy: 'external-research-layer',
+    evidenceMethod: 'official-source-body-review',
+    capturedAt: '2026-09-03',
+    notes:
+      'MISSION 2.41B §8〜§12。農林水産省「うちの郷土料理」玉子焼き（東京都）Source Body 逐語確認。'
+      + `第三者提供元: ${KONDO_CREDIT}。具体的火力・加熱分数・休ませ時間・卵焼き器サイズ・油の ml 量・完成中心温度は Source に無く SOURCE_NOT_STATED。`,
+  },
+}
+
+/** MISSION 2.41B Batch #1 — EGG branch。両方とも import-eligible ではない（Rights REVIEW_REQUIRED） */
+export const EGG_BRANCH_BATCH1_EVIDENCE_PACKS: RecipeEvidencePack[] = [
+  OYAKODON_EVIDENCE_PACK,
+  TAMAGOYAKI_EVIDENCE_PACK,
+]

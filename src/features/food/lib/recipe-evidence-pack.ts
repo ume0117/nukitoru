@@ -506,6 +506,100 @@ export function evidencePackIsNotPresentation(): true {
 }
 
 // ------------------------------------------------------------
+// State breakdown & Hold log（MISSION 2.41B §30 / §31）
+//
+// validateEvidencePack の単一 result を潰さず、Evidence / Rights / Identity / Process を
+// 別々に読むための report 用 helper。Gate（canEnterRecipeImport）は一切変更しない。
+// ------------------------------------------------------------
+
+const RIGHTS_REVIEW_REASONS: EvidenceCompletenessReason[] = [
+  'THIRD_PARTY_RIGHTS_REVIEW_PENDING',
+  'SOURCE_NOT_REGISTERED',
+]
+const RIGHTS_BLOCK_REASONS: EvidenceCompletenessReason[] = [
+  'RIGHTS_SOURCE_BLOCKED',
+  'RIGHTS_RECORD_BLOCKED',
+  'RIGHTS_STRUCTURED_FACT_BLOCKED',
+  'RIGHTS_CONDITIONAL_UNMET',
+  'RIGHTS_CLAIM_EXCEEDS_SOURCE',
+  'THIRD_PARTY_RIGHTS_UNRESOLVED',
+]
+const IDENTITY_REVIEW_REASONS: EvidenceCompletenessReason[] = [
+  'IDENTITY_CANDIDATE_MISSING',
+  'IDENTITY_NOT_IN_REGISTRY',
+]
+const PROCESS_REVIEW_REASONS: EvidenceCompletenessReason[] = [
+  'INGREDIENT_AMOUNT_CONFLICT',
+  'STEP_FACT_CONFLICT',
+  'SERVINGS_CONFLICT',
+  'PROCESS_FACT_CONFLICT',
+]
+
+export interface EvidencePackStateBreakdown {
+  /** Source Body の必須 Fact が揃っているか（Rights / Identity とは独立） */
+  evidence: 'COMPLETE' | 'INCOMPLETE'
+  /** PASS = 問題なし / REVIEW_REQUIRED = record-level review 待ち / BLOCKED = fail-closed */
+  rights: 'PASS' | 'REVIEW_REQUIRED' | 'BLOCKED'
+  identity: 'RESOLVED' | 'REVIEW_REQUIRED'
+  process: 'OK' | 'REVIEW_REQUIRED'
+  /** = validateEvidencePack(pack).result === 'COMPLETE' */
+  importEligible: boolean
+  reasons: EvidenceCompletenessReason[]
+}
+
+/**
+ * MISSION 2.41B §30 — 各 Candidate の Evidence / Rights / Identity / Process / Import を
+ * **一つの status へ潰さず**別々に返す report 用 helper。
+ */
+export function evidencePackStateBreakdown(
+  pack: RecipeEvidencePack,
+  options: ValidateEvidencePackOptions = {},
+): EvidencePackStateBreakdown {
+  const v = validateEvidencePack(pack, options)
+  const has = (list: EvidenceCompletenessReason[]) => v.reasons.some((r) => list.includes(r))
+
+  const evidenceIncomplete = v.reasons.some(
+    (r) =>
+      !RIGHTS_REVIEW_REASONS.includes(r) &&
+      !RIGHTS_BLOCK_REASONS.includes(r) &&
+      !IDENTITY_REVIEW_REASONS.includes(r) &&
+      !PROCESS_REVIEW_REASONS.includes(r),
+  )
+
+  return {
+    evidence: evidenceIncomplete ? 'INCOMPLETE' : 'COMPLETE',
+    rights: has(RIGHTS_BLOCK_REASONS)
+      ? 'BLOCKED'
+      : has(RIGHTS_REVIEW_REASONS)
+        ? 'REVIEW_REQUIRED'
+        : 'PASS',
+    identity: has(IDENTITY_REVIEW_REASONS) ? 'REVIEW_REQUIRED' : 'RESOLVED',
+    process: has(PROCESS_REVIEW_REASONS) ? 'REVIEW_REQUIRED' : 'OK',
+    importEligible: v.result === 'COMPLETE',
+    reasons: v.reasons,
+  }
+}
+
+/**
+ * MISSION 2.41B §31 — Import できない Candidate の HOLD 理由（削除せず保持するため）。
+ * import-eligible なら空配列。
+ */
+export function evidencePackHoldReasons(
+  pack: RecipeEvidencePack,
+  options: ValidateEvidencePackOptions = {},
+): string[] {
+  const b = evidencePackStateBreakdown(pack, options)
+  if (b.importEligible) return []
+  const holds: string[] = []
+  if (b.rights === 'BLOCKED') holds.push('HOLD_RIGHTS_BLOCKED')
+  if (b.rights === 'REVIEW_REQUIRED') holds.push('HOLD_RECORD_RIGHTS_REVIEW')
+  if (b.identity === 'REVIEW_REQUIRED') holds.push('HOLD_IDENTITY_REVIEW')
+  if (b.process === 'REVIEW_REQUIRED') holds.push('HOLD_PROCESS_REVIEW')
+  if (b.evidence === 'INCOMPLETE') holds.push('HOLD_INCOMPLETE_EVIDENCE')
+  return holds
+}
+
+// ------------------------------------------------------------
 // 監査用ラベル
 // ------------------------------------------------------------
 
