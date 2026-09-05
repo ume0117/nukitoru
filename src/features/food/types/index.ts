@@ -2763,3 +2763,99 @@ export interface EvidencePackValidation {
 export type EvidencePackAdapterResult =
   | { ok: true; candidate: RawRecipeImportCandidate }
   | { ok: false; reasons: EvidenceCompletenessReason[] }
+
+// ============================================================
+// MISSION 2.41F — Rights-Clear Recipe Source Discovery & Rights Gate Foundation
+//
+// 「どの Recipe Source を利用できるのか」を推測ではなく Evidence で判定する基盤。
+// Source Discovery ≠ Recipe Import（§8）。ここで RIGHTS_CLEAR_CANDIDATE になっても
+// 実 Recipe を Import しない・WorldFoodSource へ自動登録しない・RecipeVerification に接続しない。
+//
+// 既存型との関係:
+// - `RightsFlag` / `ThirdPartyRightsState` / `WorldFoodSourceType` / `CountryCode` を再利用する
+//   （§5「重複型を乱造しない」）。commercialUse / modification は RightsFlag をそのまま使う
+//   （'conditional' を含む方が MISSION 2.41C〜E の PDL1.0 General Rule 実例に正確に対応する）。
+// - License が存在すること ≠ 対象 Recipe へ License が適用されること（§2）。
+//   `recipeApplicability` / `photoApplicability` / `externalContentApplicability` で分離する。
+// ============================================================
+
+/** Source Discovery の分類（§3）。WorldFoodSource の classification / EvidenceCompletenessResult とは別概念 */
+export type RecipeSourceCandidateClassification =
+  | 'RIGHTS_CLEAR_CANDIDATE'
+  | 'REVIEW_REQUIRED'
+  | 'RESEARCH_ONLY'
+  | 'REJECTED'
+
+/** §4 — 最低限明示的に扱うライセンス種別。新規発見時に安易に列挙を増やさない */
+export type RecipeSourceLicenseType =
+  | 'PDL1.0'
+  | 'CC-BY-4.0'
+  | 'CC0'
+  | 'CC-BY-SA-4.0'
+  | 'CC-BY-NC-4.0'
+  | 'CC-BY-NC-SA-4.0'
+  | 'CC-BY-NC-ND-4.0'
+  | 'all-rights-reserved'
+  | 'custom-government-license'
+  | 'custom-open-data-license'
+  | 'unknown'
+
+export type AttributionRequirement = 'required' | 'notRequired' | 'unknown'
+
+/**
+ * License / Rights が「対象 Recipe（または対象 Asset）へ実際に適用されると確認できたか」。
+ * License が存在すること自体とは別軸（§2）。
+ */
+export type ApplicabilityState = 'confirmed' | 'partial' | 'unclear' | 'notApplicable'
+
+/** Photo / 外部 Content 用。confirmed 以外は再利用しない（本 MISSION では画像を一切使わない） */
+export type AssetApplicabilityState = 'confirmed' | 'separate' | 'prohibited' | 'unknown'
+
+/**
+ * §6 — Rights Evidence 1 件。外部規約本文を大量コピーせず、URL + 短い要約のみ保持する。
+ */
+export interface RecipeSourceRightsEvidenceItem {
+  sourceUrl: string
+  documentTitle: string
+  publisher: string
+  retrievedAt: string
+  /** 規約のうち関連するルールの短い要約（逐語大量転載しない） */
+  ruleSummary: string
+  evidenceType: 'terms-of-use' | 'license-page' | 'official-statement' | 'appendix' | 'other'
+  sectionHeading?: string
+  licenseIdentifier?: string
+  applicabilityNote?: string
+}
+
+/**
+ * Rights Gate（§9）への入力。classification / blockingReasons を含まない生の評価結果。
+ * `classification` は `classifyRecipeSourceCandidate` が決定論的に導出する（手で矛盾した値を作れない）。
+ */
+export interface RecipeSourceCandidateInput {
+  id: string
+  name: string
+  organization: string
+  country: CountryCode
+  sourceType: WorldFoodSourceType
+  homepageUrl: string
+  recipeIndexUrl?: string
+  termsUrl?: string
+  licenseUrl?: string
+  licenseType: RecipeSourceLicenseType
+  commercialUse: RightsFlag
+  modification: RightsFlag
+  attribution: AttributionRequirement
+  thirdPartyRights: ThirdPartyRightsState
+  recipeApplicability: ApplicabilityState
+  photoApplicability: AssetApplicabilityState
+  externalContentApplicability: AssetApplicabilityState
+  evidence: RecipeSourceRightsEvidenceItem[]
+  reviewNotes: string[]
+  reviewedAt: string
+}
+
+/** §5 — Rights Gate 通過後の完全な Candidate（classification / blockingReasons が確定） */
+export interface RecipeSourceCandidate extends RecipeSourceCandidateInput {
+  classification: RecipeSourceCandidateClassification
+  blockingReasons: string[]
+}
