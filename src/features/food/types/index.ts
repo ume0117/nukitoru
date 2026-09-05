@@ -2852,7 +2852,38 @@ export interface RecipeSourceCandidateInput {
   evidence: RecipeSourceRightsEvidenceItem[]
   reviewNotes: string[]
   reviewedAt: string
+  /**
+   * MISSION 2.41F-2 §7 — Source Capability Model。Rights classification とは独立した
+   * 「この Source が NUKITORU へ何を提供できるか」の分類（任意・複数可）。
+   * 未設定の既存 Candidate（MISSION 2.41F の 3 件）を壊さないよう optional にする。
+   */
+  capabilities?: RecipeSourceCapability[]
+  /**
+   * MISSION 2.41F-2A §1 / §5 — **Rights Gap とは別**の「実データ / レシピの完全性」の欠落。
+   * 例: 実 CSV schema 未確認 / recipe id 未確認 / ingredient amount 未確認 / servings なし /
+   * cooking steps なし / scan 未文字起こし。これらは `blockingReasons`（Rights のみ）には入れない。
+   * データ完全性が埋まっても Rights Gap は自動解消しない（`CSV schema が分かる ≠ Licence applicability confirmed`）。
+   */
+  dataCompletenessGaps?: string[]
+  /**
+   * MISSION 2.41F-2A §1 / §5 — Rights でもデータ完全性でもない「Product Value」の注記。
+   * 例: 歴史資料で現代の家庭料理 Starter Pack には向かない。classification には影響させない。
+   */
+  productValueNotes?: string[]
 }
+
+/**
+ * §7 — Rights とは独立した Source Capability。名前に "Recipe" が含まれることは
+ * FULL_RECIPE を意味しない（§13 test 7）。
+ */
+export type RecipeSourceCapability =
+  | 'FULL_RECIPE'
+  | 'RECIPE_INGREDIENT_GRAPH'
+  | 'NUTRITION_REFERENCE'
+  | 'FOOD_SAFETY_REFERENCE'
+  | 'CULINARY_IDENTITY_REFERENCE'
+  | 'HISTORICAL_RECIPE'
+  | 'DISCOVERY_ONLY'
 
 /** §5 — Rights Gate 通過後の完全な Candidate（classification / blockingReasons が確定） */
 export interface RecipeSourceCandidate extends RecipeSourceCandidateInput {

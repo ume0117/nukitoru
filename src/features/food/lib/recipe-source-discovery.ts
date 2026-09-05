@@ -33,6 +33,7 @@ import type {
   RecipeSourceCandidate,
   RecipeSourceCandidateClassification,
   RecipeSourceCandidateInput,
+  RecipeSourceCapability,
   RecipeSourceLicenseType,
   RightsFlag,
   ThirdPartyRightsState,
@@ -203,4 +204,134 @@ export function describeBlockingReason(reason: RecipeSourceBlockingReason): stri
     RECIPE_FACTS_RIGHTS_UNRESOLVED: 'Recipe Facts 自体の rights が未解決（Photo 等の分離では救えない）',
   }
   return map[reason]
+}
+
+// ------------------------------------------------------------
+// MISSION 2.41F-2 §7 — Source Capability Model（Rights classification とは独立）
+// ------------------------------------------------------------
+
+export function describeCapability(capability: RecipeSourceCapability): string {
+  const map: Record<RecipeSourceCapability, string> = {
+    FULL_RECIPE: '材料・分量・調理工程を備えた完成レシピとして利用できる',
+    RECIPE_INGREDIENT_GRAPH: '料理名と材料構成（分量含む場合あり）のみ。調理工程・servings は含まない',
+    NUTRITION_REFERENCE: '栄養価等の参照情報のみ',
+    FOOD_SAFETY_REFERENCE: '食品安全に関する参照情報のみ',
+    CULINARY_IDENTITY_REFERENCE: '料理名・由来・地域性等の識別情報のみ',
+    HISTORICAL_RECIPE: '歴史資料としてのレシピ（現代の家庭料理としての実用性は別評価）',
+    DISCOVERY_ONLY: '存在・名称の把握にのみ使える。Structured Fact の抽出根拠にはまだならない',
+  }
+  return map[capability]
+}
+
+/**
+ * §13 test 7 — Source 名や resource 名に "Recipe" が含まれることは FULL_RECIPE を意味しない。
+ * capabilities に FULL_RECIPE が明示的に含まれる場合のみ true。
+ */
+export function isFullRecipeCapable(candidate: Pick<RecipeSourceCandidateInput, 'capabilities'>): boolean {
+  return (candidate.capabilities ?? []).includes('FULL_RECIPE')
+}
+
+// ------------------------------------------------------------
+// §9 — Rights Evidence Chain（途中 1 つでも unknown なら無理に PASS しない）
+// ------------------------------------------------------------
+
+export type EvidenceChainLink =
+  | 'SOURCE_ORGANIZATION'
+  | 'SOURCE_RECORD'
+  | 'ACTUAL_RESOURCE'
+  | 'LICENSE'
+  | 'LICENSE_URL'
+  | 'COMMERCIAL_USE'
+  | 'MODIFICATION'
+  | 'ATTRIBUTION'
+  | 'LICENSE_APPLICABILITY'
+  | 'THIRD_PARTY_RIGHTS'
+  | 'CONTENT_SCOPE'
+
+/**
+ * Rights Evidence Chain の各 link が確認済みか。1 つでも欠落 / unknown なら
+ * `RIGHTS_CLEAR_CANDIDATE` にしないことの根拠を可視化する（gate 自体は
+ * `classifyRecipeSourceCandidate` が行う。これは監査用の補助関数）。
+ */
+export function evidenceChainMissingLinks(input: RecipeSourceCandidateInput): EvidenceChainLink[] {
+  const missing: EvidenceChainLink[] = []
+  if (!input.organization.trim()) missing.push('SOURCE_ORGANIZATION')
+  if (!input.id.trim()) missing.push('SOURCE_RECORD')
+  if (!input.recipeIndexUrl) missing.push('ACTUAL_RESOURCE')
+  if (input.licenseType === 'unknown') missing.push('LICENSE')
+  if (!input.licenseUrl) missing.push('LICENSE_URL')
+  if (input.commercialUse === 'unknown') missing.push('COMMERCIAL_USE')
+  if (input.modification === 'unknown') missing.push('MODIFICATION')
+  if (input.attribution === 'unknown') missing.push('ATTRIBUTION')
+  if (input.recipeApplicability !== 'confirmed') missing.push('LICENSE_APPLICABILITY')
+  if (input.thirdPartyRights === 'unresolved' || input.thirdPartyRights === 'unknown') missing.push('THIRD_PARTY_RIGHTS')
+  if (input.photoApplicability === 'unknown' && input.externalContentApplicability === 'unknown' && input.recipeApplicability !== 'confirmed') {
+    missing.push('CONTENT_SCOPE')
+  }
+  return missing
+}
+
+// ------------------------------------------------------------
+// MISSION 2.41F-2A §1 / §5 — Rights ≠ Completeness ≠ Product Value の分離を明示する view
+// ------------------------------------------------------------
+
+export interface GapSeparationView {
+  /** Rights Gap のみ（blockingReasons + Evidence Chain の欠落 link）。データ完全性は含まない */
+  rightsGaps: string[]
+  /** 実データ / レシピの完全性の欠落（Rights ではない） */
+  dataCompletenessGaps: string[]
+  /** Rights でもデータ完全性でもない Product Value の注記 */
+  productValueNotes: string[]
+}
+
+/**
+ * §5 — Candidate の Gap を Rights / Data Completeness / Product Value の 3 系統へ分けて返す。
+ * `rightsGaps` は gate（blockingReasons）と Evidence Chain の欠落のみから構成される
+ * （dataCompletenessGaps / productValueNotes は絶対に混ざらない）。
+ */
+export function gapSeparationFor(candidate: RecipeSourceCandidate): GapSeparationView {
+  const rightsGaps = [
+    ...candidate.blockingReasons,
+    ...evidenceChainMissingLinks(candidate).map((l) => `EVIDENCE_CHAIN:${l}`),
+  ]
+  return {
+    rightsGaps: Array.from(new Set(rightsGaps)),
+    dataCompletenessGaps: [...(candidate.dataCompletenessGaps ?? [])],
+    productValueNotes: [...(candidate.productValueNotes ?? [])],
+  }
+}
+
+/**
+ * §8 test 1 / 4 / 5 — データ完全性（CSV schema 等）が埋まっても Rights Gap は自動解消しない。
+ * Rights Gap が 1 つでも残っていれば true。
+ */
+export function hasUnresolvedRightsGap(candidate: RecipeSourceCandidate): boolean {
+  return gapSeparationFor(candidate).rightsGaps.length > 0
+}
+
+// ------------------------------------------------------------
+// §10 — Attribution Preview（正式 UI ではない。Evidence から導出できる範囲のみ）
+// ------------------------------------------------------------
+
+export interface AttributionPreview {
+  source: string
+  dataset: string
+  licence: string
+  licenceUrl?: string
+  modifiedNote: string
+}
+
+/**
+ * もし将来この Candidate を利用するとしたら何を表示・保存する必要があるかの preview。
+ * 正式文言を推測で確定しない — Evidence（organization / name / licenseType / licenseUrl）から
+ * 導出できる範囲だけを組み立てる。
+ */
+export function buildAttributionPreview(candidate: RecipeSourceCandidateInput): AttributionPreview {
+  return {
+    source: candidate.organization,
+    dataset: candidate.name,
+    licence: candidate.licenseType,
+    ...(candidate.licenseUrl ? { licenceUrl: candidate.licenseUrl } : {}),
+    modifiedNote: 'NUKITORU normalized ingredient names / structured facts（原文からの改変を明示）',
+  }
 }
