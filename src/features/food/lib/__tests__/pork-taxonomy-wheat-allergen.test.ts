@@ -116,7 +116,7 @@ describe('MISSION 2.30 — Section D: STOCK マッチングは taxonomy で変�
     expect(stockSatisfiesRecipeIngredient('豚肉', '豚肩ロース肉')).toBe(false)
   })
 
-  it('D4: rankRecipes — generic 豚肉在庫だけでは 豚肩ロース肉 recipe は A（完全一致）にならない', () => {
+  it('D4: rankRecipes — generic 豚肉在庫は 豚肩ロース肉 recipe をcategory matchでdiscoverableにするが、exact matchではない（PUBLIC BETA RELEASE SPRINT 2）', () => {
     const catalog = [recipe('katarosu-yaki', ['豚肩ロース肉'])]
     const ranked = rankRecipes(catalog, {
       availableIngredientNames: ['豚肉'],
@@ -124,7 +124,9 @@ describe('MISSION 2.30 — Section D: STOCK マッチングは taxonomy で変�
       dislikeNames: [],
       maxCookingMinutes: null,
     })
-    expect(ranked.find((c) => c.recipe.id === 'katarosu-yaki')?.category).not.toBe('A')
+    const candidate = ranked.find((c) => c.recipe.id === 'katarosu-yaki')
+    expect(candidate?.category).toBe('A')
+    expect(candidate?.categoryMatchedIngredients).toEqual(['豚肩ロース肉'])
   })
 
   it('D5: 別部位在庫（豚ロース肉）だけでは 豚肩ロース肉 recipe は A にならない', () => {

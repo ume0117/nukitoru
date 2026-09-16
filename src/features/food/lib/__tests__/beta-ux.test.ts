@@ -96,6 +96,12 @@ describe('First 10 Families Beta Gate (DA〜DO)', () => {
     expect(suggestion.missingIngredients).toEqual(['長芋'])
   })
 
+  it('PUBLIC BETA RELEASE SPRINT 2: category matchのみでisFullyAvailable=falseになった候補は、不足0件のとき「あと1つ」と誤表示しない', () => {
+    const label = candidateAvailabilityLabel(false, false)
+    expect(label).toBe('近い食材で作れるかもしれません')
+    expect(label).not.toBe('あと1つで作れます')
+  })
+
   it('DE: allergy除外されたRecipeは、候補が3件未満でもselectBetaCandidates後に一切出現しない', () => {
     const safeDish = makeRecipe({ id: 'safe-dish', requiredIngredients: [ri('マグロ', '200g')] })
     const eggDish = makeRecipe({ id: 'egg-dish', requiredIngredients: [ri('卵', '1個')] })

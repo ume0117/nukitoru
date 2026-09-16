@@ -249,20 +249,20 @@ describe('MISSION 2.19E-RESUME-2 — Evidence traceability / coherence / status'
 })
 
 describe('MISSION 2.19E-RESUME-2 — ingredient specificity & allergy safety (MISSION 2.21)', () => {
-  it('HY: 鶏もも肉在庫→MATCH / 鶏むね肉→NO MATCH / 鶏肉generic→NOT exact match', () => {
+  it('HY: 鶏もも肉在庫→exact MATCH / 鶏むね肉→NO MATCH / 鶏肉generic→category match（discoverableだがexactではない、PUBLIC BETA RELEASE SPRINT 2）', () => {
     const base = { allergyNames: [] as string[], dislikeNames: [] as string[], maxCookingMinutes: null }
-    expect(
-      rankRecipes(RECIPE_CATALOG, { ...base, availableIngredientNames: ['鶏もも肉'] })
-        .find((c) => c.recipe.id === 'tori-teriyaki')?.category,
-    ).toBe('A')
+    const exactCandidate = rankRecipes(RECIPE_CATALOG, { ...base, availableIngredientNames: ['鶏もも肉'] })
+      .find((c) => c.recipe.id === 'tori-teriyaki')
+    expect(exactCandidate?.category).toBe('A')
+    expect(exactCandidate?.categoryMatchedIngredients).toEqual([])
     expect(
       rankRecipes(RECIPE_CATALOG, { ...base, availableIngredientNames: ['鶏むね肉'] })
         .some((c) => c.recipe.id === 'tori-teriyaki'),
     ).toBe(false)
-    expect(
-      rankRecipes(RECIPE_CATALOG, { ...base, availableIngredientNames: ['鶏肉'] })
-        .find((c) => c.recipe.id === 'tori-teriyaki')?.category,
-    ).not.toBe('A')
+    const genericCandidate = rankRecipes(RECIPE_CATALOG, { ...base, availableIngredientNames: ['鶏肉'] })
+      .find((c) => c.recipe.id === 'tori-teriyaki')
+    expect(genericCandidate?.category).toBe('A')
+    expect(genericCandidate?.categoryMatchedIngredients).toEqual(['鶏もも肉'])
   })
 
   it('HZ: 鶏肉アレルギー → tori-teriyaki は HARD EXCLUDE', () => {

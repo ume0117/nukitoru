@@ -12,9 +12,11 @@ import { QuickConditionSelector, resolveQuickCondition, type QuickConditionKey }
 import { MealResultView } from './MealResultView'
 import { RecipeDetailView } from './RecipeDetailView'
 import { CookingConfirmationPanel } from './CookingConfirmationPanel'
+import { CookingModeView } from './CookingModeView'
 import { mockMealProvider } from '@/features/food/lib/mock-meal-provider'
 import { getSeasonFromDate } from '@/features/food/lib/season'
 import { getConfirmableIngredientNames, applyStockUpdates, type StockUpdateEntry } from '@/features/food/lib/cooking-completion'
+import { canAdaptRecipeForCooking, recipeToCookingPresentation } from '@/features/food/lib/recipe-cooking-presentation'
 import { sanitizeSelectedMemberIds, getSelectedMembers, mergeMemberAllergies } from '@/features/food/lib/members'
 import { getRecipeById } from '@/features/food/lib/recipe-catalog'
 import {
@@ -113,6 +115,11 @@ export function FoodApp() {
   // 料理完了後の使用食材確認（MISSION 2.4）。nullの間はパネルを表示しない。
   const [confirmingItems, setConfirmingItems] = useState<string[] | null>(null)
   const [stockStatus, setStockStatusMap] = useState<Record<string, StockStatusEntry>>(DEFAULT_STOCK_STATUS)
+
+  // PUBLIC BETA RELEASE SPRINT 2 — Cooking Mode。nullの間は表示しない。
+  // MealSuggestionは選択解除後も完成画面まで参照する必要があるため、
+  // recipeIdだけでなくCooking Mode開始時点のsuggestionそのものを保持する。
+  const [cookingSuggestion, setCookingSuggestion] = useState<MealSuggestion | null>(null)
 
   // 初回マウント時にのみlocalStorageから復元する（SSR中はstorage.ts側でwindowアクセスをスキップする）
   useEffect(() => {
@@ -223,6 +230,25 @@ export function FoodApp() {
     setConfirmingItems(getConfirmableIngredientNames(suggestion, pantry.staples))
   }
 
+  // PUBLIC BETA RELEASE SPRINT 2 — 「調理を始める」。既存のCookingModeView
+  // （MISSION 2.40）をそのまま起動する。新しいCooking UIは作らない。
+  const handleStartCooking = (suggestion: MealSuggestion) => {
+    setCookingSuggestion(suggestion)
+  }
+
+  // Cooking Mode完成到達時（写真・SNS共有はCookingModeView内で完結。ここでは
+  // 既存の「作った！」と同じ使用食材確認フローへ接続するだけ）。
+  const handleCookingCompleted = () => {
+    if (cookingSuggestion) {
+      setConfirmingItems(getConfirmableIngredientNames(cookingSuggestion, pantry.staples))
+    }
+  }
+
+  // Cooking Modeの「中断」「とじる」→ 既存画面へ戻る（新規routeを作らない）。
+  const handleExitCooking = () => {
+    setCookingSuggestion(null)
+  }
+
   // [在庫を更新する] が押された時だけ、チェック済みの食品についてのみ保存する。
   const handleSaveStockUpdates = (updates: StockUpdateEntry[]) => {
     const next = applyStockUpdates(stockStatus, updates)
@@ -329,6 +355,9 @@ export function FoodApp() {
                   mergedAllergyNames={mergedAllergies}
                   onBack={() => setSelectedRecipeId(null)}
                   onCookedClick={() => handleCookedClick(selectedSuggestion)}
+                  onStartCooking={
+                    canAdaptRecipeForCooking(selectedRecipe) ? () => handleStartCooking(selectedSuggestion) : undefined
+                  }
                 />
               )
             }
@@ -358,6 +387,23 @@ export function FoodApp() {
               onClose={() => setConfirmingItems(null)}
             />
           )}
+
+          {(() => {
+            if (!cookingSuggestion || !cookingSuggestion.recipeId) return null
+            const cookingRecipe = getRecipeById(cookingSuggestion.recipeId)
+            const presentation = cookingRecipe ? recipeToCookingPresentation(cookingRecipe) : undefined
+            if (!cookingRecipe || !presentation) return null
+            return (
+              <CookingModeView
+                presentation={presentation}
+                recipeName={cookingRecipe.name}
+                canonicalRecipeId={cookingRecipe.id}
+                evidenceSourceId={presentation.sourceEvidenceSourceId}
+                onExit={handleExitCooking}
+                onCompleted={handleCookingCompleted}
+              />
+            )
+          })()}
         </>
       )}
     </div>

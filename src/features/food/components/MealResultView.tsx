@@ -67,7 +67,7 @@ function CandidateCard({
               : 'border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400'
           }`}
         >
-          {candidateAvailabilityLabel(isAvailable)}
+          {candidateAvailabilityLabel(isAvailable, missing.length > 0)}
         </span>
         <span className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
           {[cuisine, dishTypeLabel].filter(Boolean).join(' ・ ')}

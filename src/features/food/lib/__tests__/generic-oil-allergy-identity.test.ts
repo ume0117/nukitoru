@@ -136,13 +136,17 @@ describe('MISSION 2.31A — 既存 Safety 挙動の非弱体化', () => {
     expect(butaPresent(['大豆'])).toBe(false)
   })
 
-  it('OL: buta の stock 挙動は不変（豚肩ロース肉→A / 豚ロース肉→not A / generic 豚肉→not A）', () => {
-    const cat = (stock: string[]) =>
+  it('OL: buta の stock 挙動（豚肩ロース肉→exact A / 豚ロース肉→not A（sibling） / generic 豚肉→category match A、PUBLIC BETA RELEASE SPRINT 2）', () => {
+    const find = (stock: string[]) =>
       rankRecipes(RECIPE_CATALOG, { ...butaBase, availableIngredientNames: [...stock, '玉ねぎ'], allergyNames: [] })
-        .find((c) => c.recipe.id === 'buta-shogayaki')?.category
-    expect(cat(['豚肩ロース肉'])).toBe('A')
-    expect(cat(['豚ロース肉'])).not.toBe('A')
-    expect(cat(['豚肉'])).not.toBe('A')
+        .find((c) => c.recipe.id === 'buta-shogayaki')
+    expect(find(['豚肩ロース肉'])?.category).toBe('A')
+    expect(find(['豚肩ロース肉'])?.categoryMatchedIngredients).toEqual([])
+    // 豚ロース肉は豚肩ロース肉のsibling specificであり、broaderIngredientNamesに含まれないため引き続きマッチしない
+    expect(find(['豚ロース肉'])?.category).not.toBe('A')
+    // generic 豚肉はcategory matchでdiscoverableになるが、exactではない
+    expect(find(['豚肉'])?.category).toBe('A')
+    expect(find(['豚肉'])?.categoryMatchedIngredients).toEqual(['豚肩ロース肉'])
   })
 
   it('OM: generic「油」由来の false HARD EXCLUSION が無い（アレルギーなしで通常どおり A）', () => {

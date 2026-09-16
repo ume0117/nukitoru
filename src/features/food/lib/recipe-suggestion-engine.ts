@@ -18,7 +18,7 @@
 import type { Recipe, RecipeIngredient } from '@/features/food/types'
 import { canonicalizeIngredientName } from './ingredient-normalization'
 import { allergyRelevantIngredients } from './recipe-safety'
-import { recipeIngredientsHitAllergy } from './ingredient-taxonomy'
+import { recipeIngredientsHitAllergy, categoryMatchesRecipeIngredient } from './ingredient-taxonomy'
 import { recipeIngredientsHitAllergenRisk } from './ingredient-allergens'
 import { productCookingTimeMinutes } from './recipe-time'
 
@@ -26,10 +26,18 @@ export type MatchCategory = 'A' | 'B'
 
 export interface RecipeCandidate {
   recipe: Recipe
-  /** A: 必須食材が全て手元にある。B: 1件だけ不足している */
+  /** A: 必須食材が全て手元にある（category matchのみでの充足を含む）。B: 1件だけ不足している */
   category: MatchCategory
-  /** category='B' の場合、不足している食材名（元のRecipe表記のまま） */
+  /** category='B' の場合、まだ充足していない食材名（元のRecipe表記のまま。category matchで
+   *  充足した食材はここに含めない＝「あと1品」の不足リストに誤って挙げない） */
   missingIngredients: string[]
+  /**
+   * PUBLIC BETA RELEASE SPRINT 2 — exact一致ではなくcategory match（例: 「鶏肉」で
+   * 「鶏もも肉」recipeを発見）だけで充足された食材名（元のRecipe表記のまま）。
+   * 「確定して持っている」ことの証明ではないため、Recipe Detailのhave/missing判定には
+   * 使わない（splitRequiredIngredientsは引き続き完全一致のみ）。
+   */
+  categoryMatchedIngredients: string[]
   /** 苦手食材を含むか（soft）。除外はしないが順位を下げる材料にする */
   hasDislikedIngredient: boolean
 }
@@ -107,15 +115,32 @@ export function rankRecipes(catalog: Recipe[], params: RankRecipesParams): Recip
 
     // 3. 必須食材のmatch判定（seasoningsはmatchingの必須条件にしない）。
     // 判定・表示に使うのは ingredient.name のみ（amountはmatchingに一切使わない）。
-    const missing = recipe.requiredIngredients
-      .filter((ri) => !availableCanonical.has(canonicalizeIngredientName(ri.name)))
-      .map((ri) => ri.name)
-    const matchedCount = recipe.requiredIngredients.length - missing.length
+    // PUBLIC BETA RELEASE SPRINT 2: exact一致していない食材は、さらに
+    // category match（例: 「鶏肉」で「鶏もも肉」recipeを発見）を試す。
+    // category matchはexactより弱い充足として扱う（missingIngredientsからは除くが、
+    // 「確定して持っている」ことにはしない＝有無・分量表示はRecipe Detail側で変えない）。
+    const trulyMissing: string[] = []
+    const categoryMatched: string[] = []
+    for (const ri of recipe.requiredIngredients) {
+      if (availableCanonical.has(canonicalizeIngredientName(ri.name))) continue
+      const hasCategoryMatch = params.availableIngredientNames.some((stockName) =>
+        categoryMatchesRecipeIngredient(stockName, ri.name),
+      )
+      if (hasCategoryMatch) {
+        categoryMatched.push(ri.name)
+      } else {
+        trulyMissing.push(ri.name)
+      }
+    }
+    const exactMatchedCount = recipe.requiredIngredients.length - trulyMissing.length - categoryMatched.length
 
     let category: MatchCategory
-    if (missing.length === 0) {
+    if (trulyMissing.length === 0) {
       category = 'A'
-    } else if (missing.length <= MAX_MISSING_FOR_CATEGORY_B && matchedCount >= 1) {
+    } else if (
+      trulyMissing.length <= MAX_MISSING_FOR_CATEGORY_B &&
+      exactMatchedCount + categoryMatched.length >= 1
+    ) {
       // 必須食材を1件も持っていない場合はB候補にしない
       // （例: requiredIngredientsが1件だけのRecipeで、その1件が完全に
       //   手元にない場合、missing=1という数字だけを見るとBの条件を満たすが、
@@ -130,7 +155,13 @@ export function rankRecipes(catalog: Recipe[], params: RankRecipesParams): Recip
       dislikeCanonical,
     )
 
-    candidates.push({ recipe, category, missingIngredients: missing, hasDislikedIngredient })
+    candidates.push({
+      recipe,
+      category,
+      missingIngredients: trulyMissing,
+      categoryMatchedIngredients: categoryMatched,
+      hasDislikedIngredient,
+    })
   }
 
   const ranked = sortCandidates(candidates)
@@ -147,21 +178,29 @@ function matchRatio(candidate: RecipeCandidate): number {
 /**
  * 決定論的ランキング:
  * 1. category（Aが常にBより上位）
- * 2. requiredIngredientsの一致度（一致率が高いほど上位）
- * 3. requiredIngredients件数（多いほど上位。Aカテゴリ同士は一致率が
+ * 2. PUBLIC BETA RELEASE SPRINT 2: category matchを1件も使っていない候補
+ *    （exactのみ）を、category matchを使った候補より常に上位にする
+ *    （CATEGORY_MATCHはEXACTより強く評価してはいけない）。
+ * 3. requiredIngredientsの一致度（一致率が高いほど上位）
+ * 4. requiredIngredients件数（多いほど上位。Aカテゴリ同士は一致率が
  *    常に1.0で並ぶため、この基準がないと単純な1食材レシピばかりが
  *    上位を占めてしまう。より多くの手元食材を活かす具体的な料理を
  *    僅かに優先する）
- * 4. 苦手食材を含まないものを優先（SOFT。除外はしない）
- * 5. cookingTimeMinutesが短いものを優先（MISSION 2.20: Product Time が未確定＝review/
+ * 5. 苦手食材を含まないものを優先（SOFT。除外はしない）
+ * 6. cookingTimeMinutesが短いものを優先（MISSION 2.20: Product Time が未確定＝review/
  *    unknown の Recipe は確定した経過時間として比較できないため、この基準では最後尾扱い
  *    （+Infinity）。legacy/established の Recipe 同士の相対順序は従来どおり）
- * 6. catalog内の並び順（安定ソート。ランダム要素を持たない）
+ * 7. catalog内の並び順（安定ソート。ランダム要素を持たない）
  */
 function sortCandidates(candidates: RecipeCandidate[]): RecipeCandidate[] {
   return [...candidates].sort((a, b) => {
     if (a.category !== b.category) {
       return a.category === 'A' ? -1 : 1
+    }
+    const aHasCategoryMatch = a.categoryMatchedIngredients.length > 0 ? 1 : 0
+    const bHasCategoryMatch = b.categoryMatchedIngredients.length > 0 ? 1 : 0
+    if (aHasCategoryMatch !== bHasCategoryMatch) {
+      return aHasCategoryMatch - bHasCategoryMatch
     }
     const ratioDiff = matchRatio(b) - matchRatio(a)
     if (ratioDiff !== 0) return ratioDiff

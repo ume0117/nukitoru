@@ -40,6 +40,11 @@ import { canonicalizeIngredientName } from './ingredient-normalization'
  * 「豚肉」アレルギー → これらの部位を使う recipe を HARD EXCLUDE する（fail-safe）。
  * STOCK マッチングには効かない（部位在庫 ≠ 別部位 recipe、generic 豚肉在庫 ≠ 部位 recipe。
  * stockSatisfiesRecipeIngredient は完全一致のみ）。
+ *
+ * PUBLIC BETA RELEASE SPRINT 2 で追加: 生しいたけ → きのこ。
+ * 「きのこ」の品種名であり、上記と同型の明確な broader 関係
+ * （categoryMatchesRecipeIngredient経由でsearch discoveryにのみ使う。
+ * stock確定・allergy除外の意味は変えない）。
  */
 const INGREDIENT_BROADER_RELATIONS: Record<string, readonly string[]> = {
   鶏もも肉: ['鶏肉'],
@@ -48,6 +53,7 @@ const INGREDIENT_BROADER_RELATIONS: Record<string, readonly string[]> = {
   豚ひき肉: ['豚肉'],
   豚肩ロース肉: ['豚肉'],
   豚ロース肉: ['豚肉'],
+  生しいたけ: ['きのこ'],
 }
 
 /**
@@ -80,6 +86,29 @@ export function isBroaderNarrowerRelated(a: string, b: string): boolean {
  */
 export function stockSatisfiesRecipeIngredient(stockName: string, recipeIngredientName: string): boolean {
   return canonicalizeIngredientName(stockName) === canonicalizeIngredientName(recipeIngredientName)
+}
+
+/**
+ * PUBLIC BETA RELEASE SPRINT 2 — SEARCH / CANDIDATE DISCOVERY 専用。
+ *
+ * stockName が recipeIngredientName の broader（上位）categoryであるかどうか
+ * （例: stock「鶏肉」・recipe食材「鶏もも肉」→ true）。
+ *
+ * これは「確定して持っている」ことの証明ではない。stockSatisfiesRecipeIngredient
+ * （完全一致のみ）とは別軸であり、意味的に混同しない:
+ * - この関数の true は「candidateとして発見可能にしてよい」ことだけを意味する。
+ * - Recipe Detailのhave/missing判定（splitRequiredIngredients）・Stock消費計算
+ *   ・allergy判定のいずれにもこの関数を使わない（従来どおり完全一致 or
+ *   allergyExcludesIngredientのみを使う）。
+ *
+ * narrower → narrower（例: 鶏むね肉 → 鶏もも肉、えのき → 生しいたけ）は
+ * broaderIngredientNamesに含まれないため常にfalseになる（sibling自動代入禁止）。
+ */
+export function categoryMatchesRecipeIngredient(stockName: string, recipeIngredientName: string): boolean {
+  const stock = canonicalizeIngredientName(stockName)
+  const recipeIngredient = canonicalizeIngredientName(recipeIngredientName)
+  if (stock === recipeIngredient) return false
+  return broaderIngredientNames(recipeIngredient).includes(stock)
 }
 
 /**

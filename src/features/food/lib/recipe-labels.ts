@@ -33,7 +33,15 @@ export function cuisineLabel(cuisine: RecipeCuisine | undefined): string | undef
  * MISSION 2.12 PHASE A — 内部開発用語「A」「B」を一般ユーザーへそのまま
  * 表示しないための自然な文言。判定ロジック自体（isFullyAvailable）は
  * 変更しない。表示文言のみをここに集約する。
+ *
+ * PUBLIC BETA RELEASE SPRINT 2 — category match（例:「鶏肉」で「鶏もも肉」を
+ * 発見）だけでisFullyAvailable=falseになった候補は、実際の不足食材が0件
+ * （trulyMissingが空）なので「あと1つで作れます」は誤りになる。呼び出し側が
+ * 実際に不足がある（hasKnownMissingIngredient=true）場合のみその文言を出す。
+ * 引数を省略した既存呼び出しは従来どおりの動作を維持する（後方互換）。
  */
-export function candidateAvailabilityLabel(isFullyAvailable: boolean): string {
-  return isFullyAvailable ? '家にあるもので作れます' : 'あと1つで作れます'
+export function candidateAvailabilityLabel(isFullyAvailable: boolean, hasKnownMissingIngredient = true): string {
+  if (isFullyAvailable) return '家にあるもので作れます'
+  if (!hasKnownMissingIngredient) return '近い食材で作れるかもしれません'
+  return 'あと1つで作れます'
 }

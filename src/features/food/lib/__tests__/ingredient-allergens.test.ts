@@ -151,14 +151,16 @@ describe('MISSION 2.25 — non-weakening / firewall', () => {
     expect(ranked.some((c) => c.recipe.id === 'tori-teriyaki')).toBe(false)
   })
 
-  it('JM: generic 鶏肉在庫 は 鶏もも肉 recipe を exact match にしない（MISSION 2.21、無傷）', () => {
+  it('JM: generic 鶏肉在庫は鶏もも肉recipeをcategory matchでdiscoverableにするが、exact matchの意味は不変（PUBLIC BETA RELEASE SPRINT 2）', () => {
     const ranked = rankRecipes(RECIPE_CATALOG, {
       availableIngredientNames: ['鶏肉'],
       allergyNames: [],
       dislikeNames: [],
       maxCookingMinutes: null,
     })
-    expect(ranked.find((c) => c.recipe.id === 'tori-teriyaki')?.category).not.toBe('A')
+    const candidate = ranked.find((c) => c.recipe.id === 'tori-teriyaki')
+    expect(candidate?.category).toBe('A')
+    expect(candidate?.categoryMatchedIngredients).toEqual(['鶏もも肉'])
   })
 
   it('JN: filterSafeArrangements — addIngredient しょうゆ を持つアレンジは 小麦 アレルギーで非表示', () => {

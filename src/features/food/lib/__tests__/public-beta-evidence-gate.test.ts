@@ -17,7 +17,10 @@ import { describe, it, expect } from 'vitest'
 import { mockMealProvider, createMealProvider } from '../mock-meal-provider'
 import { RECIPE_CATALOG } from '../recipe-catalog'
 import { isRecipePublishable } from '../recipe-publishability'
+import { rankRecipes } from '../recipe-suggestion-engine'
 import type { Ingredient, MealSuggestionRequest } from '@/features/food/types'
+
+const BETA_PUBLISHABLE_RECIPES = RECIPE_CATALOG.filter((r) => isRecipePublishable(r))
 
 function ing(name: string): Ingredient {
   return { id: name, name, quantityMode: 'exact' }
@@ -56,17 +59,23 @@ describe('Public Beta Runtime Evidence Gate — mock-meal-provider.ts', () => {
     }
   })
 
-  it('Gate通過前（RECIPE_CATALOG全体）ならreview status のRecipeもmatchする＝Gateが実際に絞り込んでいることの対照実験（PUBLIC BETA RELEASE SPRINT 1D: ranking上位が入れ替わり単純な件数比較ができなくなったため、review status recipeの出現有無で直接検証する）', async () => {
-    // oyako-don（review status、鶏肉・卵・玉ねぎが必要）をピンポイントで狙う食材セット。
-    const targeted = request({
-      ingredients: ['鶏肉', '卵', '玉ねぎ'].map(ing),
-      cookingPreference: { maxCookingMinutes: null, shoppingMode: 'none' },
-    })
-    const gated = await mockMealProvider.suggest(targeted)
-    const ungated = await createMealProvider(RECIPE_CATALOG).suggest(targeted)
+  it('Gate通過前（RECIPE_CATALOG全体）ならreview status のRecipeもmatchする＝Gateが実際に絞り込んでいることの対照実験（PUBLIC BETA RELEASE SPRINT 1D/2: 表示件数上限やcategory match順位変動の影響を受けないよう、rankRecipesを直接・高いmaxResultsで呼ぶ）', () => {
+    // oyako-don（review status、requiredIngredientsに generic「鶏肉」を使う・卵・玉ねぎ・
+    // ごはんが必要）をピンポイントで狙う食材セット。maxResults を大きくして、
+    // PUBLIC BETA RELEASE SPRINT 2のcategory match（「鶏肉」→tori-teriyaki等）が
+    // 表示件数上限を通じてoyako-donを押し出す影響を受けないようにする。
+    const targetedParams = {
+      availableIngredientNames: ['鶏肉', '卵', '玉ねぎ'],
+      allergyNames: [],
+      dislikeNames: [],
+      maxCookingMinutes: null,
+      maxResults: 1000,
+    }
+    const gated = rankRecipes(BETA_PUBLISHABLE_RECIPES, targetedParams)
+    const ungated = rankRecipes(RECIPE_CATALOG, targetedParams)
     expect(RECIPE_CATALOG.find((r) => r.id === 'oyako-don')?.verification?.status).toBe('review')
-    expect(gated.suggestions.some((s) => s.recipeId === 'oyako-don')).toBe(false)
-    expect(ungated.suggestions.some((s) => s.recipeId === 'oyako-don')).toBe(true)
+    expect(gated.some((c) => c.recipe.id === 'oyako-don')).toBe(false)
+    expect(ungated.some((c) => c.recipe.id === 'oyako-don')).toBe(true)
   })
 
   it('review status の Recipe（例: まぐろ丼・冷奴 等。目玉焼きはPUBLIC BETA RELEASE SPRINT 1CでVERIFIEDへ昇格したため対象から外れた）は本番runtimeに一切出ない', async () => {

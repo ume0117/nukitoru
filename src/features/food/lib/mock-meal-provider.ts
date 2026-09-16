@@ -61,7 +61,7 @@ function candidateToSuggestion(
   ingredientIndex: Map<string, Ingredient>,
   dailyCondition: MealSuggestionRequest['dailyCondition'],
 ): MealSuggestion {
-  const { recipe, category, missingIngredients, hasDislikedIngredient } = candidate
+  const { recipe, category, missingIngredients, categoryMatchedIngredients, hasDislikedIngredient } = candidate
 
   const notes: string[] = []
   const conditionNote = dailyCondition ? CONDITION_NOTES[dailyCondition] : undefined
@@ -70,6 +70,13 @@ function candidateToSuggestion(
   }
   if (category === 'B' && missingIngredients.length > 0) {
     notes.push(`あと${missingIngredients.length}品あれば作れます（不足：${missingIngredients.join('、')}）。`)
+  }
+  // PUBLIC BETA RELEASE SPRINT 2 — category match（例:「鶏肉」で「鶏もも肉」を発見）で
+  // 見つかった候補は、具体的な部位・品種の確認を促す（確定して持っているとは断定しない）。
+  if (categoryMatchedIngredients.length > 0) {
+    notes.push(
+      `${categoryMatchedIngredients.join('、')}は、登録した食材に近い種類の候補です。実際に使う部位・品種をご確認ください。`,
+    )
   }
   if (hasDislikedIngredient) {
     notes.push('苦手食材として登録されているものを含みますが、他候補と併せて表示しています。')
@@ -93,11 +100,17 @@ function candidateToSuggestion(
     warnings.push('分量が未登録の食材があります。レシピの目安量を満たすか調理前に確認してください。')
   }
 
+  // PUBLIC BETA RELEASE SPRINT 2 — category matchだけで category='A' になった場合、
+  // 「作れます」と言い切らず、具体的な部位・品種の確認を促す文言にする
+  // （CATEGORY_MATCHをEXACTと同じ強さの断定で見せない）。
+  const isFullyExactMatch = categoryMatchedIngredients.length === 0
   return {
     title: recipe.name,
     reason:
       category === 'A'
-        ? '手元の食材で作れます。'
+        ? isFullyExactMatch
+          ? '手元の食材で作れます。'
+          : '近い食材から作れるかもしれません。'
         : `あと${missingIngredients.length}品あれば作れます。`,
     dishes: [
       {
@@ -113,7 +126,10 @@ function candidateToSuggestion(
     notes,
     warnings,
     recipeId: recipe.id,
-    isFullyAvailable: category === 'A',
+    // PUBLIC BETA RELEASE SPRINT 2 — category matchだけでcategory='A'になった候補は、
+    // 「家にあるものだけで作れる」という確定判定（isFullyAvailable）には含めない
+    // （部位・品種が未確認のため。「今日、何つくる？」の通常候補には引き続き表示される）。
+    isFullyAvailable: category === 'A' && isFullyExactMatch,
     missingIngredients: category === 'B' ? missingIngredients : undefined,
   }
 }

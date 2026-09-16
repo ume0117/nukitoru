@@ -101,7 +101,7 @@ describe('MISSION 2.21 — stock matching stays exact', () => {
     expect(stockSatisfiesRecipeIngredient('鶏もも肉', '鶏肉')).toBe(false)
   })
 
-  it('GL: rankRecipes の候補判定 — 鶏肉 在庫では 鶏もも肉 recipe は A候補にならない', () => {
+  it('GL: rankRecipes の候補判定 — 鶏肉 在庫では 鶏もも肉 recipe は category matchでdiscoverableになるが、exact matchとは区別される（PUBLIC BETA RELEASE SPRINT 2）', () => {
     const catalog = [makeRecipe('mom-recipe', ['鶏もも肉'])]
     const withMomo = rankRecipes(catalog, {
       availableIngredientNames: ['鶏もも肉'],
@@ -111,6 +111,7 @@ describe('MISSION 2.21 — stock matching stays exact', () => {
     })
     expect(withMomo.map((c) => c.recipe.id)).toEqual(['mom-recipe'])
     expect(withMomo[0].category).toBe('A')
+    expect(withMomo[0].categoryMatchedIngredients).toEqual([])
 
     const withGeneric = rankRecipes(catalog, {
       availableIngredientNames: ['鶏肉'], // generic のみ
@@ -118,8 +119,11 @@ describe('MISSION 2.21 — stock matching stays exact', () => {
       dislikeNames: [],
       maxCookingMinutes: null,
     })
-    // 鶏肉だけでは 鶏もも肉 を満たさない → A にならない（missing=1 かつ matched=0 → 候補外）
-    expect(withGeneric.map((c) => c.recipe.id)).not.toContain('mom-recipe')
+    // PUBLIC BETA RELEASE SPRINT 2: 鶏肉（broader category）は鶏もも肉のcandidate discovery
+    // を可能にする。ただしexact matchではなくcategoryMatchedIngredientsとして区別される
+    // （stockSatisfiesRecipeIngredientやsplitRequiredIngredientsのexact判定は変えていない）。
+    expect(withGeneric.map((c) => c.recipe.id)).toContain('mom-recipe')
+    expect(withGeneric[0].categoryMatchedIngredients).toEqual(['鶏もも肉'])
 
     const withMune = rankRecipes(catalog, {
       availableIngredientNames: ['鶏むね肉'],
@@ -127,6 +131,7 @@ describe('MISSION 2.21 — stock matching stays exact', () => {
       dislikeNames: [],
       maxCookingMinutes: null,
     })
+    // 鶏むね肉（sibling specific）は鶏もも肉のcategory matchにならない（directional safety）
     expect(withMune.map((c) => c.recipe.id)).not.toContain('mom-recipe')
   })
 })
@@ -193,14 +198,14 @@ describe('MISSION 2.21 — allergy coverage is broader-aware (safe direction onl
 // ---- LEGACY FIREWALL ----
 
 describe('MISSION 2.21 — legacy firewall', () => {
-  it('GS: カタログの ingredient 名で broader を持つのは 鶏もも肉 / 鶏ひき肉 / 豚ひき肉 / 豚肩ロース肉（MISSION 2.31 buta correction）', () => {
+  it('GS: カタログの ingredient 名で broader を持つのは 鶏もも肉 / 鶏ひき肉 / 豚ひき肉 / 豚肩ロース肉 / 生しいたけ（PUBLIC BETA RELEASE SPRINT 2でyudofuの生しいたけ→きのこを追加）', () => {
     const withBroader = new Set<string>()
     for (const r of RECIPE_CATALOG) {
       for (const ing of [...r.requiredIngredients, ...(r.seasonings ?? [])]) {
         if (broaderIngredientNames(ing.name).length > 0) withBroader.add(ing.name)
       }
     }
-    expect([...withBroader].sort()).toEqual(['豚ひき肉', '豚肩ロース肉', '鶏ひき肉', '鶏もも肉'])
+    expect([...withBroader].sort()).toEqual(['生しいたけ', '豚ひき肉', '豚肩ロース肉', '鶏ひき肉', '鶏もも肉'])
   })
 
   it('GT: アレルギー登録が無ければ、taxonomy 追加でカタログの候補結果は変わらない', () => {
@@ -220,20 +225,26 @@ describe('MISSION 2.21 — legacy firewall', () => {
     expect(r.requiredIngredients).toEqual([{ name: '鶏もも肉', amount: '300g' }])
   })
 
-  it('GV: tori-teriyaki（鶏もも肉）— 鶏もも肉在庫=A / 鶏肉generic=非A / 鶏肉アレルギー=HARD EXCLUDE', () => {
+  it('GV: tori-teriyaki（鶏もも肉）— 鶏もも肉在庫=exact A / 鶏肉generic=category match A（discoverable、exactとは区別） / 鶏肉アレルギー=HARD EXCLUDE', () => {
     const base = { allergyNames: [] as string[], dislikeNames: [] as string[], maxCookingMinutes: null }
     const withMomo = rankRecipes(RECIPE_CATALOG, {
       ...base,
       availableIngredientNames: ['鶏もも肉'],
     })
-    expect(withMomo.find((c) => c.recipe.id === 'tori-teriyaki')?.category).toBe('A')
+    const momoCandidate = withMomo.find((c) => c.recipe.id === 'tori-teriyaki')
+    expect(momoCandidate?.category).toBe('A')
+    expect(momoCandidate?.categoryMatchedIngredients).toEqual([])
 
     const withGeneric = rankRecipes(RECIPE_CATALOG, {
       ...base,
       availableIngredientNames: ['鶏肉'],
     })
-    // 鶏肉 generic は 鶏もも肉 を満たさない → A にならない（B にもならない: matched=0）
-    expect(withGeneric.find((c) => c.recipe.id === 'tori-teriyaki')?.category).not.toBe('A')
+    // PUBLIC BETA RELEASE SPRINT 2: 鶏肉 generic は category matchでtori-teriyakiを
+    // discoverableにする（category='A'だがcategoryMatchedIngredientsで区別され、
+    // exactのみのcandidateより常に下位にランクされる。exact matchの意味自体は変えていない）。
+    const genericCandidate = withGeneric.find((c) => c.recipe.id === 'tori-teriyaki')
+    expect(genericCandidate?.category).toBe('A')
+    expect(genericCandidate?.categoryMatchedIngredients).toEqual(['鶏もも肉'])
 
     const withAllergy = rankRecipes(RECIPE_CATALOG, {
       availableIngredientNames: ['鶏もも肉'],
@@ -271,14 +282,15 @@ describe('MISSION 2.21 — foundation readiness for MISSION 2.19E-RESUME (tori-t
     expect(ranked.map((c) => c.recipe.id)).not.toContain('future-tt')
   })
 
-  it('GY: recipe 鶏もも肉 + stock 鶏肉 → NOT exact MATCH', () => {
+  it('GY: recipe 鶏もも肉 + stock 鶏肉 → category matchでdiscoverableだがexact matchではない（PUBLIC BETA RELEASE SPRINT 2）', () => {
     const ranked = rankRecipes([futureTT], {
       availableIngredientNames: ['鶏肉'],
       allergyNames: [],
       dislikeNames: [],
       maxCookingMinutes: null,
     })
-    expect(ranked.map((c) => c.recipe.id)).not.toContain('future-tt')
+    expect(ranked.map((c) => c.recipe.id)).toContain('future-tt')
+    expect(ranked[0]?.categoryMatchedIngredients).toEqual(['鶏もも肉'])
   })
 
   it('GZ: recipe 鶏もも肉 + allergy 鶏肉 → HARD EXCLUDE', () => {

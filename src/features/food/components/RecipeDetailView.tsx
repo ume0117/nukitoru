@@ -19,6 +19,8 @@ interface Props {
   mergedAllergyNames: string[]
   onBack: () => void
   onCookedClick: () => void
+  /** Cooking Modeへ変換可能な場合のみ渡される。undefinedならボタン自体を表示しない */
+  onStartCooking?: () => void
 }
 
 const DISH_TYPE_LABELS: Record<DishType, string> = {
@@ -61,6 +63,7 @@ export function RecipeDetailView({
   mergedAllergyNames,
   onBack,
   onCookedClick,
+  onStartCooking,
 }: Props) {
   const { have, missing } = splitRequiredIngredients(recipe.requiredIngredients, availableIngredientNames)
   const safeArrangements = filterSafeArrangements(recipe, mergedAllergyNames)
@@ -272,6 +275,15 @@ export function RecipeDetailView({
             </p>
           ))}
         </section>
+      )}
+
+      {onStartCooking && (
+        <button
+          onClick={onStartCooking}
+          className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white text-[12px] tracking-[0.15em] uppercase font-medium transition-colors"
+        >
+          調理を始める
+        </button>
       )}
 
       <button

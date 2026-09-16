@@ -192,8 +192,10 @@ describe('MISSION 2.26 G — stock matching 無傷', () => {
   it('KX: 鶏むね肉在庫 → no match', () => {
     expect(rankRecipes(RECIPE_CATALOG, { ...base, availableIngredientNames: ['鶏むね肉'] }).some((c) => c.recipe.id === 'tori-teriyaki')).toBe(false)
   })
-  it('KY: generic 鶏肉在庫 → not exact match', () => {
-    expect(rankRecipes(RECIPE_CATALOG, { ...base, availableIngredientNames: ['鶏肉'] }).find((c) => c.recipe.id === 'tori-teriyaki')?.category).not.toBe('A')
+  it('KY: generic 鶏肉在庫 → category matchでdiscoverable（exact matchではない、PUBLIC BETA RELEASE SPRINT 2）', () => {
+    const candidate = rankRecipes(RECIPE_CATALOG, { ...base, availableIngredientNames: ['鶏肉'] }).find((c) => c.recipe.id === 'tori-teriyaki')
+    expect(candidate?.category).toBe('A')
+    expect(candidate?.categoryMatchedIngredients).toEqual(['鶏もも肉'])
   })
 })
 

@@ -285,13 +285,17 @@ describe('MISSION 2.31 L/M/N — stock matching firewall', () => {
     })
     expect(ranked.find((c) => c.recipe.id === 'buta-shogayaki')?.category).not.toBe('A')
   })
-  it('NE: generic 豚肉在庫 は 豚肩ロース肉 recipe を exact match にしない', () => {
+  it('NE: generic 豚肉在庫 は 豚肩ロース肉 recipe を exact match にしない（PUBLIC BETA RELEASE SPRINT 2でcategory matchによるdiscoveryは追加されたが、exact matchの意味は不変）', () => {
     expect(stockSatisfiesRecipeIngredient('豚肉', '豚肩ロース肉')).toBe(false)
     const ranked = rankRecipes(RECIPE_CATALOG, {
       availableIngredientNames: ['豚肉', '玉ねぎ'],
       allergyNames: [], dislikeNames: [], maxCookingMinutes: null,
     })
-    expect(ranked.find((c) => c.recipe.id === 'buta-shogayaki')?.category).not.toBe('A')
+    const candidate = ranked.find((c) => c.recipe.id === 'buta-shogayaki')
+    // category matchにより候補としては発見できるが、豚肩ロース肉はexactではなく
+    // categoryMatchedIngredientsとして区別される。
+    expect(candidate?.category).toBe('A')
+    expect(candidate?.categoryMatchedIngredients).toEqual(['豚肩ロース肉'])
   })
 })
 
