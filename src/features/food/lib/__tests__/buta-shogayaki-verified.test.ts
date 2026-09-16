@@ -171,14 +171,24 @@ describe('MISSION 2.31 C/D/E — VERIFIED gate', () => {
     expect(isRecipePublishable(bs())).toBe(true)
   })
 
-  it('MQ: catalog の VERIFIED は tori-teriyaki（#1）と buta-shogayaki（#2）', () => {
+  it('MQ: catalog の VERIFIED は tori-teriyaki（#1）・buta-shogayaki（#2）・medama-yaki（#3・PUBLIC BETA RELEASE SPRINT 1C）', () => {
     expect(RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)).toEqual([
       'tori-teriyaki',
       'buta-shogayaki',
+      'nikujaga',
+      'medama-yaki',
+      'yudofu',
+      'niku-udon',
+      'napolitan',
     ])
     expect(RECIPE_CATALOG.filter((r) => isRecipePublishable(r)).map((r) => r.id)).toEqual([
       'tori-teriyaki',
       'buta-shogayaki',
+      'nikujaga',
+      'medama-yaki',
+      'yudofu',
+      'niku-udon',
+      'napolitan',
     ])
   })
 })

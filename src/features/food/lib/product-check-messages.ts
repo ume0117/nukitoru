@@ -48,6 +48,16 @@ export const PRODUCT_CHECK_TARGET_INGREDIENTS = [
   'マヨネーズ',
   '豆板醤',
   '油',
+  // PUBLIC BETA RELEASE SPRINT 1D — ウインナー（ソーセージ）は商品によって
+  // つなぎ・ケーシングの原材料（卵・乳・小麦等）が大きく異なり得る加工食品のため追加。
+  'ウインナー',
+  // PUBLIC BETA RELEASE SPRINT 1D — だし（かつおだし等）は商品（顆粒だし・パック・
+  // 自家製）によって原材料構成が大きく異なり得るため「だしの素」と同様に追加。
+  'だし',
+  // PUBLIC BETA RELEASE SPRINT 1D — うどんは小麦の default-generic-risk 関係を
+  // ingredient-allergens.ts に別途設定済み（HARD EXCLUDE）。しょうゆと同様、
+  // それとは独立に「商品によって表示が異なり得る」一般的な確認喚起もここに追加する。
+  'うどん',
 ] as const
 
 const TARGET_CANONICAL_SET = new Set(PRODUCT_CHECK_TARGET_INGREDIENTS.map((t) => canonicalizeIngredientName(t)))

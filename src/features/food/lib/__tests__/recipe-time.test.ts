@@ -379,9 +379,13 @@ describe('Cooking Time Semantics Foundation Gate (TA〜)', () => {
 
   // ---- 24: medama-yaki characterization ----
 
-  it('TX (24): medama-yakiのlegacy cookingTimeMinutes=5は自動的にverified elapsedToReadyにならない（scope混在のため）', () => {
+  it('TX (24): medama-yakiのlegacy cookingTimeMinutesは自動的にverified elapsedToReadyにならない（timeVerification/elapsedToReady derivationとは別subsystemのため）', () => {
     const realMedama = RECIPE_CATALOG.find((r) => r.id === 'medama-yaki')!
-    expect(realMedama.cookingTimeMinutes).toBe(5) // legacy fieldは本MISSIONで変更していない
+    // PUBLIC BETA RELEASE SPRINT 1C: NHK単独の直接事実（3分ほど、予熱抜き）へ修正（5→3）。
+    // ただしこの値はRecipe-Evidence publishability（fieldVerifications）側の話であり、
+    // 本ファイルが扱うFrom-Now-to-Table用timeVerification.elapsedToReady derivationとは
+    // 別subsystemのため、依然として未設定のまま（このテストの主旨は不変）。
+    expect(realMedama.cookingTimeMinutes).toBe(3)
     expect(realMedama.verification?.timeVerification).toBeUndefined()
     expect(isEligibleForMaxElapsedTime(realMedama, 15)).toBe(false)
     // 合成fixtureとして、NHKの「弱めの中火で3分ほど」（活火・予熱抜き）とキッコーマンの
@@ -448,14 +452,15 @@ describe('Cooking Time Semantics Foundation Gate (TA〜)', () => {
   // ---- 29〜30: publishability / eligibility独立性 ----
 
   it('UC (29): time-filter eligibilityはRecipe publishabilityと独立している（片方がtrueでも他方に影響しない）', () => {
-    // medama-yaki: 過去VERIFIEDだった実データ。現在はREVIEW（MISSION 2.14B）で、
-    // どちらにせよtimeVerificationは未設定のためeligibleではないが、
+    // medama-yaki: PUBLIC BETA RELEASE SPRINT 1CでVERIFIED/publishable=trueに昇格したが、
+    // timeVerification（elapsedToReady derivation）は未設定のままなのでeligibleにはならない。
+    // publishable=true・eligible=falseという組み合わせ自体が、
     // isRecipePublishableとisEligibleForMaxElapsedTimeが別々の関数として
-    // 完全に独立に評価されることを確認する。
+    // 完全に独立に評価されることをより明確に示す実例になった。
     const medamaYaki = RECIPE_CATALOG.find((r) => r.id === 'medama-yaki')!
     const publishable = isRecipePublishable(medamaYaki)
     const eligible = isEligibleForMaxElapsedTime(medamaYaki, 15)
-    expect(publishable).toBe(false)
+    expect(publishable).toBe(true)
     expect(eligible).toBe(false)
     // 合成例: publishable=trueだがelapsedToReady未設定＝eligibleにはならない、という
     // 組み合わせが構造的に可能であることを示す
@@ -509,7 +514,8 @@ describe('Cooking Time Semantics Foundation Gate (TA〜)', () => {
 
   it('UF: Allergy HARD EXCLUSIONはCooking Time Semantics Foundation追加後も無傷', () => {
     const medamaYaki = RECIPE_CATALOG.find((r) => r.id === 'medama-yaki')!
-    expect(allergyRelevantIngredients(medamaYaki)).toEqual(['卵', '油'])
+    // PUBLIC BETA RELEASE SPRINT 1C: seasoningsへ塩・こしょうを追加したため対象食材が拡大。
+    expect(allergyRelevantIngredients(medamaYaki)).toEqual(['卵', '油', '塩', 'こしょう'])
     const result = rankRecipes(RECIPE_CATALOG, {
       availableIngredientNames: ['卵'],
       allergyNames: ['卵'],
@@ -547,13 +553,13 @@ describe('Cooking Time Semantics Foundation Gate (TA〜)', () => {
     expect(result.some((c) => c.recipe.id === 'ui-long')).toBe(false)
   })
 
-  it('UJ: Recipe Coherence Gateの既存挙動（medama-yaki/sake-shioyaki=incoherent）はCooking Time Semantics Foundation追加後も無傷', () => {
+  it('UJ: Recipe Coherence Gateの既存挙動（sake-shioyaki=incoherentのまま／medama-yakiはPUBLIC BETA RELEASE SPRINT 1Cでcoherentへ解決）はCooking Time Semantics Foundation追加後も無傷', () => {
     const medamaYaki = RECIPE_CATALOG.find((r) => r.id === 'medama-yaki')!
     const sakeShioyaki = RECIPE_CATALOG.find((r) => r.id === 'sake-shioyaki')!
-    expect(medamaYaki.verification?.coherenceReview?.status).toBe('incoherent')
+    expect(medamaYaki.verification?.coherenceReview?.status).toBe('coherent')
     expect(sakeShioyaki.verification?.coherenceReview?.status).toBe('incoherent')
-    // MISSION 2.26: VERIFIED は tori-teriyaki のみ（Cooking Time Semantics Foundation とは無関係）
-    expect(RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)).toEqual(['tori-teriyaki', 'buta-shogayaki'])
+    // MISSION 2.26で初のVERIFIED、SPRINT 1Cでmedama-yaki追加（Cooking Time Semantics Foundation とは無関係）
+    expect(RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)).toEqual(['tori-teriyaki', 'buta-shogayaki', 'nikujaga', 'medama-yaki', 'yudofu', 'niku-udon', 'napolitan'])
   })
 
   it('UK: Source Silence原則（EVIDENCE_POLICY.md）はCooking Time Semantics Foundation追加後も無傷', async () => {

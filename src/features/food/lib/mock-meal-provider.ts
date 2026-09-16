@@ -11,6 +11,14 @@
 // recipe-suggestion-engine.ts / recipe-safety.ts / ingredient-normalization.ts
 // 側にある（旧5品ハードコードCATALOGは削除済み）。
 //
+// PUBLIC BETA RELEASE SPRINT 1 — Runtime Evidence Gate。
+// rankRecipes() へ渡す前に、isRecipePublishable()（recipe-publishability.ts）を
+// 通過したRecipeだけへ候補集合を絞る。UIで隠すのではなくdata pathで除外する。
+// isRecipePublishable()自体のsemantics・Gateの厳しさは一切変更しない
+// （このファイルはGateの利用者であり、Gate自体の定義はrecipe-publishability.ts
+// が唯一の場所であり続ける）。Allergy HARD EXCLUSION（rankRecipes内部）には
+// 一切影響しない＝絞り込んだ集合に対して従来どおり適用される。
+//
 // 設計方針（維持）:
 // - 献立選定に実際に使うのは「食材」「アレルギー」「苦手食材」「調理時間」のみ。
 // - household / dailyCondition / season / shoppingMode / pantry は
@@ -21,11 +29,15 @@
 // ============================================================
 
 import type { MealSuggestionProvider } from './ai-provider'
-import type { MealSuggestionRequest, MealSuggestionResponse, MealSuggestion, Ingredient } from '@/features/food/types'
+import type { MealSuggestionRequest, MealSuggestionResponse, MealSuggestion, Ingredient, Recipe } from '@/features/food/types'
 import { RECIPE_CATALOG } from './recipe-catalog'
 import { rankRecipes, type RecipeCandidate } from './recipe-suggestion-engine'
 import { canonicalizeIngredientName } from './ingredient-normalization'
 import { productCookingTimeMinutes } from './recipe-time'
+import { isRecipePublishable } from './recipe-publishability'
+
+/** PUBLIC BETA RELEASE SPRINT 1 — Evidence Gateを通過したRecipeのみ（isRecipePublishable経由） */
+const BETA_PUBLISHABLE_RECIPES = RECIPE_CATALOG.filter((recipe) => isRecipePublishable(recipe))
 
 const CONDITION_NOTES: Partial<Record<string, string>> = {
   cold_symptoms: '体調メモ：風邪気味として登録されています。',
@@ -106,21 +118,30 @@ function candidateToSuggestion(
   }
 }
 
-export const mockMealProvider: MealSuggestionProvider = {
-  async suggest(input: MealSuggestionRequest): Promise<MealSuggestionResponse> {
-    const ingredientIndex = buildIngredientIndex(input.ingredients)
+/**
+ * PUBLIC BETA RELEASE SPRINT 1 — catalogを引数化したfactory。
+ * 本番はBETA_PUBLISHABLE_RECIPES（Evidence Gate通過分）で作った`mockMealProvider`のみを使う。
+ * RECIPE_CATALOG全体を渡すのはテスト（matching/canonicalizationエンジン自体の検証）専用。
+ */
+export function createMealProvider(catalog: Recipe[]): MealSuggestionProvider {
+  return {
+    async suggest(input: MealSuggestionRequest): Promise<MealSuggestionResponse> {
+      const ingredientIndex = buildIngredientIndex(input.ingredients)
 
-    const candidates = rankRecipes(RECIPE_CATALOG, {
-      availableIngredientNames: input.ingredients.map((i) => i.name),
-      allergyNames: input.allergyProfile?.allergies ?? [],
-      dislikeNames: input.allergyProfile?.dislikes ?? [],
-      maxCookingMinutes: input.cookingPreference?.maxCookingMinutes ?? null,
-    })
+      const candidates = rankRecipes(catalog, {
+        availableIngredientNames: input.ingredients.map((i) => i.name),
+        allergyNames: input.allergyProfile?.allergies ?? [],
+        dislikeNames: input.allergyProfile?.dislikes ?? [],
+        maxCookingMinutes: input.cookingPreference?.maxCookingMinutes ?? null,
+      })
 
-    const suggestions = candidates.map((candidate) =>
-      candidateToSuggestion(candidate, ingredientIndex, input.dailyCondition),
-    )
+      const suggestions = candidates.map((candidate) =>
+        candidateToSuggestion(candidate, ingredientIndex, input.dailyCondition),
+      )
 
-    return { suggestions }
-  },
+      return { suggestions }
+    },
+  }
 }
+
+export const mockMealProvider: MealSuggestionProvider = createMealProvider(BETA_PUBLISHABLE_RECIPES)

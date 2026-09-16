@@ -188,10 +188,10 @@ describe('First 10 Families Beta Gate (DA〜DO)', () => {
     expect(isRecipePublishable(recipeWithRange!)).toBe(false)
   })
 
-  it('DO: VERIFIED件数はPHASE A（Dinner Decision UX）自体によっては変化しない（MISSION 2.14B Recipe Coherence Correctionによりmedama-yakiもREVIEWへ差し戻され、現在VERIFIEDは0件。本Gateの対象はPHASE A UX自体が件数を動かさないことの確認であり、件数目標は設定しない）', () => {
+  it('DO: VERIFIED件数はPHASE A（Dinner Decision UX）自体によっては変化しない（本Gateの対象はPHASE A UX自体が件数を動かさないことの確認であり、件数目標は設定しない）', () => {
     const verifiedIds = RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)
-    expect(verifiedIds).toEqual(['tori-teriyaki', 'buta-shogayaki']) /* MISSION 2.26: 初の VERIFIED。この Gate は当該 Foundation が件数を動かさないことの確認 */
-    expect(RECIPE_CATALOG.length).toBe(44)
+    expect(verifiedIds).toEqual(['tori-teriyaki', 'buta-shogayaki', 'nikujaga', 'medama-yaki', 'yudofu', 'niku-udon', 'napolitan']) /* MISSION 2.26: 初のVERIFIED。PUBLIC BETA RELEASE SPRINT 1C/1Dでmedama-yaki/nikujaga/yudofu/niku-udon/napolitan追加。この Gate は当該 Foundation が件数を動かさないことの確認 */
+    expect(RECIPE_CATALOG.length).toBe(45)
   })
 
   it('補足: recordMealDecision/loadMealDecisionsのround-tripが正しく機能する', () => {

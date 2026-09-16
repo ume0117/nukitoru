@@ -6,6 +6,7 @@ import { filterSafeArrangements } from '@/features/food/lib/recipe-safety'
 import { splitRequiredIngredients } from '@/features/food/lib/recipe-suggestion-engine'
 import { isProductCookingTimeEstablished } from '@/features/food/lib/recipe-time'
 import { productCheckMessage } from '@/features/food/lib/product-check-messages'
+import { recipeEvidenceSummaryFor } from '@/features/food/lib/recipe-evidence-summary'
 import { RecipeFeedback } from './RecipeFeedback'
 
 interface Props {
@@ -64,6 +65,7 @@ export function RecipeDetailView({
   const { have, missing } = splitRequiredIngredients(recipe.requiredIngredients, availableIngredientNames)
   const safeArrangements = filterSafeArrangements(recipe, mergedAllergyNames)
   const cuisine = cuisineLabel(recipe.cuisine)
+  const evidence = recipeEvidenceSummaryFor(recipe)
 
   return (
     <div className="border border-gray-200 dark:border-gray-800 p-4 space-y-4">
@@ -80,6 +82,39 @@ export function RecipeDetailView({
         </p>
         <p className="text-lg font-medium text-gray-900 dark:text-white break-words">{recipe.name}</p>
       </div>
+
+      {evidence && (
+        <details className="text-[12px] border border-gray-200 dark:border-gray-800 p-2.5">
+          <summary className="flex flex-wrap items-center gap-x-2 cursor-pointer text-gray-700 dark:text-gray-300">
+            <span>✓ レシピ確認済み</span>
+            <span className="text-blue-600 dark:text-blue-400 underline">根拠を見る</span>
+          </summary>
+          <div className="mt-2 space-y-2">
+            {evidence.verifiedFieldLabels.length > 0 && (
+              <p className="text-gray-500 dark:text-gray-400">
+                確認済み：{evidence.verifiedFieldLabels.join('・')}
+              </p>
+            )}
+            {evidence.sources.length > 0 && (
+              <ul className="space-y-1">
+                {evidence.sources.map((source) => (
+                  <li key={source.url} className="text-gray-600 dark:text-gray-400">
+                    {source.publisher}「{source.title}」
+                    <a
+                      href={source.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block break-all text-blue-600 dark:text-blue-400 underline"
+                    >
+                      {source.url}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </details>
+      )}
 
       <div className="text-[12px] text-gray-600 dark:text-gray-400 space-y-0.5">
         <p>今日の人数：{todayMemberCount}人</p>

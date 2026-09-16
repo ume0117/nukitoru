@@ -181,8 +181,8 @@ describe('MISSION 2.33 — Starter Set / Beta / VERIFIED 不変', () => {
     expect(STARTER_SET_RECIPE_IDS).not.toContain('buta-shogayaki')
   })
 
-  it('O: Beta Ready は NO のまま（getBetaPublishableStarterRecipes は空・practical helper で変わらない）', () => {
-    expect(getBetaPublishableStarterRecipes()).toEqual([])
+  it('O: getBetaPublishableStarterRecipes は PUBLIC BETA RELEASE SPRINT 1C 以降 medama-yaki を含む（STARTER_SET_RECIPE_IDS に含まれ、かつ publishable になったため）', () => {
+    expect(getBetaPublishableStarterRecipes().map((r) => r.id)).toEqual(['medama-yaki'])
   })
 
   it('O2: isRecipeBetaQualityReady は tori / buta とも false（practical not-tested のため）', () => {
@@ -201,10 +201,10 @@ describe('MISSION 2.33 — Starter Set / Beta / VERIFIED 不変', () => {
     expect(isRecipeBetaQualityReady(fixturePassedButNotPublishable)).toBe(false)
   })
 
-  it('P/Q: VERIFIED IDs は [tori-teriyaki, buta-shogayaki]、count 2', () => {
+  it('P/Q: VERIFIED IDs は [tori-teriyaki, buta-shogayaki, medama-yaki]、count 3（PUBLIC BETA RELEASE SPRINT 1Cでmedama-yaki追加）', () => {
     const verified = RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)
-    expect(verified).toEqual(['tori-teriyaki', 'buta-shogayaki'])
-    expect(RECIPE_CATALOG.filter((r) => isRecipePublishable(r)).map((r) => r.id)).toEqual(['tori-teriyaki', 'buta-shogayaki'])
+    expect(verified).toEqual(['tori-teriyaki', 'buta-shogayaki', 'nikujaga', 'medama-yaki', 'yudofu', 'niku-udon', 'napolitan'])
+    expect(RECIPE_CATALOG.filter((r) => isRecipePublishable(r)).map((r) => r.id)).toEqual(['tori-teriyaki', 'buta-shogayaki', 'nikujaga', 'medama-yaki', 'yudofu', 'niku-udon', 'napolitan'])
   })
 })
 

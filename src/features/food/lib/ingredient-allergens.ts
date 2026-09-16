@@ -131,6 +131,37 @@ const INGREDIENT_ALLERGEN_RELATIONS: readonly IngredientAllergenRelation[] = [
       + 'この関係は しょうゆ の default-generic-risk 関係とは独立に、'
       + '小麦アレルギー × 小麦粉を使う recipe を HARD EXCLUDE する。',
   },
+  {
+    // PUBLIC BETA RELEASE SPRINT 1D — niku-udon（豚肉こま切れ・うどん）の allergyIdentity
+    // 完成のために追加。標準的な市販「うどん」は小麦粉を原材料とし小麦を表示するが、
+    // 「米粉うどん」というグルテンフリー・小麦不使用の同名variantが実在の製品として
+    // 販売されている（東亜食品工業・小林製麺 等、実際に確認）。小麦粉のような
+    // 「同名で不使用variantが存在しない」ケースとは異なるため、relationTypeは
+    // contains ではなく しょうゆ と同じ default-generic-risk とする。
+    ingredientName: 'うどん',
+    allergenName: '小麦',
+    relationType: 'default-generic-risk',
+    sourceIds: ['caa-food-allergy-labeling-2026'],
+    policyReason:
+      '標準的な市販うどん（乾麺・ゆで麺とも）は小麦粉を原材料とし、アレルギー物質として'
+      + '「小麦」を表示する（小麦は特定原材料・義務表示）。「米粉うどん」という小麦不使用の'
+      + 'グルテンフリー製品も実在するため product-specific だが、Recipe が特定の'
+      + '小麦不使用製品を verified に明示しない限り、NUKITORU は fail-safe に小麦関連として'
+      + 'HARD EXCLUDE する。',
+  },
+  {
+    // PUBLIC BETA RELEASE SPRINT 1D — napolitan（パスタ）の allergyIdentity 完成のために追加。
+    ingredientName: 'パスタ',
+    allergenName: '小麦',
+    relationType: 'default-generic-risk',
+    sourceIds: ['caa-food-allergy-labeling-2026'],
+    policyReason:
+      '標準的な市販パスタ（乾麺）はデュラム小麦等の小麦粉を原材料とし、アレルギー物質として'
+      + '「小麦」を表示する（小麦は特定原材料・義務表示）。「米粉パスタ」「ライスパスタ」という'
+      + '小麦不使用のグルテンフリー製品も実在するため product-specific だが、Recipe が特定の'
+      + '小麦不使用製品を verified に明示しない限り、NUKITORU は fail-safe に小麦関連として'
+      + 'HARD EXCLUDE する（うどん・しょうゆと同型のdefault-generic-risk）。',
+  },
 ]
 
 /** ingredientName（canonical）に紐づく allergen relation の一覧 */

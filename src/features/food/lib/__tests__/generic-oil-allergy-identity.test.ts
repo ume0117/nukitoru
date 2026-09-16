@@ -174,10 +174,15 @@ describe('MISSION 2.31A — VERIFIED #1 / #2 無傷', () => {
     expect(productCookingTimeMinutes(bs())).toBeNull()
   })
 
-  it('OQ: VERIFIED は tori-teriyaki（#1）と buta-shogayaki（#2）', () => {
+  it('OQ: VERIFIED は tori-teriyaki（#1）・buta-shogayaki（#2）・medama-yaki（#3・PUBLIC BETA RELEASE SPRINT 1C）', () => {
     expect(RECIPE_CATALOG.filter((r) => isRecipePublishable(r)).map((r) => r.id)).toEqual([
       'tori-teriyaki',
       'buta-shogayaki',
+      'nikujaga',
+      'medama-yaki',
+      'yudofu',
+      'niku-udon',
+      'napolitan',
     ])
   })
 })

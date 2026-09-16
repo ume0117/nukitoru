@@ -600,7 +600,8 @@ describe('FROM NOW TO TABLE Foundation Gate (FA〜)', () => {
 
   it('GD (31): Allergy HARD EXCLUSION は Phase B 追加後も無傷', () => {
     const medamaYaki = RECIPE_CATALOG.find((r) => r.id === 'medama-yaki')!
-    expect(allergyRelevantIngredients(medamaYaki)).toEqual(['卵', '油'])
+    // PUBLIC BETA RELEASE SPRINT 1C: seasoningsへ塩・こしょうを追加したため対象食材が拡大。
+    expect(allergyRelevantIngredients(medamaYaki)).toEqual(['卵', '油', '塩', 'こしょう'])
     const result = rankRecipes(RECIPE_CATALOG, {
       availableIngredientNames: ['卵'],
       allergyNames: ['卵'],
@@ -625,12 +626,12 @@ describe('FROM NOW TO TABLE Foundation Gate (FA〜)', () => {
     expect(selectBetaCandidates([1, 2, 3, 4, 5])).toEqual([1, 2, 3])
   })
 
-  it('GG (34): Recipe Coherence Gate（medama-yaki/sake-shioyaki=incoherent, VERIFIED=0）は無傷', () => {
+  it('GG (34): Recipe Coherence Gate（sake-shioyaki=incoherentのまま／medama-yakiはPUBLIC BETA RELEASE SPRINT 1Cでcoherentへ解決）は無傷', () => {
     const medamaYaki = RECIPE_CATALOG.find((r) => r.id === 'medama-yaki')!
     const sakeShioyaki = RECIPE_CATALOG.find((r) => r.id === 'sake-shioyaki')!
-    expect(medamaYaki.verification?.coherenceReview?.status).toBe('incoherent')
+    expect(medamaYaki.verification?.coherenceReview?.status).toBe('coherent')
     expect(sakeShioyaki.verification?.coherenceReview?.status).toBe('incoherent')
-    expect(RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)).toEqual(['tori-teriyaki', 'buta-shogayaki']) /* MISSION 2.26: 初の VERIFIED */
+    expect(RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)).toEqual(['tori-teriyaki', 'buta-shogayaki', 'nikujaga', 'medama-yaki', 'yudofu', 'niku-udon', 'napolitan']) /* MISSION 2.26: 初のVERIFIED。SPRINT 1Cでmedama-yaki追加 */
   })
 
   it('GH (35): Source Silence 原則（EVIDENCE_POLICY.md）は Phase B 追加後も無傷', async () => {

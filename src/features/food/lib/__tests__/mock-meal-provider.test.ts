@@ -1,7 +1,15 @@
 import { describe, it, expect } from 'vitest'
-import { mockMealProvider } from '../mock-meal-provider'
+import { createMealProvider } from '../mock-meal-provider'
 import { RECIPE_CATALOG } from '../recipe-catalog'
 import type { Ingredient, MealSuggestionRequest, QuantityMode } from '@/features/food/types'
+
+// PUBLIC BETA RELEASE SPRINT 1 — このファイルはmatching/canonicalizationエンジン自体
+// （recipe-suggestion-engine.ts / ingredient-normalization.ts）の検証が目的であり、
+// Public Beta Runtime Evidence Gate（isRecipePublishable経由でBETA_PUBLISHABLE_RECIPESへ
+// 絞り込む本番のmockMealProvider）の対象ではない。そのためRECIPE_CATALOG全体を使う
+// createMealProviderを直接使う（本番のGate自体はmock-meal-provider.test.ts内の
+// 専用describeで別途検証する）。
+const mockMealProvider = createMealProvider(RECIPE_CATALOG)
 
 function ing(name: string, quantityMode: QuantityMode = 'exact'): Ingredient {
   return { id: name, name, quantityMode }

@@ -173,11 +173,11 @@ describe('MISSION 2.17 — Evidence Traceability & Quantity Semantics Foundation
     ).toBe(conflictFvs.length)
   })
 
-  it('TA8: source change は coherence gate を迂回しない', () => {
-    expect(recipe('medama-yaki').verification?.coherenceReview?.status).toBe('incoherent')
-    classifySourceChange(undefined, computeContentFingerprint('medama-obs'))
-    expect(recipe('medama-yaki').verification?.coherenceReview?.status).toBe('incoherent')
-    expect(isRecipePublishable(recipe('medama-yaki'))).toBe(false)
+  it('TA8: source change は coherence gate を迂回しない（PUBLIC BETA RELEASE SPRINT 1Cでmedama-yakiがcoherentへ解決したため、安定した対照例のsake-shioyakiを使う）', () => {
+    expect(recipe('sake-shioyaki').verification?.coherenceReview?.status).toBe('incoherent')
+    classifySourceChange(undefined, computeContentFingerprint('sake-shioyaki-obs'))
+    expect(recipe('sake-shioyaki').verification?.coherenceReview?.status).toBe('incoherent')
+    expect(isRecipePublishable(recipe('sake-shioyaki'))).toBe(false)
   })
 
   it('TA9: re-verification metadata を表現できる（reverifyAfter / lastReverifiedAt）', () => {
@@ -412,10 +412,10 @@ describe('MISSION 2.17 — Evidence Traceability & Quantity Semantics Foundation
     expect(result.some((c) => c.recipe.id === 'medama-yaki')).toBe(false)
   })
 
-  it('R32: Recipe Coherence Gate 無傷', () => {
-    expect(recipe('medama-yaki').verification?.coherenceReview?.status).toBe('incoherent')
+  it('R32: Recipe Coherence Gate 無傷（sake-shioyaki=incoherentのまま／medama-yakiはPUBLIC BETA RELEASE SPRINT 1Cでcoherentへ解決）', () => {
+    expect(recipe('medama-yaki').verification?.coherenceReview?.status).toBe('coherent')
     expect(recipe('sake-shioyaki').verification?.coherenceReview?.status).toBe('incoherent')
-    expect(RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)).toEqual(['tori-teriyaki', 'buta-shogayaki']) /* MISSION 2.26: 初の VERIFIED */
+    expect(RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)).toEqual(['tori-teriyaki', 'buta-shogayaki', 'nikujaga', 'medama-yaki', 'yudofu', 'niku-udon', 'napolitan']) /* MISSION 2.26: 初のVERIFIED。SPRINT 1Cでmedama-yaki追加 */
   })
 
   it('R33: Source Silence 原則（EVIDENCE_POLICY.md）無傷', async () => {

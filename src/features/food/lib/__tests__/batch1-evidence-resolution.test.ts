@@ -141,8 +141,8 @@ describe('MISSION 2.16 — Evidence Resolution Batch 1', () => {
     }
   })
 
-  it('BI: catalog 全体の VERIFIED 数は 0 のまま', () => {
-    expect(RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)).toEqual(['tori-teriyaki', 'buta-shogayaki']) /* MISSION 2.26: 初の VERIFIED */
+  it('BI: catalog 全体の VERIFIED（MISSION 2.26で初のVERIFIED、PUBLIC BETA RELEASE SPRINT 1Cでmedama-yaki追加）', () => {
+    expect(RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)).toEqual(['tori-teriyaki', 'buta-shogayaki', 'nikujaga', 'medama-yaki', 'yudofu', 'niku-udon', 'napolitan'])
   })
 
   // ---- source coverage ----
@@ -231,8 +231,8 @@ describe('MISSION 2.16 — Evidence Resolution Batch 1', () => {
     expect(selectBetaCandidates([1, 2, 3, 4, 5])).toEqual([1, 2, 3])
   })
 
-  it('BR: Recipe Coherence Gate（medama-yaki / sake-shioyaki = incoherent）は無傷', () => {
-    expect(recipe('medama-yaki').verification?.coherenceReview?.status).toBe('incoherent')
+  it('BR: Recipe Coherence Gate は無傷（sake-shioyaki=incoherentのまま／medama-yakiはPUBLIC BETA RELEASE SPRINT 1Cでcoherentへ解決）', () => {
+    expect(recipe('medama-yaki').verification?.coherenceReview?.status).toBe('coherent')
     expect(recipe('sake-shioyaki').verification?.coherenceReview?.status).toBe('incoherent')
   })
 

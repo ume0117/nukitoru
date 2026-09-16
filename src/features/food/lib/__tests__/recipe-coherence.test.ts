@@ -113,15 +113,22 @@ describe('Recipe Coherence Gate Foundation (GA〜)', () => {
   })
 
   // ---- 1〜4: 実データ回帰（medama-yaki / sake-shioyaki） ----
+  //
+  // PUBLIC BETA RELEASE SPRINT 1C: medama-yakiはMISSION 2.14A/2.14Bで指摘された
+  // 不整合（seasonings欠落・criticalSteps不一致・cookingTimeMinutes scope混在）を、
+  // 新規source探索なしで既存2source（NHK・キッコーマン）の再確認のみによって解消し、
+  // NHKを単一のcomplete process anchorとして採用してcoherent/verifiedへ昇格した
+  // （下記GA-NEW/GB-NEW）。sake-shioyakiは本SPRINTの対象外のため、REVIEW/incoherentの
+  // 実例として引き続きGC/GDで参照する（安定した対照例）。
 
-  it('GA: medama-yakiはMISSION 2.14B CorrectionによりREVIEWである', () => {
+  it('GA-NEW: medama-yakiはPUBLIC BETA RELEASE SPRINT 1C Evidence CompletionによりVERIFIEDである', () => {
     const medamaYaki = RECIPE_CATALOG.find((r) => r.id === 'medama-yaki')!
-    expect(medamaYaki.verification?.status).toBe('review')
+    expect(medamaYaki.verification?.status).toBe('verified')
   })
 
-  it('GB: medama-yakiはpublishableではない', () => {
+  it('GB-NEW: medama-yakiはpublishableである（NHK単独をcomplete process anchorとして採用しcoherent化した後）', () => {
     const medamaYaki = RECIPE_CATALOG.find((r) => r.id === 'medama-yaki')!
-    expect(isRecipePublishable(medamaYaki)).toBe(false)
+    expect(isRecipePublishable(medamaYaki)).toBe(true)
   })
 
   it('GC: sake-shioyakiはMISSION 2.14 CorrectionによりREVIEWである', () => {
@@ -135,15 +142,32 @@ describe('Recipe Coherence Gate Foundation (GA〜)', () => {
   })
 
   // ---- 5: Source Silence ----
+  //
+  // PUBLIC BETA RELEASE SPRINT 1C: medama-yakiのseasoningsはNHK単独のdirect支持へ
+  // 解決済みのため、この原則の実例としては合成fixtureを使う（原則自体は不変・
+  // 弱めていない。migration ≠ weakening）。
 
-  it('GE: 情報源の沈黙は否定的Evidenceにならない（medama-yakiのseasonings: キッコーマンが塩に沈黙していても「塩不使用」の直接支持にはならない）', () => {
-    const medamaYaki = RECIPE_CATALOG.find((r) => r.id === 'medama-yaki')!
-    const seasonings = medamaYaki.verification?.fieldVerifications?.find((f) => f.field === 'seasonings')
-    // キッコーマンは「基本」method内で塩に一切言及しない（沈黙）が、それはsupportTypeを
-    // direct/derivedにする根拠にならない。かつNHKは実際には塩・こしょうを使うと明示しており
-    // 「塩味なし」を積極的に否定する。
-    expect(seasonings?.sourceIds).toContain('kikkoman-medamayaki-tips-2026')
+  it('GE: 情報源の沈黙は否定的Evidenceにならない（source Bが調味料に沈黙していても「不使用」の直接支持にはならない）', () => {
+    const recipe = makeRecipe({ id: 'ge-r1', requiredIngredients: [ri('卵', '1個')] })
+    const sourceA = makeSource({ id: 'ge-sA' })
+    const sourceB = makeSource({ id: 'ge-sB' })
+    const verification: RecipeVerification = {
+      status: 'review',
+      sourceIds: ['ge-sA', 'ge-sB'],
+      recipeIdentity: makeIdentity({ definingIngredients: ['卵'] }),
+      fieldVerifications: [
+        // source Bは「塩」に一切言及しない（沈黙）。sourceIdsに含めても、
+        // それだけではsupportTypeをdirect/derivedにする根拠にならない
+        // （SOURCE SILENCE原則: 沈黙は「不使用」の直接支持にならない）。
+        { field: 'seasonings', sourceIds: ['ge-sA', 'ge-sB'] },
+      ],
+    }
+    const seasonings = ({ ...recipe, verification } as Recipe).verification?.fieldVerifications?.find(
+      (f) => f.field === 'seasonings',
+    )
+    expect(seasonings?.sourceIds).toContain('ge-sB')
     expect(seasonings?.supportType).toBeUndefined()
+    expect(isRecipePublishable({ ...recipe, verification }, [sourceA, sourceB])).toBe(false)
   })
 
   // ---- 6〜13: Coherence Review自体の構造検証 ----
@@ -519,7 +543,10 @@ describe('Recipe Coherence Gate Foundation (GA〜)', () => {
 
   it('GZ: Allergy HARD EXCLUSIONはRecipe Coherence Gate追加後も無傷', () => {
     const medamaYaki = RECIPE_CATALOG.find((r) => r.id === 'medama-yaki')!
-    expect(allergyRelevantIngredients(medamaYaki)).toEqual(['卵', '油'])
+    // PUBLIC BETA RELEASE SPRINT 1C: seasoningsへ塩・こしょうを追加（NHKの実際の
+    // finishing stepを反映）したため、対象食材の集合が広がった。卵の除外という
+    // Allergy HARD EXCLUSIONの結論自体は不変。
+    expect(allergyRelevantIngredients(medamaYaki)).toEqual(['卵', '油', '塩', 'こしょう'])
     const result = rankRecipes(RECIPE_CATALOG, {
       availableIngredientNames: ['卵'],
       allergyNames: ['卵'],
@@ -577,9 +604,9 @@ describe('Recipe Coherence Gate Foundation (GA〜)', () => {
 
   // ---- 33〜35: 移行・件数確認 ----
 
-  it('HG: coherenceReview.status==="coherent"は tori-teriyaki のみ。自動 coherent 移行はしていない', () => {
+  it('HG: coherenceReview.status==="coherent"（PUBLIC BETA RELEASE SPRINT 1Cでmedama-yakiも追加）。自動 coherent 移行はしていない', () => {
     const coherent = RECIPE_CATALOG.filter((r) => r.verification?.coherenceReview?.status === 'coherent')
-    expect(coherent.map((r) => r.id)).toEqual(['tori-teriyaki', 'buta-shogayaki'])
+    expect(coherent.map((r) => r.id)).toEqual(['tori-teriyaki', 'buta-shogayaki', 'nikujaga', 'medama-yaki', 'yudofu', 'niku-udon', 'napolitan'])
     // MISSION 2.26: tori-teriyaki は明示的な Evidence 解決＋human sign-off で verified になった
     // （naked boolean や自動移行ではなく、isCoherenceReviewValid が構造的に true）
     for (const r of coherent) {
@@ -589,13 +616,13 @@ describe('Recipe Coherence Gate Foundation (GA〜)', () => {
     }
   })
 
-  it('HH: catalog の VERIFIED は tori-teriyaki のみ（MISSION 2.26 の初 VERIFIED。件数目標は設定しない）', () => {
+  it('HH: catalog の VERIFIED（MISSION 2.26の初VERIFIED以来、PUBLIC BETA RELEASE SPRINT 1Cでmedama-yakiが追加）。件数目標は設定しない', () => {
     const verified = RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified')
-    expect(verified.map((r) => r.id)).toEqual(['tori-teriyaki', 'buta-shogayaki'])
+    expect(verified.map((r) => r.id)).toEqual(['tori-teriyaki', 'buta-shogayaki', 'nikujaga', 'medama-yaki', 'yudofu', 'niku-udon', 'napolitan'])
   })
 
-  it('HI: MISSION 2.14B Correction後、Beta Publishable Starter Setは空である', () => {
-    expect(getBetaPublishableStarterRecipes()).toEqual([])
+  it('HI: PUBLIC BETA RELEASE SPRINT 1C以降、Beta Publishable Starter Setはmedama-yakiを含む（medama-yakiはSTARTER_SET_RECIPE_IDSに含まれるためVERIFIED化で反映される）', () => {
+    expect(getBetaPublishableStarterRecipes().map((r) => r.id)).toEqual(['medama-yaki'])
   })
 
   // ============================================================

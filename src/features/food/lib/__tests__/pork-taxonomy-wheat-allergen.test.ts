@@ -229,9 +229,9 @@ describe('MISSION 2.30 — Section G: 非弱体化 / regression', () => {
     expect(ranked.find((c) => c.recipe.id === 'katarosu-yaki')?.category).toBe('A')
   })
 
-  it('G4: tori-teriyaki は VERIFIED のまま（MISSION 2.31 で buta-shogayaki も VERIFIED #2 に昇格）', () => {
+  it('G4: tori-teriyaki は VERIFIED のまま（MISSION 2.31でbuta-shogayakiもVERIFIED #2に昇格、PUBLIC BETA RELEASE SPRINT 1Cでmedama-yakiもVERIFIED #3に昇格）', () => {
     const verified = RECIPE_CATALOG.filter((r) => isRecipePublishable(r))
-    expect(verified.map((r) => r.id)).toEqual(['tori-teriyaki', 'buta-shogayaki'])
+    expect(verified.map((r) => r.id)).toEqual(['tori-teriyaki', 'buta-shogayaki', 'nikujaga', 'medama-yaki', 'yudofu', 'niku-udon', 'napolitan'])
   })
 
   it('G5: MISSION 2.30 時点では buta-shogayaki は review のままだった（安全性ゲートを VERIFIED のために弱めていない）。'

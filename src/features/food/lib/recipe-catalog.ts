@@ -1498,29 +1498,122 @@ export const RECIPE_CATALOG: Recipe[] = [
     name: '肉じゃが',
     type: 'main',
     cuisine: 'japanese',
+    // PUBLIC BETA RELEASE SPRINT 1D — Minimum Useful Recipe Set。
+    // 旧バージョン（verification未設定＝実効的unverified、根拠不明の推測値）を、
+    // キッコーマン公式レシピ「基本の肉じゃが【味しみ！定番人気和食】」
+    // （kikkoman-nikujaga-2026）単独をcomplete process anchorとして採用し、
+    // Evidence-backedな値へ全面的に修正した。牛肉量（200g→100g）・人数（3人分→2人分）・
+    // 野菜量（玉ねぎ1個→1/2個、にんじん1本→1/2本）・調味料（大さじ2/2/1→大さじ2/3、砂糖なし）・
+    // 液体（水350ml→かつおだし1と1/2カップ）・しらたき追加・油追加、いずれも
+    // source本文の直接記載に合わせた（推測・中央値選択は一切していない）。
     requiredIngredients: [
-      { name: '牛肉', amount: '200g' },
+      { name: '牛肉', amount: '100g（切り落とし）' },
       { name: 'じゃがいも', amount: '3個' },
-      { name: 'にんじん', amount: '1本' },
-      { name: '玉ねぎ', amount: '1個' },
+      { name: '玉ねぎ', amount: '1/2個' },
+      { name: 'にんじん', amount: '1/2本' },
+      { name: 'しらたき', amount: '100g' },
     ],
     seasonings: [
+      { name: '油', amount: '小さじ2' },
+      { name: 'だし', amount: '1と1/2カップ' },
       { name: 'しょうゆ', amount: '大さじ2' },
-      { name: 'みりん', amount: '大さじ2' },
-      { name: '砂糖', amount: '大さじ1' },
+      { name: 'みりん', amount: '大さじ3' },
     ],
-    cookingLiquids: [{ name: '水', amount: '350ml' }],
-    ingredientChecks: [{ ingredientName: 'しょうゆ' }],
-    cookingTimeMinutes: 30,
-    servingsBase: 3,
+    ingredientChecks: [{ ingredientName: 'しょうゆ' }, { ingredientName: 'だし' }, { ingredientName: '油' }],
+    cookingTimeMinutes: 20,
+    servingsBase: 2,
     tags: ['煮込み', '子ども向け'],
-    equipment: ['包丁', 'まな板', '鍋'],
-    steps: [
-      'じゃがいも、にんじん、玉ねぎを一口大に切る',
-      '鍋で牛肉を炒め、色が変わったら野菜を加えて炒める',
-      '水、しょうゆ、みりん、砂糖を加える',
-      '具材が柔らかくなるまで煮る',
+    equipment: ['包丁', 'まな板', '鍋', '落としぶた'],
+    preparation: [
+      { text: 'じゃがいもは皮をむいて一口大に切り、水にさらして水気をきる' },
+      { text: '玉ねぎはくし形切りにする' },
+      { text: 'にんじんは皮をむいて乱切りにする' },
+      { text: 'しらたきはゆでて食べやすい長さに切る' },
+      { text: '牛肉は一口大に切る' },
     ],
+    steps: [
+      '鍋に油を中火で熱し、玉ねぎを炒める',
+      '牛肉を加えてさらに炒め合わせる',
+      'にんじん、じゃがいも、しらたきを加えて炒め合わせる',
+      'だしを加え、沸騰したらアクを取る',
+      'しょうゆ、みりんを加え、落としぶたをする',
+      '弱火にして15分ほど煮る',
+    ],
+    verification: {
+      status: 'verified',
+      sourceIds: [
+        'kikkoman-nikujaga-2026',
+        'caa-food-allergy-labeling-2026',
+        'kikkoman-shoyu-allergen-2026',
+        'sanj-glutenfree-shoyu-2026',
+      ],
+      recipeIdentity: {
+        canonicalDish: '肉じゃが',
+        variant: '牛肉・かつおだしを使う基本の肉じゃが（しらたき入り、砂糖不使用）',
+        servingsBasis: 2,
+        intendedTasteProfile: '家庭的な、だしの効いた甘辛味',
+        coreMethod: '玉ねぎ→牛肉→根菜・しらたきの順に炒め、だしを加えてアクを取り、しょうゆ・みりんを加えて落としぶたで煮る',
+        definingIngredients: ['牛肉', 'じゃがいも', '玉ねぎ'],
+      },
+      fieldVerifications: [
+        { field: 'requiredIngredients', sourceIds: ['kikkoman-nikujaga-2026'], supportType: 'direct' },
+        { field: 'ingredientAmounts', sourceIds: ['kikkoman-nikujaga-2026'], supportType: 'direct' },
+        { field: 'seasonings', sourceIds: ['kikkoman-nikujaga-2026'], supportType: 'direct' },
+        { field: 'seasoningAmounts', sourceIds: ['kikkoman-nikujaga-2026'], supportType: 'direct' },
+        { field: 'cookingTimeMinutes', sourceIds: ['kikkoman-nikujaga-2026'], supportType: 'direct' },
+        { field: 'servingsBase', sourceIds: ['kikkoman-nikujaga-2026'], supportType: 'direct' },
+        { field: 'criticalSteps', sourceIds: ['kikkoman-nikujaga-2026'], supportType: 'direct' },
+        { field: 'equipment', sourceIds: ['kikkoman-nikujaga-2026'], supportType: 'direct' },
+        { field: 'preparation', sourceIds: ['kikkoman-nikujaga-2026'], supportType: 'direct' },
+        {
+          // MISSION パターン踏襲（tori-teriyaki/buta-shogayaki と同一方式）: allergyIdentityは
+          // 「Recipe sourceが食材を証明」＋「日本の食品表示制度・製造者アレルギー表示・
+          // NUKITORUのdefault-generic-risk policyがingredient→allergen関係を証明」の組み合わせ＝derived。
+          field: 'allergyIdentity',
+          sourceIds: [
+            'caa-food-allergy-labeling-2026',
+            'kikkoman-shoyu-allergen-2026',
+            'sanj-glutenfree-shoyu-2026',
+          ],
+          supportType: 'derived',
+          derivation:
+            'Recipeの食材同定（牛肉・じゃがいも・玉ねぎ・にんじん・しらたき・油・だし・しょうゆ・'
+            + 'みりん）はキッコーマン公式sourceが直接確立。しょうゆ → 小麦・大豆 = '
+            + 'default-generic-risk（標準的市販こいくちしょうゆが小麦・大豆をアレルギー物質として'
+            + '表示。小麦不使用のグルテンフリーしょうゆも実在するため generic は fail-safe に'
+            + '小麦・大豆関連として HARD EXCLUDE）。牛肉・じゃがいも・玉ねぎ・にんじん・しらたき・'
+            + '油・みりんは消費者庁の特定原材料等28品目のいずれにも該当しない。だし（かつおだし）は'
+            + '同28品目に明示的な該当項目がなく、製品によって原材料構成が異なり得るため'
+            + 'ingredientChecksでPRODUCT CHECK ALERT対象として別途注意喚起する（HARD EXCLUSIONの'
+            + '対象にはしない）。',
+        },
+      ],
+      reviewNotes: [],
+      coherenceReview: {
+        status: 'coherent',
+        sourceProcessNotes: [
+          {
+            sourceId: 'kikkoman-nikujaga-2026',
+            equipment: '鍋、落としぶた（濡らしたペーパータオルで代用可）',
+            fatOrOil: 'サラダ油小さじ2',
+            liquidOrWater: '水ではなくかつおだし1と1/2カップを使う',
+            lid: '調味料を加えて煮立てた後、落としぶたをする',
+            heatSequence: '中火で玉ねぎ→牛肉→にんじん・じゃがいも・しらたきの順に炒め、だしを加えて'
+              + '強火で煮立ててアクを取り、調味料を加えて再び煮立てたら弱火にして15分ほど煮る',
+            seasoningSequence: 'だしを加えて煮立ててアクを取った後にしょうゆ・みりんを加える'
+              + '（具材を炒めている段階では調味料を入れない）',
+            preparationSequence: '野菜（じゃがいも→玉ねぎ→にんじん→しらたき）を切ってから牛肉を切る',
+          },
+        ],
+        reviewedDimensions: ['equipment', 'fat-or-oil', 'liquid-or-water', 'lid', 'heat-sequence', 'seasoning-sequence', 'major-preparation-sequence'],
+        rationale:
+          'キッコーマン公式レシピ（基本の肉じゃが）単独をcomplete process anchorとして採用した。'
+          + 'equipment・fat-or-oil・liquid-or-water・lid・heat-sequence・seasoning-sequence・'
+          + 'major-preparation-sequenceのいずれも同一source内の一貫したprocessであり、'
+          + '複数sourceの工程を混在させた架空のhybridは作っていない。',
+      },
+      hasUnsupportedInference: false,
+    },
   },
   {
     id: 'mabo-tofu',
@@ -1928,14 +2021,23 @@ export const RECIPE_CATALOG: Recipe[] = [
     type: 'side',
     cuisine: 'japanese',
     requiredIngredients: [{ name: '卵', amount: '1個' }],
-    seasonings: [{ name: '油', amount: '小さじ1と1/2' }],
+    seasonings: [
+      { name: '油', amount: '小さじ1と1/2' },
+      { name: '塩', amount: '少々' },
+      { name: 'こしょう', amount: '少々' },
+    ],
     // MISSION 2.31A — 油は種類が特定されない generic-category（PRODUCT CHECK ALERT）
     ingredientChecks: [{ ingredientName: '油' }],
-    cookingTimeMinutes: 5,
+    cookingTimeMinutes: 3,
     servingsBase: 1,
     tags: ['朝食', '時短', '子ども向け'],
     equipment: ['フライパン'],
-    steps: ['フライパンに油を熱する', '卵を割り入れる', '好みの固さになるまで焼く'],
+    steps: [
+      '卵を器に割り入れる',
+      'フライパンに油を入れ、強火で熱する',
+      '卵をフライパンに入れ、白身の色が変わってきたら弱めの中火にして3分ほど焼く',
+      '塩、こしょう各少々をふる',
+    ],
     // MISSION 2.12 PHASE B — First 10 Families Starter Set Evidence Resolution。
     // CURRENT: 油 小さじ1 / SOURCE A: kyounoryouri-medamayaki-2026（NHKみんなのきょうの
     // 料理・瀬田金行シェフ監修、2人分）卵2個・サラダ油大さじ1・調理時間10分（1個ずつ
@@ -1975,15 +2077,42 @@ export const RECIPE_CATALOG: Recipe[] = [
     // equipment（フライパン・ふたなし・水なし）自体の識別は両source一致しており
     // 維持する。Recipe factは一切変更しない（油小さじ1と1/2・cookingTimeMinutes=5分・
     // steps・equipment、すべて元のまま）。statusをVERIFIEDからREVIEWへ差し戻す。
+    //
+    // PUBLIC BETA RELEASE SPRINT 1C — Evidence Completion（既存source再確認のみ、
+    // 新規source探索なし）。上記2.14A/2.14Bで特定された不整合を、NHK
+    // （kyounoryouri-medamayaki-2026）を単一のcomplete process anchorとして採用し
+    // 解消した。生HTML本文を再度直接確認し、以下をRecipe factへ反映:
+    // (1) NHKは実際には卵1個ずつ順に焼く手順で、「卵1コを器に割り入れる」と直接明記
+    //     している（従来の「2個/2人分から1個を導出」というderivedではなく、NHK本文の
+    //     単一egg処理そのものがdirect evidenceになる）。
+    // (2) NHKの油の量も「大さじ1/2」が卵1個あたりの直接記載であり、小さじ1と1/2と
+    //     完全一致（従来のderivationは撤回、directへ格上げ）。
+    // (3) NHKが明示するfinishing step「塩、こしょう各少々をふって食べる」をseasonings
+    //     へ追加した（Recipe factの変更。sourceに実在する記載を反映しただけで、
+    //     推測・数値発明は一切していない）。
+    // (4) criticalStepsをNHKの実際の順序（卵を器に割り入れる→油を強火で熱する→
+    //     卵を入れ、白身の色が変わったら弱めの中火にして3分ほど焼く→塩こしょうをふる）
+    //     に一致させた。
+    // (5) cookingTimeMinutesをNHKの「3分ほど」（弱めの中火のactive加熱のみ、予熱を
+    //     含まない単一の直接事実）へ変更（5→3）。予熱・卵を割り入れる工程はNUKITORUの
+    //     独自見積もりとして加算しない（Section 7 cookingTimeMinutes意味論ポリシーに
+    //     従い、単一sourceの直接事実のみを採用）。
+    // キッコーマン（kikkoman-medamayaki-tips-2026）は、油のみ・水/ふたなし・卵を先に
+    // 器へ割り入れる、という主要構造をNHKと独立に裏付ける補強情報として
+    // verification.sourceIds・coherenceReview.sourceProcessNotesには引き続き保持するが、
+    // 個別fieldVerificationのsourceIdsからは外した（Recipe factの文言はNHK単独の直接
+    // 記載と完全一致させ、複数sourceを混ぜて架空のhybrid processを作らないため）。
+    // キッコーマンが塩・こしょうに言及しない点はSOURCE SILENCE原則により「塩不使用」の
+    // 根拠にはせず、単に「この基本methodでは言及なし」という事実として記録するのみ。
     verification: {
-      status: 'review',
+      status: 'verified',
       sourceIds: ['kyounoryouri-medamayaki-2026', 'kikkoman-medamayaki-tips-2026'],
       recipeIdentity: {
         canonicalDish: '目玉焼き',
-        variant: '片面焼き・水を使わない基本の目玉焼き（蒸し焼きバージョンではない）',
+        variant: '片面焼き・水を使わない基本の目玉焼き（蒸し焼きバージョンではない）、仕上げに塩・こしょうをふる',
         servingsBasis: 1,
-        intendedTasteProfile: '黄身が半熟〜好みの固さの、シンプルな塩味なしの目玉焼き（油と卵のみ）',
-        coreMethod: 'フライパンに油を熱し、卵を割り入れて水を使わず好みの固さまで焼く',
+        intendedTasteProfile: '黄身が半熟〜好みの固さの、仕上げに塩・こしょうをふるシンプルな目玉焼き',
+        coreMethod: 'フライパンに油を強火で熱し、卵を割り入れて弱めの中火で焼き、仕上げに塩・こしょうをふる（水を使わない）',
         definingIngredients: ['卵'],
       },
       fieldVerifications: [
@@ -1995,69 +2124,67 @@ export const RECIPE_CATALOG: Recipe[] = [
         {
           field: 'ingredientAmounts',
           sourceIds: ['kyounoryouri-medamayaki-2026'],
-          supportType: 'derived',
-          derivation: 'NHK「2人分・卵2個」＝1人分1個という1:1の卵数比率をそのまま適用。',
+          supportType: 'direct',
         },
         {
-          // MISSION 2.14B CORRECTION: NHKの実レシピは「塩、こしょう各少々」を明示的な
-          // finishing stepとして含んでおり、「塩味なし」を積極的に否定する。キッコーマン
-          // 「基本」methodは塩・こしょうに一切言及しないが、これは沈黙でありSOURCE
-          // SILENCE原則によりnegative evidenceにならない。よってdirect支持を撤回。
+          // PUBLIC BETA RELEASE SPRINT 1C: NHKの実レシピが明示する「塩、こしょう各少々」
+          // finishing stepをそのままRecipe factへ反映した単一source directの直接支持。
           field: 'seasonings',
-          sourceIds: ['kyounoryouri-medamayaki-2026', 'kikkoman-medamayaki-tips-2026'],
-          variantRelation: 'unresolved-between-variants',
+          sourceIds: ['kyounoryouri-medamayaki-2026'],
+          supportType: 'direct',
         },
         {
           field: 'seasoningAmounts',
           sourceIds: ['kyounoryouri-medamayaki-2026'],
-          variantRelation: 'unresolved-between-variants',
+          supportType: 'direct',
         },
         {
-          // MISSION 2.14B CORRECTION: derivationがNHKの「3分ほど」（予熱抜きのactive
-          // 加熱のみ）にNUKITORU独自の予熱時間見積もりを加算した上で、それをキッコーマン
-          // の「3〜4分」（同じく予熱抜きのactive加熱のみ）と「整合する」と比較しており、
-          // 異なるscope（予熱込み vs 予熱抜き）の時間を同一視していた。cookingTimeMinutes
-          // の意味論がRecipe横断で確定するまで、この混在derivationはEvidence解決済みと
-          // 扱えない。
+          // PUBLIC BETA RELEASE SPRINT 1C: NHKの「3分ほど」（弱めの中火のactive加熱のみ、
+          // 予熱を含まない）を単一source directの直接事実として採用。予熱等の加算・
+          // 他sourceとのscope混在は行わない。
           field: 'cookingTimeMinutes',
-          sourceIds: ['kyounoryouri-medamayaki-2026', 'kikkoman-medamayaki-tips-2026'],
+          sourceIds: ['kyounoryouri-medamayaki-2026'],
+          supportType: 'direct',
         },
         {
           field: 'servingsBase',
           sourceIds: ['kyounoryouri-medamayaki-2026'],
-          supportType: 'derived',
-          derivation: 'NHK「2人分・卵2個」から、卵1個＝1人分という比率を採用。',
+          supportType: 'direct',
         },
         {
-          // MISSION 2.14B CORRECTION: 両sourceが共通して明示する「卵を先にボウルへ
-          // 割り入れてからフライパンへ入れる」という工程をNUKITORUのstepsは欠いており、
-          // 火加減のsequence（NHK: 強火→白身が変わり始めたら弱めの中火3分／
-          // キッコーマン: 中火で予熱→卵を入れたら弱火にして3〜4分）も両source間で
-          // 一致しない。NUKITORUのstepsはどちらとも文字通り一致しない簡略化された
-          // hybridであり、direct支持は不正確な分類だった。
+          // PUBLIC BETA RELEASE SPRINT 1C: NHKの実際の手順（卵を器に割り入れる→油を
+          // 強火で熱する→卵を入れ弱めの中火で3分焼く→塩こしょうをふる）とNUKITORUの
+          // stepsを完全に一致させた単一source directの直接支持。
           field: 'criticalSteps',
-          sourceIds: ['kyounoryouri-medamayaki-2026', 'kikkoman-medamayaki-tips-2026'],
+          sourceIds: ['kyounoryouri-medamayaki-2026'],
+          supportType: 'direct',
         },
         { field: 'equipment', sourceIds: ['kyounoryouri-medamayaki-2026'], supportType: 'direct' },
         { field: 'allergyIdentity', sourceIds: ['kyounoryouri-medamayaki-2026'], supportType: 'direct' },
       ],
-      reviewNotes: [
-        'MISSION 2.14A/2.14B CORRECTION: 両source（NHKみんなのきょうの料理・キッコーマン）'
-          + 'の生HTML本文を再確認した結果、(1) seasonings=[油]のみという「塩味なし」識別を'
-          + 'NHKの実レシピ（塩・こしょうを明示的なfinishing stepとして含む）が積極的に'
-          + '否定していること、(2) キッコーマンの沈黙はSOURCE SILENCE原則により「塩を'
-          + '使わない」ことのEvidenceにならないこと、(3) NUKITORUのcriticalStepsが'
-          + '両sourceに共通する「ボウルへ先に割り入れる」工程を欠き、火加減sequenceも'
-          + '両source間で一致しないこと、(4) cookingTimeMinutes=5のderivationが予熱込み'
-          + '（NHK+独自見積もり）と予熱抜き（キッコーマン）という異なるscopeの時間を'
-          + '同一視していたこと、が判明した。equipment（フライパン・ふたなし・水なし）の'
-          + '識別自体は両source一致しており正当。Recipe factは一切変更せず、'
-          + 'seasonings/seasoningAmounts/criticalSteps/cookingTimeMinutesのEvidence'
-          + '解決状態のみを訂正し、statusをVERIFIEDからREVIEWへ差し戻す。',
+      reviewNotes: [],
+      provenanceNotes: [
+        'MISSION 2.14A/2.14B CORRECTION（履歴）: 両source（NHKみんなのきょうの料理・'
+          + 'キッコーマン）の生HTML本文を再確認した結果、(1) seasonings=[油]のみという'
+          + '「塩味なし」識別をNHKの実レシピ（塩・こしょうを明示的なfinishing stepとして'
+          + '含む）が積極的に否定していること、(2) キッコーマンの沈黙はSOURCE SILENCE'
+          + '原則により「塩を使わない」ことのEvidenceにならないこと、(3) NUKITORUの'
+          + 'criticalStepsが両sourceに共通する「ボウルへ先に割り入れる」工程を欠き、'
+          + '火加減sequenceも両source間で一致しないこと、(4) cookingTimeMinutes=5の'
+          + 'derivationが予熱込み（NHK+独自見積もり）と予熱抜き（キッコーマン）という'
+          + '異なるscopeの時間を同一視していたこと、が判明し、statusをVERIFIEDから'
+          + 'REVIEWへ差し戻した。',
+        'PUBLIC BETA RELEASE SPRINT 1C（履歴）: 2.14A/2.14Bで特定された不整合を、'
+          + '複数sourceを混ぜて架空のhybrid processを作るのではなく、NHKを単一の'
+          + 'complete process anchorとして採用することで解消した。Recipe fact（steps・'
+          + 'seasonings・cookingTimeMinutes）をNHK本文の直接記載と完全に一致させ、'
+          + 'キッコーマンはequipment/lid/liquid-or-water/preparation-sequenceの独立'
+          + '補強情報として保持するに留めた（fieldVerificationの直接支持source自体には'
+          + '含めない）。statusをVERIFIEDへ復帰。',
       ],
       hasUnsupportedInference: false,
       coherenceReview: {
-        status: 'incoherent',
+        status: 'coherent',
         sourceProcessNotes: [
           {
             sourceId: 'kyounoryouri-medamayaki-2026',
@@ -2086,15 +2213,22 @@ export const RECIPE_CATALOG: Recipe[] = [
         ],
         reviewedDimensions: ['equipment', 'lid', 'liquid-or-water', 'heat-sequence', 'seasoning-sequence', 'major-preparation-sequence'],
         rationale:
-          '両sourceともequipment/lid/liquid-or-water/major-preparation-sequence'
-            + '（ボウルへ先に割り入れる）は一致し、この4次元は矛盾しない1つのprocessを'
-            + '構成する。しかしheat-sequence（NHKの強火→弱めの中火 vs キッコーマンの'
-            + '中火予熱→弱火）とseasoning-sequence（NHKは明示的に塩・こしょうを使う vs '
-            + 'キッコーマンは言及なし＝SOURCE SILENCE原則により肯定にも否定にもならない）'
-            + 'の2次元で、NUKITORUの現在のRecipe（塩・こしょうなし、火加減未指定）が'
-            + 'どちらのsourceの実際のprocessとも一致しない独自のhybridになっている。'
-            + 'よってincoherentと判定する。equipment等が個別に一致することは、'
-            + 'seasoning/heat-sequenceの不一致をrescueしない。',
+          'PUBLIC BETA RELEASE SPRINT 1C: NUKITORUのRecipe（卵を器に割り入れる→油を'
+            + '強火で熱する→卵を入れ、白身の色が変わったら弱めの中火にして3分ほど焼く→'
+            + '塩・こしょう各少々をふる）を、NHK（kyounoryouri-medamayaki-2026）単独の'
+            + '実際のprocessと文字通り完全に一致させた。equipment・lid・'
+            + 'liquid-or-water・heat-sequence・seasoning-sequence・'
+            + 'major-preparation-sequenceのいずれも、NHK本文に明示された事実とのみ'
+            + '一致しており、複数sourceの工程を混在させて架空のhybridを作ってはいない'
+            + '（fieldVerificationの直接支持sourceはNHK単独）。キッコーマン'
+            + '（kikkoman-medamayaki-tips-2026）はequipment・lid・liquid-or-water・'
+            + 'preparation-sequence（卵を先に器へ割り入れる）という主要構造をNHKと'
+            + '独立に裏付ける補強情報として残すが、heat-sequenceの具体的な火力表現'
+            + '（中火予熱→弱火）とseasoning-sequence（言及なし）はNHKと異なる／沈黙で'
+            + 'あるため、Recipe fact自体の直接根拠としては採用していない（SOURCE '
+            + 'SILENCE原則: キッコーマンの沈黙は「塩不使用」の根拠にしない）。単一source'
+            + '（NHK）の完全な直接一致により、process不整合は解消されたためcoherentと'
+            + '判定する。',
       },
     },
   },
@@ -2245,6 +2379,111 @@ export const RECIPE_CATALOG: Recipe[] = [
           + 'REVIEWを維持する / EVIDENCE TYPE: 引き続きE（NOT_FOUND/under-specified）。',
       ],
       hasUnsupportedInference: true,
+    },
+  },
+  {
+    // PUBLIC BETA RELEASE SPRINT 1D — Minimum Useful Recipe Set。
+    // キッコーマン公式レシピ「湯豆腐【定番の簡単和食メニュー】」（kikkoman-yudofu-2026）
+    // 単独をcomplete process anchorとして新規追加。豆腐（Gate C）と長ねぎ（Gate D）を
+    // 1品でカバーする。ねぎ・しょうゆの分量はsource本文が「適量」とするため、
+    // exact値へ変換せず「適量」のまま保持する（RecipeIngredient.amountは文字列型のため
+    // この表現をそのまま正しく扱える）。
+    id: 'yudofu',
+    name: '湯豆腐',
+    type: 'main',
+    cuisine: 'japanese',
+    requiredIngredients: [
+      { name: '豆腐', amount: '2丁' },
+      { name: '生しいたけ', amount: '8個' },
+      { name: '春菊', amount: '1/2束' },
+    ],
+    seasonings: [
+      { name: '昆布', amount: '15cm' },
+      { name: '長ねぎ', amount: '適量' },
+      { name: 'しょうゆ', amount: '適量' },
+    ],
+    ingredientChecks: [{ ingredientName: 'しょうゆ' }],
+    cookingTimeMinutes: 20,
+    servingsBase: 4,
+    tags: ['鍋', '時短', 'ヘルシー'],
+    equipment: ['土鍋'],
+    preparation: [
+      { text: '豆腐は4つ切りにする' },
+      { text: '生しいたけは軸を取る' },
+      { text: '長ねぎは小口切りにする' },
+    ],
+    steps: [
+      '土鍋に昆布を入れ、水を適量はる',
+      '豆腐と生しいたけを入れ、煮立てないように静かに煮る',
+      '豆腐がゆらゆら動いてきたら春菊を加える',
+      '長ねぎとしょうゆを添えて食べる',
+    ],
+    notes: ['豆腐を煮すぎないようにしてください。ゆらゆら動いてきたら食べ頃です。'],
+    verification: {
+      status: 'verified',
+      sourceIds: [
+        'kikkoman-yudofu-2026',
+        'caa-food-allergy-labeling-2026',
+        'kikkoman-shoyu-allergen-2026',
+        'sanj-glutenfree-shoyu-2026',
+      ],
+      recipeIdentity: {
+        canonicalDish: '湯豆腐',
+        variant: '昆布だしで豆腐・生しいたけ・春菊を煮て、長ねぎ・しょうゆを添える基本の湯豆腐',
+        servingsBasis: 4,
+        intendedTasteProfile: '昆布だしと具材そのものの味を活かした、しょうゆのみのシンプルな味',
+        coreMethod: '昆布を入れた鍋で豆腐・生しいたけを煮立てないように静かに煮て、最後に春菊を加え、長ねぎ・しょうゆを添えて食べる',
+        definingIngredients: ['豆腐', '昆布'],
+      },
+      fieldVerifications: [
+        { field: 'requiredIngredients', sourceIds: ['kikkoman-yudofu-2026'], supportType: 'direct' },
+        { field: 'ingredientAmounts', sourceIds: ['kikkoman-yudofu-2026'], supportType: 'direct' },
+        { field: 'seasonings', sourceIds: ['kikkoman-yudofu-2026'], supportType: 'direct' },
+        { field: 'seasoningAmounts', sourceIds: ['kikkoman-yudofu-2026'], supportType: 'direct' },
+        { field: 'cookingTimeMinutes', sourceIds: ['kikkoman-yudofu-2026'], supportType: 'direct' },
+        { field: 'servingsBase', sourceIds: ['kikkoman-yudofu-2026'], supportType: 'direct' },
+        { field: 'criticalSteps', sourceIds: ['kikkoman-yudofu-2026'], supportType: 'direct' },
+        { field: 'equipment', sourceIds: ['kikkoman-yudofu-2026'], supportType: 'direct' },
+        { field: 'preparation', sourceIds: ['kikkoman-yudofu-2026'], supportType: 'direct' },
+        {
+          field: 'allergyIdentity',
+          sourceIds: [
+            'caa-food-allergy-labeling-2026',
+            'kikkoman-shoyu-allergen-2026',
+            'sanj-glutenfree-shoyu-2026',
+          ],
+          supportType: 'derived',
+          derivation:
+            'Recipeの食材同定（豆腐・生しいたけ・春菊・昆布・長ねぎ・しょうゆ）はキッコーマン'
+            + '公式sourceが直接確立。しょうゆ → 小麦・大豆 = default-generic-risk（標準的市販'
+            + 'こいくちしょうゆが小麦・大豆をアレルギー物質として表示。小麦不使用のグルテンフリー'
+            + 'しょうゆも実在するため generic は fail-safe に小麦・大豆関連として HARD EXCLUDE）。'
+            + '豆腐・生しいたけ・春菊・昆布・長ねぎは消費者庁の特定原材料等28品目のいずれにも'
+            + '該当しない。',
+        },
+      ],
+      reviewNotes: [],
+      coherenceReview: {
+        status: 'coherent',
+        sourceProcessNotes: [
+          {
+            sourceId: 'kikkoman-yudofu-2026',
+            equipment: '土鍋を使う',
+            liquidOrWater: '昆布を入れた水（だし汁を別に取らず、鍋の中で昆布から出す）',
+            heatSequence: '煮立てないように静かに煮る（沸騰させない、弱火相当）',
+            seasoningSequence: '調理中は無調味。長ねぎ・しょうゆは食べる直前に添えるのみで鍋には加えない',
+            preparationSequence: '豆腐を4つ切り→生しいたけの軸を取る→長ねぎを小口切りにする',
+          },
+        ],
+        reviewedDimensions: ['equipment', 'liquid-or-water', 'heat-sequence', 'seasoning-sequence', 'major-preparation-sequence'],
+        rationale:
+          'キッコーマン公式レシピ（湯豆腐）単独をcomplete process anchorとして採用した。'
+          + 'equipment・liquid-or-water・heat-sequence・seasoning-sequence・'
+          + 'major-preparation-sequenceのいずれも同一source内の一貫したprocessであり、'
+          + '複数sourceを混在させていない。蓋（lid）の使用有無は本文に言及がないため、'
+          + 'silence-as-factを避けreviewedDimensionsに含めていない。',
+      },
+      hasUnsupportedInference: false,
     },
   },
   {
@@ -2612,6 +2851,9 @@ export const RECIPE_CATALOG: Recipe[] = [
     ingredientChecks: [
       { ingredientName: 'しょうゆ' },
       { ingredientName: 'だしの素' },
+      // PUBLIC BETA RELEASE SPRINT 1D — うどんをPRODUCT_CHECK_TARGET_INGREDIENTSへ
+      // 追加したことに伴う整合性対応（Recipe factは変更していない）。
+      { ingredientName: 'うどん' },
     ],
     cookingTimeMinutes: 10,
     servingsBase: 1,
@@ -2620,60 +2862,229 @@ export const RECIPE_CATALOG: Recipe[] = [
     steps: ['鍋に水とだしの素を入れて煮立たせ、しょうゆで味を調える', 'うどんを加えて温める'],
   },
   {
+    // PUBLIC BETA RELEASE SPRINT 1D — Minimum Useful Recipe Set。
+    // 旧バージョン（verification未設定＝実効的unverified、根拠不明の推測値）を、
+    // キッコーマン公式レシピ「豚肉と小松菜の簡単煮込みうどん【しょうゆとみりんの
+    // 定番甘辛味】」（kikkoman-buta-komatsuna-udon-2026）単独をcomplete process anchor
+    // として採用し、Evidence-backedな値へ全面的に修正した。豚肉は「こま切れ」と明記され、
+    // 既存canonicalization（豚こま/豚こま切れ→豚肉）によりgeneric「豚肉」入力で
+    // matchする。うどん（Gate E）・豚肉（generic）・玉ねぎ・卵を1品でカバーする。
     id: 'niku-udon',
     name: '肉うどん',
     type: 'main',
     cuisine: 'japanese',
     requiredIngredients: [
-      { name: 'うどん', amount: '2玉' },
-      { name: '豚肉', amount: '100g' },
+      { name: 'うどん', amount: '2玉（ゆで）' },
+      { name: '豚肉', amount: '100g（こま切れ）' },
+      { name: '玉ねぎ', amount: '1/2個' },
+      { name: '小松菜', amount: '50g' },
+      { name: '卵', amount: '1個（半熟卵）' },
     ],
     seasonings: [
-      { name: 'だしの素', amount: '小さじ2' },
-      { name: 'しょうゆ', amount: '大さじ1' },
+      { name: '油', amount: '少々' },
+      { name: 'だし', amount: '2カップ' },
+      { name: 'しょうゆ', amount: '大さじ1と1/2' },
+      { name: 'みりん', amount: '大さじ1と1/2' },
+      { name: '塩', amount: '少々' },
     ],
-    cookingLiquids: [{ name: '水', amount: '700ml' }],
     ingredientChecks: [
       { ingredientName: 'しょうゆ' },
-      { ingredientName: 'だしの素' },
+      { ingredientName: 'だし' },
+      { ingredientName: 'うどん' },
+      { ingredientName: '油' },
     ],
-    cookingTimeMinutes: 15,
+    cookingTimeMinutes: 20,
     servingsBase: 2,
     tags: ['麺'],
     equipment: ['鍋'],
-    steps: [
-      '鍋に水とだしの素を入れて煮立たせ、しょうゆで味を調える',
-      '豚肉を加えて中心まで色が変わるまで煮る',
-      'うどんを加えて温める',
+    preparation: [
+      { text: '豚肉は食べやすい大きさに切る' },
+      { text: '玉ねぎは1cm幅のくし形に切る' },
+      { text: '小松菜はさっとゆでて根元を切り落とし、3cm長さに切る' },
     ],
-    notes: ['豚肉は中心まで色が変わっていることを確認してください。'],
-    arrangements: [{ id: 'niku-udon-negi', label: 'ねぎをのせる', addIngredients: ['ねぎ'] }],
+    steps: [
+      '鍋に油を熱し、玉ねぎを軽く炒める',
+      'だし、しょうゆ、みりん、塩を加えて煮立てる',
+      '豚肉をほぐし入れ、弱火で3〜4分煮る',
+      'うどんを加えてさらに1分ほど煮て、小松菜を加えてさっと煮る',
+      '器に盛り、半分に切った半熟卵をのせる',
+    ],
+    notes: [
+      '半熟卵はあらかじめゆでたものを用意してください（source本文はゆで時間を明記していません）。',
+    ],
+    verification: {
+      status: 'verified',
+      sourceIds: ['kikkoman-buta-komatsuna-udon-2026', 'caa-food-allergy-labeling-2026'],
+      recipeIdentity: {
+        canonicalDish: '肉うどん',
+        variant: '豚肉（こま切れ）と小松菜、半熟卵をのせる、しょうゆ・みりんの甘辛味の煮込みうどん',
+        servingsBasis: 2,
+        intendedTasteProfile: '家庭的な、しょうゆとみりんの定番甘辛味',
+        coreMethod: '玉ねぎを炒めてからだし・調味料を煮立て、豚肉を煮た後にうどん・小松菜を加えて煮て、半熟卵をのせる',
+        definingIngredients: ['豚肉', 'うどん'],
+      },
+      fieldVerifications: [
+        { field: 'requiredIngredients', sourceIds: ['kikkoman-buta-komatsuna-udon-2026'], supportType: 'direct' },
+        { field: 'ingredientAmounts', sourceIds: ['kikkoman-buta-komatsuna-udon-2026'], supportType: 'direct' },
+        { field: 'seasonings', sourceIds: ['kikkoman-buta-komatsuna-udon-2026'], supportType: 'direct' },
+        { field: 'seasoningAmounts', sourceIds: ['kikkoman-buta-komatsuna-udon-2026'], supportType: 'direct' },
+        { field: 'cookingTimeMinutes', sourceIds: ['kikkoman-buta-komatsuna-udon-2026'], supportType: 'direct' },
+        { field: 'servingsBase', sourceIds: ['kikkoman-buta-komatsuna-udon-2026'], supportType: 'direct' },
+        { field: 'criticalSteps', sourceIds: ['kikkoman-buta-komatsuna-udon-2026'], supportType: 'direct' },
+        { field: 'equipment', sourceIds: ['kikkoman-buta-komatsuna-udon-2026'], supportType: 'direct' },
+        { field: 'preparation', sourceIds: ['kikkoman-buta-komatsuna-udon-2026'], supportType: 'direct' },
+        {
+          // うどん＝小麦（default-generic-risk、ingredient-allergens.ts参照）・卵＝直接identity
+          // （requiredIngredients自体の名前一致でHARD EXCLUDE、taxonomy不要）・
+          // しょうゆ＝小麦・大豆（既存policy）を、日本の食品表示制度・製造者アレルギー表示・
+          // NUKITORUのdefault-generic-risk policyで評価した組み合わせ＝derived。
+          field: 'allergyIdentity',
+          sourceIds: ['caa-food-allergy-labeling-2026'],
+          supportType: 'derived',
+          derivation:
+            'Recipeの食材同定（豚肉・玉ねぎ・小松菜・卵・うどん・油・だし・しょうゆ・みりん・塩）'
+            + 'はキッコーマン公式sourceが直接確立。卵は消費者庁の特定原材料（義務表示・9品目）'
+            + 'そのものであり、requiredIngredientsの直接名一致でHARD EXCLUDEされる（taxonomy'
+            + '不要）。うどん → 小麦 = default-generic-risk（標準的な市販うどんは小麦粉を原材料と'
+            + 'し小麦を表示。米粉うどんという小麦不使用variantも実在するため、Recipeが特定の'
+            + '小麦不使用製品をverifiedに明示しない限りfail-safeにHARD EXCLUDE）。'
+            + 'しょうゆ → 小麦・大豆 = default-generic-risk（既存policyと同一）。豚肉・玉ねぎ・'
+            + '小松菜・だし・油・みりん・塩は消費者庁の特定原材料等28品目のいずれにも該当しない'
+            + '（だしは製品により原材料構成が異なり得るためingredientChecksでPRODUCT CHECK '
+            + 'ALERT対象として別途注意喚起する）。',
+        },
+      ],
+      reviewNotes: [],
+      coherenceReview: {
+        status: 'coherent',
+        sourceProcessNotes: [
+          {
+            sourceId: 'kikkoman-buta-komatsuna-udon-2026',
+            equipment: '鍋を使う',
+            fatOrOil: '油少々で玉ねぎを炒める',
+            liquidOrWater: '水ではなくかつおだし2カップを使う',
+            heatSequence: '玉ねぎを炒めてからだし・調味料を煮立て、豚肉を弱火で3〜4分煮た後、'
+              + 'うどんを1分ほど、小松菜をさっと煮る',
+            seasoningSequence: 'だしを加えると同時にしょうゆ・みりん・塩を加えて煮立ててから'
+              + '具材を加える（具材を先に炒めてから調味料を入れるnikujaga型ではなく、'
+              + '調味料を先に煮立ててから具材を加える型）',
+            preparationSequence: '豚肉・玉ねぎを切り、小松菜はゆでてから切る（下ごしらえの順）',
+          },
+        ],
+        reviewedDimensions: ['equipment', 'fat-or-oil', 'liquid-or-water', 'heat-sequence', 'seasoning-sequence', 'major-preparation-sequence'],
+        rationale:
+          'キッコーマン公式レシピ（豚肉と小松菜の簡単煮込みうどん）単独をcomplete process '
+          + 'anchorとして採用した。equipment・fat-or-oil・liquid-or-water・heat-sequence・'
+          + 'seasoning-sequence・major-preparation-sequenceのいずれも同一source内の'
+          + '一貫したprocessであり、複数sourceを混在させていない。',
+      },
+      hasUnsupportedInference: false,
+    },
   },
   {
+    // PUBLIC BETA RELEASE SPRINT 1D — Minimum Useful Recipe Set。
+    // 旧バージョン（verification未設定＝実効的unverified、根拠不明の推測値）を、
+    // カゴメ公式レシピ「フライパン一つで！本格ナポリタン」（kagome-napolitan-2026）
+    // 単独をcomplete process anchorとして採用し、Evidence-backedな値へ全面的に
+    // 修正した。ケチャップの製造元であるカゴメ自身のレシピを採用。パスタ（Gate E）・
+    // 玉ねぎを1品でカバーする。水でパスタを直接茹でるワンパン方式のため、
+    // 水は cookingLiquids として正しく計上する（他の調味料と混同しない）。
     id: 'napolitan',
     name: 'ナポリタン',
     type: 'main',
     cuisine: 'japanese',
     requiredIngredients: [
-      { name: 'パスタ', amount: '160g' },
+      { name: 'パスタ', amount: '200g' },
       { name: '玉ねぎ', amount: '1/2個' },
+      { name: 'ピーマン', amount: '1個' },
+      { name: 'ウインナー', amount: '2本' },
     ],
     seasonings: [
-      { name: 'ケチャップ', amount: '大さじ4' },
+      { name: '塩', amount: '1g' },
       { name: '油', amount: '大さじ1' },
+      { name: 'ケチャップ', amount: '大さじ8.3' },
     ],
+    cookingLiquids: [{ name: '水', amount: '650ml' }],
     // MISSION 2.31A — 油は種類が特定されない generic-category（PRODUCT CHECK ALERT）
-    ingredientChecks: [{ ingredientName: '油' }],
-    cookingTimeMinutes: 20,
+    ingredientChecks: [{ ingredientName: '油' }, { ingredientName: 'ウインナー' }],
+    cookingTimeMinutes: 15,
     servingsBase: 2,
     tags: ['麺', '子ども向け'],
-    equipment: ['包丁', 'まな板', '鍋', 'フライパン'],
-    steps: [
-      'パスタを表示時間通りにゆでる',
-      '玉ねぎを薄切りにする',
-      'フライパンで玉ねぎを炒め、ゆでたパスタを加える',
-      'ケチャップを加えて炒め合わせる',
+    equipment: ['フライパン'],
+    preparation: [
+      { text: 'ウインナーは斜め切りにする' },
+      { text: '玉ねぎとピーマンは薄切りにする' },
     ],
+    steps: [
+      'フライパンに水、塩、油を入れて混ぜ、半分に折ったパスタを加える',
+      '中火〜強火にかけ、沸騰後は表示時間通りにゆでる',
+      'ゆで上がる2〜3分前に、ウインナー・玉ねぎ・ピーマンを加えて一緒にゆでる',
+      '表示時間になったら、水気が残っていれば強火で飛ばしてからケチャップを加えて炒め合わせる',
+    ],
+    verification: {
+      status: 'verified',
+      sourceIds: ['kagome-napolitan-2026', 'caa-food-allergy-labeling-2026'],
+      recipeIdentity: {
+        canonicalDish: 'ナポリタン',
+        variant: 'フライパン一つでパスタを直接茹でるワンパン方式（別鍋でゆでない）。ウインナー・玉ねぎ・ピーマンの定番具材',
+        servingsBasis: 2,
+        intendedTasteProfile: 'ケチャップの酸味と甘みを活かした、喫茶店・洋食店風の味',
+        coreMethod: 'フライパンに水・塩・油とパスタを入れて直接ゆで、仕上げ前に具材を加えて一緒にゆで、ケチャップと炒め合わせる',
+        definingIngredients: ['パスタ', 'ケチャップ'],
+      },
+      fieldVerifications: [
+        { field: 'requiredIngredients', sourceIds: ['kagome-napolitan-2026'], supportType: 'direct' },
+        { field: 'ingredientAmounts', sourceIds: ['kagome-napolitan-2026'], supportType: 'direct' },
+        { field: 'seasonings', sourceIds: ['kagome-napolitan-2026'], supportType: 'direct' },
+        { field: 'seasoningAmounts', sourceIds: ['kagome-napolitan-2026'], supportType: 'direct' },
+        { field: 'cookingLiquids', sourceIds: ['kagome-napolitan-2026'], supportType: 'direct' },
+        { field: 'cookingTimeMinutes', sourceIds: ['kagome-napolitan-2026'], supportType: 'direct' },
+        { field: 'servingsBase', sourceIds: ['kagome-napolitan-2026'], supportType: 'direct' },
+        { field: 'criticalSteps', sourceIds: ['kagome-napolitan-2026'], supportType: 'direct' },
+        { field: 'equipment', sourceIds: ['kagome-napolitan-2026'], supportType: 'direct' },
+        { field: 'preparation', sourceIds: ['kagome-napolitan-2026'], supportType: 'direct' },
+        {
+          field: 'allergyIdentity',
+          sourceIds: ['caa-food-allergy-labeling-2026'],
+          supportType: 'derived',
+          derivation:
+            'Recipeの食材同定（パスタ・玉ねぎ・ピーマン・ウインナー・塩・油・ケチャップ・水）は'
+            + 'カゴメ公式sourceが直接確立。パスタ → 小麦 = default-generic-risk'
+            + '（ingredient-allergens.tsに新規追加。標準的な市販パスタはデュラム小麦等の小麦粉を'
+            + '原材料とし小麦を表示するが、「米粉パスタ」「ライスパスタ」という小麦不使用製品も'
+            + '実在するため product-specific。Recipeが特定の小麦不使用製品をverifiedに明示しない'
+            + '限りfail-safeに小麦関連としてHARD EXCLUDE。うどん・しょうゆと同型）。ウインナーは'
+            + '商品によってつなぎ・ケーシングの原材料（卵・乳・小麦等）が大きく異なり得る加工食品の'
+            + 'ためPRODUCT CHECK ALERT対象とし、HARD EXCLUSIONの対象にはしない。玉ねぎ・'
+            + 'ピーマン・塩・ケチャップ・水は消費者庁の特定原材料等28品目のいずれにも該当しない。',
+        },
+      ],
+      reviewNotes: [],
+      coherenceReview: {
+        status: 'coherent',
+        sourceProcessNotes: [
+          {
+            sourceId: 'kagome-napolitan-2026',
+            equipment: 'フライパン1つで完結（別鍋でパスタをゆでない）',
+            fatOrOil: 'サラダ油大さじ1（茹で水に加える）',
+            liquidOrWater: '水650ml（茹で水兼用。だし等は使わない）',
+            heatSequence: '中火〜強火で茹で、ゆで上がる2〜3分前に具材投入、仕上げに水気を'
+              + '強火で飛ばしてからケチャップを加える',
+            seasoningSequence: '塩・油は茹で水に最初から入れる。ケチャップは最後、水気を'
+              + '飛ばしてから加えて炒め合わせる（先に加えない）',
+            preparationSequence: 'ウインナー・玉ねぎ・ピーマンを切っておき、ゆで上がり直前に'
+              + '茹で水へ加える',
+          },
+        ],
+        reviewedDimensions: ['equipment', 'fat-or-oil', 'liquid-or-water', 'heat-sequence', 'seasoning-sequence', 'major-preparation-sequence'],
+        rationale:
+          'カゴメ公式レシピ（フライパン一つで！本格ナポリタン）単独をcomplete process '
+          + 'anchorとして採用した。equipment・fat-or-oil・liquid-or-water・heat-sequence・'
+          + 'seasoning-sequence・major-preparation-sequenceのいずれも同一source内の'
+          + '一貫したprocessであり、複数sourceを混在させていない。',
+      },
+      hasUnsupportedInference: false,
+    },
   },
   {
     id: 'kinoko-pasta',

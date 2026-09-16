@@ -33,10 +33,15 @@ describe('MISSION 2.26 A — Recipe VERIFIED', () => {
   it('KB: isRecipePublishable(tori-teriyaki) === true', () => {
     expect(isRecipePublishable(tt())).toBe(true)
   })
-  it('KC: catalog の VERIFIED は tori-teriyaki（#1）と buta-shogayaki（#2・MISSION 2.31）', () => {
+  it('KC: catalog の VERIFIED は tori-teriyaki（#1）・buta-shogayaki（#2・MISSION 2.31）・medama-yaki（#3・PUBLIC BETA RELEASE SPRINT 1C）', () => {
     expect(RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)).toEqual([
       'tori-teriyaki',
       'buta-shogayaki',
+      'nikujaga',
+      'medama-yaki',
+      'yudofu',
+      'niku-udon',
+      'napolitan',
     ])
   })
 })

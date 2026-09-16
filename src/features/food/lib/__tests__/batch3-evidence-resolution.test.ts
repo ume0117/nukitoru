@@ -145,8 +145,8 @@ describe('MISSION 2.18 — Evidence Resolution Batch 3', () => {
     expect(isRecipePublishable(recipe('tori-teriyaki'))).toBe(true)
   })
 
-  it('DF: catalog 全体の VERIFIED は tori-teriyaki（#1）と buta-shogayaki（#2・MISSION 2.31）', () => {
-    expect(RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)).toEqual(['tori-teriyaki', 'buta-shogayaki'])
+  it('DF: catalog 全体の VERIFIED は tori-teriyaki（#1）・buta-shogayaki（#2・MISSION 2.31）・medama-yaki（#3・PUBLIC BETA RELEASE SPRINT 1C）', () => {
+    expect(RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)).toEqual(['tori-teriyaki', 'buta-shogayaki', 'nikujaga', 'medama-yaki', 'yudofu', 'niku-udon', 'napolitan'])
   })
 
   it('DG: RecipeIdentity が確立された（canonicalDish / coreMethod）', () => {
@@ -309,8 +309,8 @@ describe('MISSION 2.18 — Evidence Resolution Batch 3', () => {
     expect(fvs.every((f) => f.supportType !== 'direct')).toBe(true)
   })
 
-  it('DS: Recipe Coherence Gate 無傷', () => {
-    expect(recipe('medama-yaki').verification?.coherenceReview?.status).toBe('incoherent')
+  it('DS: Recipe Coherence Gate 無傷（sake-shioyaki=incoherentのまま／medama-yakiはPUBLIC BETA RELEASE SPRINT 1Cでcoherentへ解決）', () => {
+    expect(recipe('medama-yaki').verification?.coherenceReview?.status).toBe('coherent')
     expect(recipe('sake-shioyaki').verification?.coherenceReview?.status).toBe('incoherent')
   })
 
@@ -546,10 +546,10 @@ describe('MISSION 2.19A — tori-teriyaki observation record correction', () => 
     expect(recipe('buta-shogayaki').verification?.status).toBe('verified')
   })
 
-  it('EX: VERIFIED は tori-teriyaki（#1）と buta-shogayaki（#2・MISSION 2.31）', () => {
+  it('EX: VERIFIED は tori-teriyaki（#1）・buta-shogayaki（#2・MISSION 2.31）・medama-yaki（#3・PUBLIC BETA RELEASE SPRINT 1C）', () => {
     expect(
       RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id),
-    ).toEqual(['tori-teriyaki', 'buta-shogayaki'])
+    ).toEqual(['tori-teriyaki', 'buta-shogayaki', 'nikujaga', 'medama-yaki', 'yudofu', 'niku-udon', 'napolitan'])
   })
 
   it('EY: Allergy HARD EXCLUSION は 2.19A で不変', () => {

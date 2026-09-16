@@ -152,8 +152,8 @@ describe('MISSION 2.16 — Evidence Resolution Batch 2', () => {
     }
   })
 
-  it('CI: catalog 全体の VERIFIED 数は 0 のまま', () => {
-    expect(RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)).toEqual(['tori-teriyaki', 'buta-shogayaki']) /* MISSION 2.26: 初の VERIFIED */
+  it('CI: catalog 全体の VERIFIED（MISSION 2.26で初のVERIFIED、PUBLIC BETA RELEASE SPRINT 1Cでmedama-yaki追加）', () => {
+    expect(RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)).toEqual(['tori-teriyaki', 'buta-shogayaki', 'nikujaga', 'medama-yaki', 'yudofu', 'niku-udon', 'napolitan'])
   })
 
   // ---- pork-cabbage: Evidence記録の訂正（direct → variant） ----
@@ -261,8 +261,8 @@ describe('MISSION 2.16 — Evidence Resolution Batch 2', () => {
     expect(selectBetaCandidates([1, 2, 3, 4, 5])).toEqual([1, 2, 3])
   })
 
-  it('CR: Recipe Coherence Gate（medama-yaki / sake-shioyaki = incoherent）無傷', () => {
-    expect(recipe('medama-yaki').verification?.coherenceReview?.status).toBe('incoherent')
+  it('CR: Recipe Coherence Gate 無傷（sake-shioyaki=incoherentのまま／medama-yakiはPUBLIC BETA RELEASE SPRINT 1Cでcoherentへ解決）', () => {
+    expect(recipe('medama-yaki').verification?.coherenceReview?.status).toBe('coherent')
     expect(recipe('sake-shioyaki').verification?.coherenceReview?.status).toBe('incoherent')
   })
 

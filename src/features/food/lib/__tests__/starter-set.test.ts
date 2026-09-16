@@ -97,16 +97,17 @@ describe('First 10 Families Starter Set Gate (DP〜EE)', () => {
     }
   })
 
-  it('EA: medama-yakiはMISSION 2.14B Recipe Coherence CorrectionによりREVIEWへ差し戻され、publishableではない（seasonings/criticalSteps/cookingTimeMinutesのEvidence解決が未完了なため）', () => {
+  it('EA: medama-yakiはMISSION 2.14B Recipe Coherence CorrectionでREVIEWへ差し戻された後、PUBLIC BETA RELEASE SPRINT 1CでNHK単独をcomplete process anchorとしてpublishableへ昇格した', () => {
     const medamaYaki = RECIPE_CATALOG.find((r) => r.id === 'medama-yaki')!
-    expect(medamaYaki.verification?.status).toBe('review')
-    expect(isRecipePublishable(medamaYaki)).toBe(false)
+    expect(medamaYaki.verification?.status).toBe('verified')
+    expect(isRecipePublishable(medamaYaki)).toBe(true)
   })
 
   it('EB: Allergy HARD EXCLUSIONはStarter Set/Evidence作業後も無傷（requiredIngredients+seasoningsのみ対象）', () => {
     const medamaYaki = RECIPE_CATALOG.find((r) => r.id === 'medama-yaki')!
+    // PUBLIC BETA RELEASE SPRINT 1C: seasoningsへ塩・こしょうを追加したため対象食材が拡大。
     const relevant = allergyRelevantIngredients(medamaYaki)
-    expect(relevant).toEqual(['卵', '油'])
+    expect(relevant).toEqual(['卵', '油', '塩', 'こしょう'])
 
     const result = rankRecipes(RECIPE_CATALOG, {
       availableIngredientNames: ['卵'],

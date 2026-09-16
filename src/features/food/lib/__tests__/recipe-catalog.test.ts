@@ -81,7 +81,9 @@ const COOKING_VERB_EQUIPMENT_RULES: Array<{ verbs: string[]; equipmentAnyOf: str
   { verbs: ['揚げ'], equipmentAnyOf: ['フライパン', '鍋'] },
   { verbs: ['焼く', '焼き'], equipmentAnyOf: ['フライパン', 'グリル', 'トースター'] },
   { verbs: ['煮る', '煮込む', '煮立た', '煮詰め'], equipmentAnyOf: ['鍋', 'フライパン'] },
-  { verbs: ['ゆでる', '茹でる'], equipmentAnyOf: ['鍋'] },
+  // PUBLIC BETA RELEASE SPRINT 1D: napolitan（カゴメ公式、フライパン一つでパスタを直接
+  // ゆでるワンパン方式）が実在するため、他のverb同様フライパンも許容する。
+  { verbs: ['ゆでる', '茹でる'], equipmentAnyOf: ['鍋', 'フライパン'] },
   { verbs: ['炊く', '炊飯'], equipmentAnyOf: ['炊飯器'] },
 ]
 
@@ -246,13 +248,18 @@ describe('recipe-catalog.ts — Quality Gate（全件走査、件数に依存し
     for (const recipe of RECIPE_CATALOG) {
       if (!recipe.steps) continue
       const joined = recipe.steps.join('')
-      const known = new Set([
+      const known = [
         ...recipe.requiredIngredients.map((i) => i.name),
         ...(recipe.seasonings ?? []).map((i) => i.name),
         ...(recipe.arrangements ?? []).flatMap((a) => a.addIngredients ?? []),
-      ])
+      ]
+      // PUBLIC BETA RELEASE SPRINT 1D: 「だし」のような短い語が「だしの素」のような
+      // 既知の長い語のsubstringである場合は誤検知になる（「だしの素」を宣言していれば
+      // 「だし」もそこに含まれて当然steps内に出現する）。knownの各語がwordを含んでいれば
+      // 解決済みとみなす（完全一致だけを見ない）。
+      const isKnown = (word: string) => known.some((k) => k.includes(word))
       for (const word of seasoningVocab) {
-        if (!joined.includes(word) || known.has(word)) continue
+        if (!joined.includes(word) || isKnown(word)) continue
         if (word === '油' && OIL_REMOVAL_NOT_INGREDIENT_EXCEPTIONS.has(recipe.id)) continue
         expect.fail(`${recipe.id}: 「${word}」がstepsに現れるがrequiredIngredients/seasonings/arrangementsに含まれない`)
       }
@@ -498,10 +505,13 @@ describe('recipe-catalog.ts — Cooking Liquid Reality Gate', () => {
    * いずれかからcookingLiquidsが失われた場合に検知する回帰防止テスト
    * （新規Recipeの水量要否をここで自動判定するものではない）。
    */
+  // PUBLIC BETA RELEASE SPRINT 1D: nikujaga・niku-udonはEvidence Completionにより
+  // 液体が「水」から「だし」（seasoningsとして計上。cookingLiquidsは型定義上「水・湯のみ」
+  // のため対象外）へ変わったため、このリストから除外した（水量なしで再現不能という
+  // 判定自体は撤回していない。液体の絶対量はseasoningsのamountとして引き続き明記されている）。
   const RECIPES_REQUIRING_COOKING_LIQUID = [
     'oyako-don',
     'curry-rice',
-    'nikujaga',
     'mabo-tofu',
     'saba-misoni',
     'tofu-tamago-soup',
@@ -511,7 +521,6 @@ describe('recipe-catalog.ts — Cooking Liquid Reality Gate', () => {
     'jagaimo-potage',
     'kakitama-jiru',
     'shoyu-udon',
-    'niku-udon',
   ]
 
   it('AI: 水量なしでは再現不能と判定済みのRecipeにcookingLiquidsが定義されている', () => {
@@ -703,10 +712,16 @@ const AUDITED_RECIPE_IDS_PHASE_B = ['medama-yaki', 'hiyayakko', 'sake-shioyaki',
 // 設定されたRecipe。いずれもstatus=review（VERIFIEDではない）。
 const AUDITED_RECIPE_IDS_BATCH3 = ['tori-teriyaki', 'buta-shogayaki']
 
+// PUBLIC BETA RELEASE SPRINT 1D — Minimum Useful Recipe Set。既存のverification未設定
+// （実効的unverified）recipeへ、実在する単一source anchorを使ってEvidenceを完成させ
+// verifiedへ昇格させた（nikujaga/niku-udon/napolitan）。yudofuは新規追加recipe。
+const AUDITED_RECIPE_IDS_SPRINT1D = ['nikujaga', 'niku-udon', 'napolitan', 'yudofu']
+
 const ALL_AUDITED_RECIPE_IDS = [
   ...AUDITED_RECIPE_IDS_D7A,
   ...AUDITED_RECIPE_IDS_PHASE_B,
   ...AUDITED_RECIPE_IDS_BATCH3,
+  ...AUDITED_RECIPE_IDS_SPRINT1D,
 ]
 
 describe('recipe-catalog.ts — Evidence Audit Gate (BG〜BP, PHASE D.7-A)', () => {
@@ -793,7 +808,8 @@ describe('recipe-catalog.ts — Evidence Audit Gate (BG〜BP, PHASE D.7-A)', () 
     const iritamago = RECIPE_CATALOG.find((r) => r.id === 'iritamago')!
     expect(iritamago.requiredIngredients).toEqual([{ name: '卵', amount: '2個' }])
 
-    expect(RECIPE_CATALOG.length).toBe(44)
+    // PUBLIC BETA RELEASE SPRINT 1Dでyudofuを新規追加し45件になった。
+    expect(RECIPE_CATALOG.length).toBe(45)
   })
 
   it('対象10 Recipeは全件verificationが設定されている（UNVERIFIED放置ではない。statusはreview/verifiedいずれか）', () => {
@@ -820,7 +836,7 @@ describe('recipe-catalog.ts — Evidence Audit Gate (BG〜BP, PHASE D.7-A)', () 
     expect(tonjiru.cookingLiquids).toEqual([{ name: '水', amount: '600ml' }])
     expect(tonjiru.cookingTimeMinutes).toBe(25)
 
-    const nikujaga = RECIPE_CATALOG.find((r) => r.id === 'nikujaga')!
-    expect(nikujaga.cookingTimeMinutes).toBe(30)
+    // PUBLIC BETA RELEASE SPRINT 1D: nikujagaはEvidence Completion対象になったため、
+    // このサンプルからは外した（tonjiruが引き続き「対象外recipeの内容不変」のサンプル）。
   })
 })

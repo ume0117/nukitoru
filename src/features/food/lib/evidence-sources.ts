@@ -490,6 +490,39 @@ export const EVIDENCE_SOURCE_CATALOG: RecipeEvidenceSource[] = [
       observedAt: '2026-08-31',
     },
   },
+  // PUBLIC BETA RELEASE SPRINT 1D — Minimum Useful Recipe Set。
+  {
+    id: 'kikkoman-nikujaga-2026',
+    publisher: 'キッコーマン',
+    title: '基本の肉じゃが【味しみ！定番人気和食】',
+    url: 'https://www.kikkoman.co.jp/homecook/search/recipe/00004691/',
+    sourceType: 'manufacturer',
+    checkedAt: '2026-09-16',
+  },
+  {
+    id: 'kikkoman-yudofu-2026',
+    publisher: 'キッコーマン',
+    title: '湯豆腐【定番の簡単和食メニュー】',
+    url: 'https://www.kikkoman.co.jp/homecook/search/recipe/00000639/',
+    sourceType: 'manufacturer',
+    checkedAt: '2026-09-16',
+  },
+  {
+    id: 'kikkoman-buta-komatsuna-udon-2026',
+    publisher: 'キッコーマン',
+    title: '豚肉と小松菜の簡単煮込みうどん【しょうゆとみりんの定番甘辛味】',
+    url: 'https://www.kikkoman.co.jp/homecook/search/recipe/00005877/',
+    sourceType: 'manufacturer',
+    checkedAt: '2026-09-16',
+  },
+  {
+    id: 'kagome-napolitan-2026',
+    publisher: 'カゴメ',
+    title: 'フライパン一つで！本格ナポリタン',
+    url: 'https://www.kagome.co.jp/products/recipe/14623/',
+    sourceType: 'manufacturer',
+    checkedAt: '2026-09-16',
+  },
 ]
 
 export function getEvidenceSourceById(

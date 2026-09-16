@@ -112,13 +112,13 @@ describe('Global Foundation Gate (CB〜CN)', () => {
     expect(hasUnresolvedRangeEvidence(recipeWithDecision!)).toBe(true)
   })
 
-  it('CL: 既存44 Recipeの件数は本PHASEで変化していない', () => {
-    expect(RECIPE_CATALOG.length).toBe(44)
+  it('CL: Recipeの件数は本PHASEで変化していない（PUBLIC BETA RELEASE SPRINT 1Dでyudofuを新規追加し45件）', () => {
+    expect(RECIPE_CATALOG.length).toBe(45)
   })
 
-  it('CM: verified状態のRecipe件数はGlobal Foundation自体によっては変化しない（MISSION 2.14B Recipe Coherence Correctionによりmedama-yakiもREVIEWへ差し戻され現在0件。本Gateの対象はGlobal Foundation側の変更とは無関係であることの確認）', () => {
+  it('CM: verified状態のRecipe件数はGlobal Foundation自体によっては変化しない（本Gateの対象はGlobal Foundation側の変更とは無関係であることの確認）', () => {
     const verifiedIds = RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)
-    expect(verifiedIds).toEqual(['tori-teriyaki', 'buta-shogayaki']) /* MISSION 2.26: 初の VERIFIED。この Gate は当該 Foundation が件数を動かさないことの確認 */
+    expect(verifiedIds).toEqual(['tori-teriyaki', 'buta-shogayaki', 'nikujaga', 'medama-yaki', 'yudofu', 'niku-udon', 'napolitan']) /* MISSION 2.26: 初のVERIFIED。PUBLIC BETA RELEASE SPRINT 1Cでmedama-yaki追加。この Gate は当該 Foundation が件数を動かさないことの確認 */
   })
 
   it('CN: Allergy HARD EXCLUSIONはGlobal Foundation追加後も無傷（requiredIngredients+seasoningsのみ対象）', () => {
@@ -210,13 +210,13 @@ describe('Global Code Extensibility Gate (CO〜CZ)', () => {
     expect(allergyRelevantIngredients(maguroDon!)).toContain('マグロ')
   })
 
-  it('CX: 既存44 Recipeの件数は本FIXで変化していない', () => {
-    expect(RECIPE_CATALOG.length).toBe(44)
+  it('CX: Recipeの件数は本FIXで変化していない（PUBLIC BETA RELEASE SPRINT 1Dでyudofuを新規追加し45件）', () => {
+    expect(RECIPE_CATALOG.length).toBe(45)
   })
 
-  it('CY: verified状態のRecipe件数はGlobal Code Extensibility Fix自体によっては変化しない（sake-shioyaki・medama-yakiともにMISSION 2.14/2.14BのCORRECTIONによりREVIEWへ差し戻され現在0件）', () => {
+  it('CY: verified状態のRecipe件数はGlobal Code Extensibility Fix自体によっては変化しない', () => {
     const verifiedIds = RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id)
-    expect(verifiedIds).toEqual(['tori-teriyaki', 'buta-shogayaki']) /* MISSION 2.26: 初の VERIFIED。この Gate は当該 Foundation が件数を動かさないことの確認 */
+    expect(verifiedIds).toEqual(['tori-teriyaki', 'buta-shogayaki', 'nikujaga', 'medama-yaki', 'yudofu', 'niku-udon', 'napolitan']) /* MISSION 2.26: 初のVERIFIED。PUBLIC BETA RELEASE SPRINT 1Cでmedama-yaki追加。この Gate は当該 Foundation が件数を動かさないことの確認 */
   })
 
   it('CZ: CANONICAL_FOOD_SAMPLE（Gate CB〜CNのfixture）は本FIXで変化していない', () => {

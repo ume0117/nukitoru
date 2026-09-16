@@ -237,7 +237,7 @@ describe('Evidence Variant Foundation Gate (EF〜FF)', () => {
     }
   })
 
-  it('ET: isRecipePublishableは唯一のPublic Gateであり続ける（Variant/Coherence関連フィールドを追加してもGate関数は同一の結論を返す。medama-yakiはMISSION 2.14B CorrectionによりREVIEWへ差し戻されたため、trueの例は合成fixtureで確認する）', () => {
+  it('ET: isRecipePublishableは唯一のPublic Gateであり続ける（Variant/Coherence関連フィールドを追加してもGate関数は同一の結論を返す。trueの例は合成fixtureと、PUBLIC BETA RELEASE SPRINT 1CでVERIFIEDになった実データmedama-yakiの両方で確認する）', () => {
     const recipe = makeRecipe({ id: 'et-complete-r1', requiredIngredients: [ri('鮭', '1切れ')] })
     const source = makeSource({ id: 'et-complete-s1' })
     const verification: RecipeVerification = {
@@ -253,12 +253,13 @@ describe('Evidence Variant Foundation Gate (EF〜FF)', () => {
     }
     const medamaYaki = RECIPE_CATALOG.find((r) => r.id === 'medama-yaki')!
     expect(isRecipePublishable({ ...recipe, verification }, [source])).toBe(true)
-    expect(isRecipePublishable(medamaYaki)).toBe(false)
+    expect(isRecipePublishable(medamaYaki)).toBe(true)
   })
 
   it('EU: Allergy HARD EXCLUSIONはVariant Foundation追加後も無傷', () => {
     const medamaYaki = RECIPE_CATALOG.find((r) => r.id === 'medama-yaki')!
-    expect(allergyRelevantIngredients(medamaYaki)).toEqual(['卵', '油'])
+    // PUBLIC BETA RELEASE SPRINT 1C: seasoningsへ塩・こしょうを追加したため対象食材が拡大。
+    expect(allergyRelevantIngredients(medamaYaki)).toEqual(['卵', '油', '塩', 'こしょう'])
     const result = rankRecipes(RECIPE_CATALOG, {
       availableIngredientNames: ['卵'],
       allergyNames: ['卵'],
@@ -316,14 +317,14 @@ describe('Evidence Variant Foundation Gate (EF〜FF)', () => {
     expect(hasUnresolvedRangeEvidence(shioMusubi)).toBe(true)
   })
 
-  it('FC: medama-yakiはMISSION 2.14B Recipe Coherence CorrectionによりREVIEWへ差し戻された（seasoningsがNHKの実際のsource内容と矛盾していたため）', () => {
+  it('FC: medama-yakiはMISSION 2.14B Recipe Coherence CorrectionでREVIEWへ差し戻された後、PUBLIC BETA RELEASE SPRINT 1CでNHK単独をcomplete process anchorとしてVERIFIEDへ昇格した', () => {
     const medamaYaki = RECIPE_CATALOG.find((r) => r.id === 'medama-yaki')!
-    expect(medamaYaki.verification?.status).toBe('review')
-    expect(medamaYaki.verification?.coherenceReview?.status).toBe('incoherent')
+    expect(medamaYaki.verification?.status).toBe('verified')
+    expect(medamaYaki.verification?.coherenceReview?.status).toBe('coherent')
   })
 
-  it('FD: Beta Publishable Starterは現在0件（medama-yaki・sake-shioyakiともにMISSION 2.14/2.14B CORRECTIONによりREVIEWへ差し戻されたため）', () => {
-    expect(getBetaPublishableStarterRecipes().map((r) => r.id)).toEqual([])
+  it('FD: Beta Publishable Starterは medama-yaki を含む（PUBLIC BETA RELEASE SPRINT 1CでVERIFIED化。sake-shioyakiは対象外のためREVIEWのまま）', () => {
+    expect(getBetaPublishableStarterRecipes().map((r) => r.id)).toEqual(['medama-yaki'])
   })
 
   it('FE: 数値conflictを解消するためだけに作られたvariantは確立されない（gyudonのconflictを模した架空のvariant試行）', () => {

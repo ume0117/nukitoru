@@ -379,14 +379,14 @@ describe('MISSION 2.35 A/H — 既存 Recipe Evidence は Presentation 生成の
     expect(JSON.stringify(TORI_TERIYAKI_SOURCE_KNOWLEDGE)).toBe(before)
   })
 
-  it('H: tori-teriyaki / buta-shogayaki は引き続き VERIFIED かつ publishable', () => {
+  it('H: tori-teriyaki / buta-shogayaki は引き続き VERIFIED かつ publishable（PUBLIC BETA RELEASE SPRINT 1Cでmedama-yakiも追加）', () => {
     expect(getVerificationStatus(tori())).toBe('verified')
     expect(getVerificationStatus(buta())).toBe('verified')
     expect(isRecipePublishable(tori())).toBe(true)
     expect(isRecipePublishable(buta())).toBe(true)
     expect(
       RECIPE_CATALOG.filter((r) => r.verification?.status === 'verified').map((r) => r.id),
-    ).toEqual(['tori-teriyaki', 'buta-shogayaki'])
+    ).toEqual(['tori-teriyaki', 'buta-shogayaki', 'nikujaga', 'medama-yaki', 'yudofu', 'niku-udon', 'napolitan'])
   })
 
   it('H: World Food Knowledge レイヤーは RECIPE_CATALOG を変更しない（Evidence snapshot 不変）', () => {

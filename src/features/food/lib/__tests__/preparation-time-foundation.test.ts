@@ -27,7 +27,7 @@ import { applicableFieldsFor, isRecipePublishable } from '../recipe-publishabili
 import { rankRecipes } from '../recipe-suggestion-engine'
 import { allergyRelevantIngredients } from '../recipe-safety'
 import { RECIPE_CATALOG } from '../recipe-catalog'
-import { mockMealProvider } from '../mock-meal-provider'
+import { createMealProvider } from '../mock-meal-provider'
 import type { Ingredient } from '@/features/food/types'
 
 function makeRecipe(overrides: Partial<Recipe> & Pick<Recipe, 'id' | 'requiredIngredients'>): Recipe {
@@ -194,8 +194,10 @@ describe('MISSION 2.20 — Product Time status (BLOCKER B)', () => {
   })
 
   it('FJ: mockMealProvider の estimatedMinutes — 既存44 Recipe はすべて数値のまま', async () => {
+    // PUBLIC BETA RELEASE SPRINT 1 — 既存44 Recipe全体の検証が目的のため、
+    // Beta Evidence Gateで絞り込む前のRECIPE_CATALOG全体を使うcreateMealProviderを使う。
     const ing = (name: string): Ingredient => ({ id: name, name, quantityMode: 'exact' })
-    const res = await mockMealProvider.suggest({
+    const res = await createMealProvider(RECIPE_CATALOG).suggest({
       ingredients: [ing('ごはん'), ing('マグロ'), ing('卵'), ing('豆腐')],
       cookingPreference: { maxCookingMinutes: null, shoppingMode: 'none' },
     })
@@ -323,8 +325,9 @@ describe('MISSION 2.20 — Recipe preparation model (BLOCKER A)', () => {
   it('FQ: preparation を持たない Recipe は applicableFieldsFor が従来どおり（"preparation" 非対象）', () => {
     const noPrep = makeRecipe({ id: 'fq1', requiredIngredients: [{ name: 'a', amount: '1' }] })
     expect(applicableFieldsFor(noPrep)).not.toContain('preparation')
-    // catalog は tori-teriyaki（2.19E-RESUME-2）と buta-shogayaki（MISSION 2.31）で preparation 追加、他は非対象
-    const withPrepIds = new Set(['tori-teriyaki', 'buta-shogayaki'])
+    // catalog は tori-teriyaki（2.19E-RESUME-2）と buta-shogayaki（MISSION 2.31）で preparation 追加。
+    // PUBLIC BETA RELEASE SPRINT 1Dでnikujaga・yudofu・niku-udon・napolitanにも追加、他は非対象。
+    const withPrepIds = new Set(['tori-teriyaki', 'buta-shogayaki', 'nikujaga', 'yudofu', 'niku-udon', 'napolitan'])
     for (const r of RECIPE_CATALOG) {
       if (withPrepIds.has(r.id)) {
         expect(applicableFieldsFor(r)).toContain('preparation')
