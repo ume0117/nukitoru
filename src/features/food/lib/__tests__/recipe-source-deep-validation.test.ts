@@ -145,7 +145,10 @@ describe('MISSION 2.41F-2 — Primary Target deep validation', () => {
     expect(c.attribution).toBe('required')
     expect(c.classification).toBe('REVIEW_REQUIRED')
     expect(c.blockingReasons).toEqual(['RECIPE_APPLICABILITY_NOT_CONFIRMED'])
-    expect(c.capabilities).toContain('RECIPE_INGREDIENT_GRAPH')
+    // MISSION 2.41F-3: 実データ確認により RECIPE_INGREDIENT_GRAPH は誤りと判明し削除された
+    // （Health Canada 自身が "it does not take into account recipes" と明記）。
+    expect(c.capabilities).toEqual(['NUTRITION_REFERENCE'])
+    expect(c.capabilities).not.toContain('RECIPE_INGREDIENT_GRAPH')
   })
   it('Target C: UK National Archives MAF 102/15 は Rights は比較的明確だが実データ未抽出', () => {
     const c = UK_NATIONAL_ARCHIVES_MAF10215_CANDIDATE
@@ -160,7 +163,9 @@ describe('MISSION 2.41F-2 — Primary Target deep validation', () => {
       expect(c.evidence.length).toBeGreaterThanOrEqual(2)
       for (const e of c.evidence) {
         expect(e.sourceUrl).toMatch(/^https?:\/\//)
-        expect(e.retrievedAt).toBe('2026-09-05')
+        // MISSION 2.41F-3 で FSCT に追加した Evidence は実際に確認した日付（2026-09-16）を持つ。
+        // 元 MISSION 2.41F-2 の Evidence は 2026-09-05 のまま。日付を偽らず実際の accessed date を保つ。
+        expect(e.retrievedAt).toMatch(/^2026-09-(05|16)$/)
       }
     }
   })
