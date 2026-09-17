@@ -112,11 +112,7 @@ function URLResultCard({ result, onDelete, lang }: { result: ScanResult; onDelet
         )}
         <div className="flex gap-2">
           {analysis.hasWarnings ? (
-            {analysis.hasWarnings ? (
             <button onClick={handleOpen} className="flex-1 h-9 bg-blue-600 hover:bg-blue-700 text-white text-[10px] tracking-[0.15em] uppercase font-medium transition-colors">Open</button>
-          ) : (
-            <a href={result.value} target="_blank" rel="noopener noreferrer" className="flex-1 h-9 bg-blue-600 hover:bg-blue-700 text-white text-[10px] tracking-[0.15em] uppercase font-medium transition-colors flex items-center justify-center">Open</a>
-          )}
           ) : (
             <a href={result.value} target="_blank" rel="noopener noreferrer" className="flex-1 h-9 bg-blue-600 hover:bg-blue-700 text-white text-[10px] tracking-[0.15em] uppercase font-medium transition-colors flex items-center justify-center">Open</a>
           )}
