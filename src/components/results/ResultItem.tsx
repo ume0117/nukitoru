@@ -222,6 +222,7 @@ function QRResultCard({ result, onDelete }: { result: ScanResult; onDelete: (id:
         </div>
       </div>
       <p className="font-mono text-sm text-gray-800 dark:text-gray-100 break-all leading-relaxed">{result.value}</p>
+      <a href={result.value} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full h-9 bg-blue-600 hover:bg-blue-700 text-white text-[10px] tracking-[0.15em] uppercase font-medium transition-colors">Open</a>
     </div>
   )
 }
